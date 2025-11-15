@@ -12,19 +12,19 @@ Il gère :
 Le SDK est publié sur le registre public npm :
 
 ```bash
-npm install @obsidiane/auth
+npm install @obsidiane/auth-sdk
 ```
 
 ou
 
 ```bash
-yarn add @obsidiane/auth
+yarn add @obsidiane/auth-sdk
 ```
 
 ## Utilisation
 
 ```ts
-import { AuthClient } from '@obsidiane/auth';
+import { AuthClient } from '@obsidiane/auth-sdk';
 
 const auth = new AuthClient({
   baseUrl: 'https://auth.example.com', // ou '' si même origine

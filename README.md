@@ -359,7 +359,7 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
 
 ## SDKs
 
-### Client JS – `@obsidiane/auth`
+### Client JS – `@obsidiane/auth-sdk`
 
 * Consomme l’API (login, me, refresh, logout, register, reset password) depuis navigateur ou Node/SSR.
 * Sources & doc : `packages/auth-client-js`.
