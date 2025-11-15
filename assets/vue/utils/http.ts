@@ -51,7 +51,7 @@ export interface CsrfRequestConfig extends InternalAxiosRequestConfig {
 export const http: AxiosInstance = axios.create({
   withCredentials: true,
   headers: {
-    Accept: 'application/json',
+    Accept: 'application/ld+json, application/json',
   },
 });
 

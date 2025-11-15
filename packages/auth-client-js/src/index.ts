@@ -30,7 +30,7 @@ export class AuthClient {
     const res = await this.doFetch(this.url(`/api/auth/csrf/${encodeURIComponent(tokenId)}`), {
       method: 'GET',
       credentials: 'include',
-      headers: { Accept: 'application/json' },
+      headers: { Accept: 'application/ld+json, application/json' },
     });
 
     if (!res.ok) {

@@ -7,7 +7,8 @@ api_platform:
         json: [ "application/merge-patch+json" ]
         jsonapi: [ "application/vnd.api+json" ]
     formats:
-        jsonld: [ 'application/json' ]
+        jsonld: [ 'application/ld+json' ]
+        json: [ 'application/json' ]
         multipart: [ 'multipart/form-data' ]
     docs_formats:
         json: [ 'application/json' ]
@@ -27,5 +28,4 @@ api_platform:
             JWT:
                 name: Authorization
                 type: header
-
 
