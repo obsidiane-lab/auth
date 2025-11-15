@@ -74,6 +74,18 @@ COPY --link infra/frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
 
 CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
 
+# Frontend assets build image
+FROM node:20-alpine AS frontend_build
+
+WORKDIR /app
+
+COPY --link package*.json ./
+COPY --link webpack.config.js postcss.config.mjs tsconfig.json ./
+COPY --link assets ./assets
+
+RUN npm ci
+RUN npm run build
+
 # Prod FrankenPHP image
 FROM frankenphp_base AS frankenphp_prod
 
@@ -91,6 +103,9 @@ RUN set -eux; \
 # copy sources
 COPY --link . ./
 RUN rm -Rf frankenphp/
+
+# copy built frontend assets
+COPY --from=frontend_build /app/public/build /app/public/build
 
 RUN set -eux; \
 	mkdir -p var/cache var/log; \
