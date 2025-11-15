@@ -1,0 +1,45 @@
+name: Auto Tag
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    name: Calculate and push tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Calculate next tag
+        id: calc
+        env:
+          CI_COMMIT_REF_NAME: ${{ github.ref_name }}
+          CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          chmod +x infra/deploy/script/calculate_tag.sh
+          TAG=$(infra/deploy/script/calculate_tag.sh)
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push tag
+        if: steps.calc.outputs.tag != ''
+        env:
+          TAG: ${{ steps.calc.outputs.tag }}
+        run: |
+          if git rev-parse "${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists, skipping."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git tag "${TAG}"
+          git push origin "refs/tags/${TAG}"
