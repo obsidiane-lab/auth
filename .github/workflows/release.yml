@@ -6,8 +6,7 @@ on:
       - '*.*.*'
 
 env:
-  # Docker image name on Docker Hub, e.g. "myuser/obsidiane-auth"
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_IMAGE }}
+  IMAGE_NAME: 'obsidiane/auth'
 
 jobs:
   release:
@@ -36,7 +35,7 @@ jobs:
         id: build_image
         run: |
           if [ -z "${IMAGE_NAME:-}" ]; then
-            echo "IMAGE_NAME secret (DOCKERHUB_IMAGE) is not set" >&2
+            echo "IMAGE_NAME environment variable is not set" >&2
             exit 1
           fi
 
