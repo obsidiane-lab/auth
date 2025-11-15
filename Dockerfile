@@ -81,6 +81,7 @@ WORKDIR /app
 
 COPY --link package*.json ./
 COPY --link webpack.config.js postcss.config.mjs tsconfig.json ./
+COPY --link templates ./templates
 COPY --link assets ./assets
 
 RUN npm ci
