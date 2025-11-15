@@ -7,6 +7,8 @@ on:
 
 env:
   IMAGE_NAME: 'obsidiane/auth'
+  NPM_REGISTRY: ${{ vars.NPM_REGISTRY != '' && vars.NPM_REGISTRY || 'https://registry.npmjs.org' }}
+  PUBLISH_NPM: ${{ vars.PUBLISH_NPM != '' && vars.PUBLISH_NPM || '1' }}
 
 jobs:
   release:
@@ -23,7 +25,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
+          registry-url: ${{ env.NPM_REGISTRY }}
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v3
@@ -85,31 +87,40 @@ jobs:
       - name: Publish npm package
         env:
           APP_VERSION: ${{ steps.build_image.outputs.version }}
-          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_REGISTRY: ${{ env.NPM_REGISTRY }}
+          PUBLISH_NPM: ${{ env.PUBLISH_NPM }}
         working-directory: packages/auth-client-js
         run: |
+          publish_flag=$(printf '%s' "${PUBLISH_NPM:-1}" | tr '[:upper:]' '[:lower:]')
+          if [ -n "$publish_flag" ] && [ "$publish_flag" != "1" ] && [ "$publish_flag" != "true" ] && [ "$publish_flag" != "yes" ]; then
+            echo "Skipping npm publish because PUBLISH_NPM is set to '$PUBLISH_NPM'."
+            exit 0
+          fi
+
           if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
-            echo "NPM_TOKEN secret is not set" >&2
-            exit 1
+            echo "NPM_TOKEN secret is not set; skipping npm publish."
+            exit 0
           fi
 
           npm install
           npm version "$APP_VERSION" --no-git-tag-version
-          npm publish --access public
+          npm publish \
+            --access public \
+            --registry "${NPM_REGISTRY:-https://registry.npmjs.org}"
 
-      - name: Notify  Packagist
-        env:
-          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
-          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
-        run: |
-          if [ -z "${PACKAGIST_USERNAME:-}" ] || [ -z "${PACKAGIST_TOKEN:-}" ]; then
-            echo "Packagist credentials not configured, skipping notification."
-            exit 0
-          fi
+  publish_packagist:
+    name: Publish to Packagist
+    runs-on: ubuntu-latest
+    needs: release
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
 
-          REPO_URL="https://github.com/${REPOSITORY}.git"
-
-          curl -sS -X POST \
-            -H "Content-Type: application/json" \
-            -d "{\"repository\": {\"url\": \"${REPO_URL}\"}}" \
-            "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}"
+      - name: Trigger Packagist update
+        uses: mnavarrocarter/packagist-update@v1.0.0
+        with:
+          username: ${{ secrets.PACKAGIST_USERNAME }}
+          api_token: ${{ secrets.PACKAGIST_TOKEN }}
+          package_name: obsidiane/auth-bundle
