@@ -52,37 +52,6 @@ jobs:
                     -t "${IMAGE_NAME}:latest" \
                     .
 
-            - name: Run container and generate OpenAPI spec
-              run: |
-                  set -e
-
-                  docker run -d --rm -p 8080:80 --name obsidiane-auth "${IMAGE_NAME}:${APP_VERSION}"
-
-                  echo "Waiting for API to be ready..."
-                  for i in $(seq 1 20); do
-                    if curl -fsS "http://localhost:8080/api/docs.json" -o openapi.json; then
-                      echo "OpenAPI spec downloaded to openapi.json"
-                      break
-                    fi
-                    echo "  retry #$i..."
-                    sleep 3
-                  done
-
-                  if [ ! -f openapi.json ]; then
-                    echo "Failed to fetch OpenAPI spec from container" >&2
-                    docker logs obsidiane-auth || true
-                    docker stop obsidiane-auth || true
-                    exit 1
-                  fi
-
-                  docker stop obsidiane-auth
-
-            - name: Upload OpenAPI spec artifact
-              uses: actions/upload-artifact@v4
-              with:
-                  name: openapi-${{ env.APP_VERSION }}
-                  path: openapi.json
-
             - name: Push Docker image
               run: |
                   set -e

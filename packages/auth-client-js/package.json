@@ -12,8 +12,7 @@
     },
     "scripts": {
         "build": "tsc -p tsconfig.json",
-        "gen:types": "openapi-typescript ../../openapi.json -o src/types.gen.ts",
-        "prepublishOnly": "npm run gen:types && npm run build"
+        "prepublishOnly": "npm run build"
     },
     "files": [
         "dist",
@@ -21,7 +20,6 @@
         "LICENSE"
     ],
     "devDependencies": {
-        "openapi-typescript": "^7.0.0",
         "typescript": "^5.6.0"
     }
 }
