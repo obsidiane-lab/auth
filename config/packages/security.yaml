@@ -1,0 +1,49 @@
+security:
+    password_hashers:
+        App\Entity\User:
+            algorithm: auto
+
+    providers:
+        app_user_provider:
+            entity: { class: App\Entity\User, property: email }
+
+    firewalls:
+        dev: { pattern: ^/(_(profiler|wdt)|css|images|js)/, security: false }
+
+        auth_pages:
+            # Public UI routes (login/register/reset password)
+            pattern: ^/(?:login|register|reset-password(?:/.*)?)$
+            security: false
+        api:
+            pattern: ^/api
+            stateless: true
+            provider: app_user_provider
+            user_checker: App\Security\UserChecker
+            entry_point: jwt
+            login_throttling:
+                limiter: app.login_rate_limiter
+            json_login:
+                check_path: /api/login
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: App\Security\JsonLoginFailureHandler
+            jwt: ~
+            refresh_jwt:
+                check_path: /api/token/refresh
+
+    access_control:
+        # UI pages
+        - { path: ^/auth(?:/.*)?$, roles: PUBLIC_ACCESS, methods: [ GET ] }
+        - { path: ^/reset-password(?:/.*)?$, roles: PUBLIC_ACCESS, methods: [ GET, POST ] }
+
+        # Public API endpoints
+        - { path: ^/api/(login|token/refresh)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
+        - { path: ^/api/auth/(register|logout)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
+        - { path: ^/api/auth/csrf/, roles: PUBLIC_ACCESS, methods: [ GET ] }
+        - { path: ^/api/setup/admin$, roles: PUBLIC_ACCESS, methods: [ POST ] }
+        - { path: ^/api/docs, roles: PUBLIC_ACCESS, methods: [ GET ] }
+        - { path: ^/verify-email$, roles: PUBLIC_ACCESS, methods: [ GET ] }
+
+        # Everything else requires authentication
+        - { path: ^/, roles: IS_AUTHENTICATED_FULLY }

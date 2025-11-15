@@ -1,0 +1,64 @@
+services:
+  php:
+    build:
+      context: .
+      target: frankenphp_dev
+    environment:
+      APP_BASE_URL: "http://localhost:8000"
+      APP_SECRET: "secret"
+      APP_ENV: "dev"
+      ACCESS_COOKIE_NAME: "__Secure-at"
+      ACCESS_COOKIE_DOMAIN: ""
+      ACCESS_COOKIE_PATH: "/"
+      ACCESS_COOKIE_SAMESITE: "lax"
+      ACCESS_COOKIE_SECURE: "0"
+      MERCURE_URL: "http://php/.well-known/mercure"
+      FRANKENPHP_WORKER_CONFIG: "watch"
+      XDEBUG_MODE: "off"
+      ALLOWED_ORIGINS: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
+      DATABASE_URL: "mysql://app:ChangeMe@database:3306/app"
+      JWT_SECRET: "!ChangeThisMercureHubJWTSecretKey!"
+      JWT_ISSUER: "https://auth.example.com"
+      JWT_AUDIENCE: "core-api"
+      FRONTEND_DEFAULT_REDIRECT: "https://app.example.com"
+      FRONTEND_REDIRECT_ALLOWLIST: "https://app.example.com/,https://another.example.com/"
+      UI_THEME_COLOR: "red"
+      UI_THEME_MODE: "light"
+      NOTIFUSE_API_BASE_URL: "https://notifuse.obsidiane.fr"
+      NOTIFUSE_WORKSPACE_ID: "suretiq"
+      NOTIFUSE_API_KEY: "secret"
+      BRANDING_NAME: "SurEtiq"
+    volumes:
+      - ./:/app
+      - ./infra/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
+      - ./infra/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
+    ports:
+      - "8000:80"
+    depends_on:
+      - database
+
+  database:
+    image: mariadb
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
+      MYSQL_RANDOM_ROOT_PASSWORD: "true"
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ChangeMe}
+      MYSQL_USER: ${MYSQL_USER:-app}
+    volumes:
+      - database_data:/var/lib/mysql:rw
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "3306:3306"
+
+  maildev:
+    image: maildev/maildev
+    ports:
+      - "1080:1080"
+      - "1025:1025"
+
+volumes:
+  database_data:

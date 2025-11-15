@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+{% set initial_direction = app.request.locale starts with 'ar' or app.request.locale starts with 'he' ? 'rtl' : 'ltr' %}
+{% set active_theme_color = theme_color|default('red') %}
+<html lang="{{ app.request.locale|default('en') }}" data-theme="{{ active_theme_color }}" dir="{{ initial_direction }}" class="{{ theme_mode|default('dark') == 'dark' ? 'dark' : '' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="dark light">
+    <title>{% block title %}{{ wording_name }}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ path('app_favicon') }}">
+
+    {{ encore_entry_link_tags('app') }}
+
+    {% block stylesheets %}{% endblock %}
+</head>
+<body
+    class="bg-background font-poppins text-foreground selection:bg-primary selection:text-primary-foreground min-h-screen"
+    data-controller="theme"
+    data-theme-mode-value="{{ theme_mode|default('dark') }}"
+    data-theme-color-value="{{ active_theme_color }}"
+    data-theme-direction-value="{{ initial_direction }}">
+
+{% block body %}{% endblock %}
+
+{{ encore_entry_script_tags('app') }}
+
+{% block javascripts %}{% endblock %}
+</body>
+</html>

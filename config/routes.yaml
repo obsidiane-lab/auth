@@ -1,0 +1,23 @@
+controllers:
+    resource: ../src/Controller/
+    type: attribute
+
+api_token_refresh:
+    path: /api/token/refresh
+
+api_login:
+    path: /api/login
+
+api_platform:
+    resource: .
+    type: api_platform
+    prefix: /api
+
+_security_logout:
+    resource: security.route_loader.logout
+    type: service
+
+when@dev:
+    _errors:
+        resource: '@FrameworkBundle/Resources/config/routing/errors.php'
+        prefix: /_error

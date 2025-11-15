@@ -1,0 +1,19 @@
+lexik_jwt_authentication:
+  secret_key: '%env(resolve:JWT_SECRET)%'
+  token_ttl: '%env(int:JWT_ACCESS_TTL)%'
+  clock_skew: 60
+  encoder:
+    service: lexik_jwt_authentication.encoder.lcobucci
+    signature_algorithm: '%env(JWT_ALGORITHM)%'
+  token_extractors:
+    authorization_header:
+      enabled: false
+      prefix: Bearer
+      name: Authorization
+    cookie:
+      enabled: true
+      name: '%env(string:ACCESS_COOKIE_NAME)%'
+  remove_token_from_body_when_cookies_used: true
+  blocklist_token:
+    enabled: true
+    cache: cache.app

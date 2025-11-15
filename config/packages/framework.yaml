@@ -1,0 +1,37 @@
+# see https://symfony.com/doc/current/reference/configuration/framework.html
+framework:
+    secret: '%env(APP_SECRET)%'
+    default_locale: fr
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        providers:
+
+    csrf_protection:
+        enabled: true
+        stateless_token_ids:
+            - authenticate
+            - register
+            - password_request
+            - password_reset
+            - logout
+            - initial_admin
+        cookie_name: 'csrf-token'
+        check_header: true
+    form:
+        csrf_protection:
+            enabled: true
+
+    # Note that the session will be started ONLY if you read or write from it.
+    session:
+        cookie_secure: 'auto'
+        cookie_httponly: true
+        cookie_samesite: lax
+
+    #esi: true
+    #fragments: true
+
+when@test:
+    framework:
+        test: true
+        session:
+            storage_factory_id: session.storage.factory.mock_file

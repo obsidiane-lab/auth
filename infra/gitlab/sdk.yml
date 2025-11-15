@@ -1,0 +1,163 @@
+fetch-openapi-json:
+    stage: build
+    rules:
+        - !reference [ .rules_other_branch, rules ]
+        - !reference [ .rules_dev_branch, rules ]
+        - !reference [ .rules_prod_branch, rules ]
+    needs:
+        -   job: build
+        -   job: define-version-app
+            artifacts: true
+    services:
+        -   name: "$CI_REGISTRY_IMAGE:$APP_VERSION"
+            alias: php
+    before_script:
+        - apk add --no-cache curl
+    variables:
+        OPENAPI_URL: "http://php/api/docs.json"
+    script:
+        - |
+            echo "🔄 Tentative de récupération de la spécification OpenAPI…"
+            echo "🖇️ Connexion à $OPENAPI_URL"
+            curl --verbose \
+                 --retry 10 --retry-delay 2 --retry-connrefused \
+                 --fail-with-body \
+                 --write-out "\n→ HTTP_CODE=%{http_code}\n" \
+                 "$OPENAPI_URL" \
+                 -o openapi.json \
+            || {
+              echo "‼️ Échec de la récupération : curl a planté, voir ci-dessous pour le détail"
+              exit 1
+            }
+        - echo "✅ Succès; openapi.json récupéré 🎉"
+    artifacts:
+        paths:
+            - openapi.json
+        expire_in: 1h
+
+
+publish_npm_sdk:
+    stage: release
+    image: node:20-alpine
+    needs:
+        -   job: fetch-openapi-json
+            artifacts: true
+        -   job: build
+        -   job: define-version-app
+            artifacts: true
+    rules:
+        - !reference [ .rules_other_branch, rules ]
+        - !reference [ .rules_dev_branch, rules ]
+        - !reference [ .rules_prod_branch, rules ]
+    before_script:
+        - node --version
+        - apk add --no-cache git curl jq
+        - |
+            NPM_REG_URL="https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/"
+            echo "//${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/:_authToken=${CI_JOB_TOKEN}" > ~/.npmrc
+            echo "@obsidiane:registry=${NPM_REG_URL}" >> ~/.npmrc
+            echo "always-auth=true" >> ~/.npmrc
+    script:
+        - cd packages/auth-client-js
+        - npm install
+        - export NPM_PACKAGE_NAME="$(jq -r .name package.json)"
+        - echo "🔧 APP_VERSION = $APP_VERSION"
+        - echo "📦 Package = ${NPM_PACKAGE_NAME}"
+        - |
+            echo "🔎 Vérification de l’existence de ${NPM_PACKAGE_NAME}@${APP_VERSION}…"
+            API="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages"
+            RESP="$(curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+              --get "$API" \
+              --data "package_type=npm" \
+              --data-urlencode "package_name=${NPM_PACKAGE_NAME}" \
+              --data-urlencode "package_version=${APP_VERSION}" || true)"
+            PKG_ID="$(echo "${RESP:-[]}" | jq -r '.[0].id // empty')"
+            if [ -n "$PKG_ID" ]; then
+              echo "⚠️ Version ${APP_VERSION} trouvée (id=$PKG_ID), suppression…"
+              CODE="$(curl -sS -o /dev/null -w "%{http_code}" \
+                --request DELETE \
+                --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+                "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/${PKG_ID}" || echo "ERR")"
+              echo "🧹 Suppression terminée (HTTP_CODE=${CODE})"
+            else
+              echo "✅ Aucune version existante — publication possible"
+            fi
+        - echo "Publishing ${NPM_PACKAGE_NAME} version ${APP_VERSION}"
+        - npm version "$APP_VERSION" --no-git-tag-version
+        - npm publish --registry "https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/npm/"
+
+# Optional: package PHP SDK as a distributable zip artifact. Publishing to Composer registry
+# requires choosing between Packagist or GitLab Composer Registry; awaiting confirmation.
+package_composer_sdk:
+    stage: build
+    needs:
+        -   job: fetch-openapi-json
+        -   job: define-version-app
+            artifacts: true
+    image: alpine:3.20
+    rules:
+        - !reference [ .rules_other_branch, rules ]
+        - !reference [ .rules_dev_branch, rules ]
+        - !reference [ .rules_prod_branch, rules ]
+    script:
+        - apk add --no-cache zip jq
+        - cd packages/auth-client-php
+        - mkdir -p dist build
+        # Inject version into composer.json copy for this build (via jq)
+        - jq --arg v "$APP_VERSION" '.version=$v' composer.json > build/composer.json
+        - cp -r src build/src
+        - cp -r config build/config
+        - cp -f README.md build/ || true
+        - cd build && zip -r "../dist/auth-php-sdk-${APP_VERSION}.zip" . && cd -
+        - echo "Created dist/auth-php-sdk-${APP_VERSION}.zip"
+    artifacts:
+        name: composer-sdk-${CI_COMMIT_SHORT_SHA}
+        paths:
+            - packages/auth-client-php/dist/*.zip
+        expire_in: 1 week
+
+publish_composer_sdk:
+    stage: release
+    needs:
+        -   job: fetch-openapi-json
+        -   job: package_composer_sdk
+            artifacts: true
+        -   job: define-version-app
+            artifacts: true
+    rules:
+        -   if: '$CI_COMMIT_TAG'
+            when: on_success
+        -   if: '$CI_COMMIT_BRANCH'
+            when: on_success
+    image: alpine:3.20
+    before_script:
+        - apk add --no-cache curl
+    script:
+        - apk add --no-cache jq curl
+        - PACKAGE_NAME="obsidiane-auth"
+        - FILE="packages/auth-client-php/dist/auth-php-sdk-${APP_VERSION}.zip"
+        - echo "🔧 APP_VERSION = $APP_VERSION"
+        - echo "📦 Uploading Composer package ${PACKAGE_NAME} ${APP_VERSION} to GitLab Generic Registry"
+        - |
+            echo "🔎 Vérification de l’existence de ${PACKAGE_NAME}@${APP_VERSION}…"
+            API="${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages"
+            RESP="$(curl -fsS --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+              --get "$API" \
+              --data "package_type=generic" \
+              --data-urlencode "package_name=${PACKAGE_NAME}" \
+              --data-urlencode "package_version=${APP_VERSION}" || true)"
+            PKG_ID="$(echo "${RESP:-[]}" | jq -r '.[0].id // empty')"
+            if [ -n "$PKG_ID" ]; then
+              echo "⚠️ Version ${APP_VERSION} trouvée (id=$PKG_ID), suppression…"
+              CODE="$(curl -sS -o /dev/null -w "%{http_code}" \
+                --request DELETE \
+                --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+                "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/${PKG_ID}" || echo "ERR")"
+              echo "🧹 Suppression terminée (HTTP_CODE=${CODE})"
+            else
+              echo "✅ Aucune version existante — publication possible"
+            fi
+        - |
+            curl --header "JOB-TOKEN: ${CI_JOB_TOKEN}" \
+                 --upload-file "$FILE" \
+                 "https://${CI_SERVER_HOST}/api/v4/projects/${CI_PROJECT_ID}/packages/generic/${PACKAGE_NAME}/${APP_VERSION}/auth-php-sdk-${APP_VERSION}.zip"

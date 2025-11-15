@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env.*
+Dockerfile.ci
+node_modules
+vendor
+var
+packages/**/dist
+packages/**/node_modules

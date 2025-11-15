@@ -1,0 +1,10 @@
+notifuse:
+  api_base_url: '%env(string:NOTIFUSE_API_BASE_URL)%'
+  workspace_id: '%env(string:NOTIFUSE_WORKSPACE_ID)%'
+  workspace_api_key: '%env(string:NOTIFUSE_API_KEY)%'
+  http_client_options:
+    timeout: 8.0
+    max_redirects: 3
+    verify_peer: true
+    headers:
+      X-Client-Name: 'obsidiane-auth'

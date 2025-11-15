@@ -1,0 +1,118 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+      - '*.*.*'
+
+env:
+  # Docker image name on Docker Hub, e.g. "myuser/obsidiane-auth"
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_IMAGE }}
+
+jobs:
+  release:
+    name: Publish Docker, npm and Packagist
+    runs-on: ubuntu-latest
+    env:
+      REPOSITORY: ${{ github.repository }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build Docker image
+        id: build_image
+        run: |
+          if [ -z "${IMAGE_NAME:-}" ]; then
+            echo "IMAGE_NAME secret (DOCKERHUB_IMAGE) is not set" >&2
+            exit 1
+          fi
+
+          APP_VERSION="${GITHUB_REF_NAME#v}"
+          echo "version=$APP_VERSION" >> "$GITHUB_OUTPUT"
+
+          docker build \
+            --build-arg APP_VERSION="$APP_VERSION" \
+            --target frankenphp_prod \
+            -t "$IMAGE_NAME:$APP_VERSION" \
+            .
+
+      - name: Run container and generate OpenAPI spec
+        env:
+          APP_VERSION: ${{ steps.build_image.outputs.version }}
+        run: |
+          set -e
+          docker run -d --rm -p 8080:80 --name obsidiane-auth "$IMAGE_NAME:$APP_VERSION"
+
+          echo "Waiting for API to be ready..."
+          for i in $(seq 1 20); do
+            if curl -fsS "http://localhost:8080/api/docs.json" -o openapi.json; then
+              echo "OpenAPI spec downloaded to openapi.json"
+              break
+            fi
+            echo "  retry #$i..."
+            sleep 3
+          done
+
+          if [ ! -f openapi.json ]; then
+            echo "Failed to fetch OpenAPI spec from container" >&2
+            docker logs obsidiane-auth || true
+            docker stop obsidiane-auth || true
+            exit 1
+          fi
+
+          docker stop obsidiane-auth
+
+      - name: Publish Docker image
+        env:
+          APP_VERSION: ${{ steps.build_image.outputs.version }}
+        run: |
+          docker push "$IMAGE_NAME:$APP_VERSION"
+          docker tag "$IMAGE_NAME:$APP_VERSION" "$IMAGE_NAME:latest"
+          docker push "$IMAGE_NAME:latest"
+
+      - name: Publish npm package
+        env:
+          APP_VERSION: ${{ steps.build_image.outputs.version }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        working-directory: packages/auth-client-js
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "NPM_TOKEN secret is not set" >&2
+            exit 1
+          fi
+
+          npm install
+          npm version "$APP_VERSION" --no-git-tag-version
+          npm publish
+
+      - name: Notify Packagist
+        env:
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+        run: |
+          if [ -z "${PACKAGIST_USERNAME:-}" ] || [ -z "${PACKAGIST_TOKEN:-}" ]; then
+            echo "Packagist credentials not configured, skipping notification."
+            exit 0
+          fi
+
+          REPO_URL="https://github.com/${REPOSITORY}.git"
+
+          curl -sS -X POST \
+            -H "Content-Type: application/json" \
+            -d "{\"repository\": {\"url\": \"${REPO_URL}\"}}" \
+            "https://packagist.org/api/update-package?username=${PACKAGIST_USERNAME}&apiToken=${PACKAGIST_TOKEN}"
+
