@@ -137,34 +137,37 @@ const handlePointerCancel = (event: PointerEvent) => {
   resetPointerState();
 };
 
-const handleSpaceDown = (event: KeyboardEvent) => {
+const handleSpaceDown = (event: KeyboardEvent | Event) => {
+  const keyboardEvent = event as KeyboardEvent;
   if (props.disabled) {
     return;
   }
 
-  event.preventDefault();
+  keyboardEvent.preventDefault();
   keyboardActive.value = true;
   pressed.value = true;
 };
 
-const handleSpaceUp = (event: KeyboardEvent) => {
+const handleSpaceUp = (event: KeyboardEvent | Event) => {
+  const keyboardEvent = event as KeyboardEvent;
   if (props.disabled || !keyboardActive.value) {
     return;
   }
 
-  event.preventDefault();
+  keyboardEvent.preventDefault();
   keyboardActive.value = false;
   pressed.value = false;
-  emit('click', event);
+  emit('click', keyboardEvent);
 };
 
-const handleEnterUp = (event: KeyboardEvent) => {
+const handleEnterUp = (event: KeyboardEvent | Event) => {
+  const keyboardEvent = event as KeyboardEvent;
   if (props.disabled) {
     return;
   }
 
-  event.preventDefault();
-  emit('click', event);
+  keyboardEvent.preventDefault();
+  emit('click', keyboardEvent);
 };
 
 const handleBlur = () => {

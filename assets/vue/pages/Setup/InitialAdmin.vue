@@ -28,7 +28,7 @@
           </label>
         </div>
         <p v-if="apiFieldErrors.displayName || (submitted && v$.displayName.$error)" :class="validationErrorClass">
-          <span v-if="apiFieldErrors.displayName">{{ t(apiFieldErrors.displayName) }}</span>
+          <span v-if="apiFieldErrors.displayName">{{ t(apiFieldErrors.displayName!) }}</span>
           <span v-else>{{ t('setup.initial_admin.error.display_name') }}</span>
         </p>
       </div>
@@ -51,7 +51,7 @@
           </label>
         </div>
         <p v-if="apiFieldErrors.email || (submitted && v$.email.$error)" :class="validationErrorClass">
-          <span v-if="apiFieldErrors.email">{{ t(apiFieldErrors.email) }}</span>
+          <span v-if="apiFieldErrors.email">{{ t(apiFieldErrors.email!) }}</span>
           <span v-else>{{ t('setup.initial_admin.error.email') }}</span>
         </p>
       </div>
@@ -83,7 +83,7 @@
           </button>
         </div>
         <p v-if="apiFieldErrors.password || (submitted && v$.password.$error)" :class="validationErrorClass">
-          <span v-if="apiFieldErrors.password">{{ t(apiFieldErrors.password) }}</span>
+          <span v-if="apiFieldErrors.password">{{ t(apiFieldErrors.password!) }}</span>
           <span v-else>{{ t('setup.initial_admin.error.password') }}</span>
         </p>
         <div class="grid grid-cols-4 gap-2">
@@ -118,7 +118,7 @@
           v-if="apiFieldErrors.confirmPassword || (submitted && v$.confirmPassword.$error)"
           :class="validationErrorClass"
         >
-          <span v-if="apiFieldErrors.confirmPassword">{{ t(apiFieldErrors.confirmPassword) }}</span>
+          <span v-if="apiFieldErrors.confirmPassword">{{ t(apiFieldErrors.confirmPassword!) }}</span>
           <span v-else>{{ t('setup.initial_admin.error.confirm_password') }}</span>
         </p>
       </div>

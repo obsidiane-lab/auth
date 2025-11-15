@@ -68,6 +68,10 @@ Encore
         config.corejs = '3.38';
     })
     .enablePostCssLoader()
+    .configureCssMinimizerPlugin((options) => {
+        options.minimizerOptions = options.minimizerOptions || {};
+        options.minimizerOptions.preset = ['default', { svgo: false }];
+    })
     // enables Sass/SCSS support
     //.enableSassLoader()
 

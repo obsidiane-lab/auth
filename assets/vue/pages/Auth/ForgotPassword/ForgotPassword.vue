@@ -32,7 +32,7 @@
                     </label>
                 </div>
                 <p v-if="submitted && v$.email.$error" :class="validationErrorClass">
-                    <span v-if="apiErrorKey">{{ t(apiErrorKey) }}</span>
+                    <span v-if="apiErrorKey">{{ t(apiErrorKey!) }}</span>
                     <span v-else-if="v$.email.email.$invalid">{{ t('auth.login.error.api.INVALID_PAYLOAD') }}</span>
                     <span v-else>{{ t('auth.login.error.credentials_required') }}</span>
                 </p>

@@ -30,7 +30,7 @@
                     </label>
                 </div>
                 <p v-if="apiFieldErrors.displayName || (submitted && v$.displayName.$error)" :class="validationErrorClass">
-                    <span v-if="apiFieldErrors.displayName">{{ t(apiFieldErrors.displayName) }}</span>
+                    <span v-if="apiFieldErrors.displayName">{{ t(apiFieldErrors.displayName!) }}</span>
                     <span v-else>{{ t(REGISTER_ERROR_KEYS.DISPLAY_NAME_REQUIRED) }}</span>
                 </p>
             </div>
@@ -53,7 +53,7 @@
                     </label>
                 </div>
                 <p v-if="apiFieldErrors.email || (submitted && v$.email.$error)" :class="validationErrorClass">
-                    <span v-if="apiFieldErrors.email">{{ t(apiFieldErrors.email) }}</span>
+                    <span v-if="apiFieldErrors.email">{{ t(apiFieldErrors.email!) }}</span>
                     <span v-else-if="v$.email.email.$invalid">{{ t('auth.login.error.api.INVALID_PAYLOAD') }}</span>
                     <span v-else>{{ t('auth.login.error.credentials_required') }}</span>
                 </p>
@@ -86,7 +86,7 @@
                     </button>
                 </div>
                 <p v-if="apiFieldErrors.password || (submitted && v$.password.$error)" :class="validationErrorClass">
-                    <span v-if="apiFieldErrors.password">{{ t(apiFieldErrors.password) }}</span>
+                    <span v-if="apiFieldErrors.password">{{ t(apiFieldErrors.password!) }}</span>
                     <span v-else-if="v$.password.minLength.$invalid">{{
                             t(REGISTER_ERROR_KEYS.INVALID_PASSWORD)
                         }}</span>
@@ -122,7 +122,7 @@
                     </label>
                 </div>
                 <p v-if="apiFieldErrors.confirmPassword || (submitted && v$.confirmPassword.$error)" :class="validationErrorClass">
-                    <span v-if="apiFieldErrors.confirmPassword">{{ t(apiFieldErrors.confirmPassword) }}</span>
+                    <span v-if="apiFieldErrors.confirmPassword">{{ t(apiFieldErrors.confirmPassword!) }}</span>
                     <span v-else>{{ t('password.reset.error.mismatch') }}</span>
                 </p>
             </div>
