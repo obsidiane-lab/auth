@@ -85,7 +85,7 @@ jobs:
       - name: Publish npm package
         env:
           APP_VERSION: ${{ steps.build_image.outputs.version }}
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NODE_AUTH_TOKEN }}
         working-directory: packages/auth-client-js
         run: |
           if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
