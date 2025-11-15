@@ -95,7 +95,7 @@ jobs:
 
           npm install
           npm version "$APP_VERSION" --no-git-tag-version
-          npm publish
+          npm publish --access public
 
       - name: Notify Packagist
         env:
