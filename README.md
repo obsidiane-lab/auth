@@ -364,7 +364,7 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
 * Consomme l’API (login, me, refresh, logout, register, reset password) depuis navigateur ou Node/SSR.
 * Sources & doc : `packages/auth-client-js`.
 
-### Bundle PHP – `obsidiane/auth-bundle`
+### Bundle PHP – `obsidiane/auth-sdk`
 
 * Client HTTP Symfony pour ce service d’authentification.
 * Sources & doc : `packages/auth-client-php`.
