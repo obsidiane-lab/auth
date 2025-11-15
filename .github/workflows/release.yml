@@ -188,4 +188,4 @@ jobs:
               with:
                   username: ${{ secrets.PACKAGIST_USERNAME }}
                   api_token: ${{ secrets.PACKAGIST_TOKEN }}
-                  package_name: obsidiane/auth-php-sdk
+                  package_name: obsidiane/auth-sdk
