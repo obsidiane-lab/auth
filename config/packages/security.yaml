@@ -34,7 +34,7 @@ security:
 
     access_control:
         # UI pages
-        - { path: ^/auth(?:/.*)?$, roles: PUBLIC_ACCESS, methods: [ GET ] }
+        - { path: ^/(login|register)$, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/reset-password(?:/.*)?$, roles: PUBLIC_ACCESS, methods: [ GET, POST ] }
 
         # Public API endpoints

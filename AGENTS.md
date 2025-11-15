@@ -7,7 +7,7 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 ## 1. Objectifs du module
 
 - Fournir une authentification sécurisée « dual-mode » :
-- **UI** : formulaires Twig accessibles via `/auth/login`, `/auth/register` et `/reset-password` (réinitialisation via ResetPasswordBundle).
+- **UI** : formulaires Twig accessibles via `/login`, `/register` et `/reset-password` (réinitialisation via ResetPasswordBundle).
 - **API JSON** : endpoints sous `/api/auth/*` (me, logout, register) + `/api/login` (Lexik) et `/api/token/refresh`.
 - Gérer les sessions JWT short-lived + refresh tokens Gesdinet.
 - Appliquer les bonnes pratiques de sécurité : CSRF stateless Symfony, state signé, allowlist de redirections, rate limiting.
@@ -22,9 +22,9 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 
 | Fichier | Rôle principal |
 | --- | --- |
-| `src/Controller/AuthLoginPageController.php` | Sert la page `/auth/login` (Vue `SignIn`). |
-| `src/Controller/AuthRegisterPageController.php` | Sert la page `/auth/register` (Vue `SignUp`). |
-| `src/Controller/AuthPageController.php` | Compatibilité: `/auth` redirige vers la route dédiée selon `view=`. |
+| `src/Controller/AuthLoginPageController.php` | Sert la page `/login` (Vue `SignIn`). |
+| `src/Controller/AuthRegisterPageController.php` | Sert la page `/register` (Vue `SignUp`). |
+| `src/Controller/AuthPageController.php` | Compatibilité: `/` redirige vers la route dédiée selon `view=`. |
 | `src/Controller/ResetPasswordController.php` | Flow ResetPasswordBundle: `/reset-password`, `/reset-password/check-email`, `/reset-password/reset/{token}`. |
 | `src/Controller/Setup/InitialAdminPageController.php` | Page `/setup` pour créer l’administrateur initial quand aucun utilisateur n’existe. |
 | `src/Controller/Setup/InitialAdminController.php` | API `POST /api/setup/admin` (CSRF `initial_admin`) qui crée le premier compte admin. |
@@ -37,20 +37,15 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 
 Les contrôleurs délèguent aux couches métier (services dédiés) pour appliquer le SRP.
 
-### 2.2 Domaine Auth (dossier `src/Auth`)
+### 2.2 Domaine Auth & services associés
 
-| Sous-dossier | Contenu |
+| Zone | Contenu |
 | --- | --- |
-| `Cookie/` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`). |
-| `Dto/` | `RegisterUserInput`, `RegisterIdentityInput` utilisés par API Platform et les contrôleurs. |
-| `Processor/` | `RegisterUserProcessor` : implémentation API Platform `POST /register`. |
-| `Redirect/` | `RedirectPolicy.php` : gestion de l’allowlist et redirection par défaut. |
-| `Registration/` | `UserRegistration.php` (cas d’usage inscription) + `RegistrationException.php`. |
-| `Subscriber/` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`. |
-| `Security/` | `CsrfRequestValidator.php` valide l’en-tête `X-CSRF-TOKEN`; `CsrfTokenId.php` liste les ids UI/API; `CsrfTokenProvider.php` encapsule `csrf_token($id)`; `CsrfProtectedRoutesSubscriber.php` applique la vérification (notamment sur `/api/login`); `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion si l’email n’est pas confirmé. |
-| `View/` | `AuthViewPropsBuilder.php` construit les props (redirect, endpoints, CSRF, thème) pour les pages UI. |
-| `Mail/` | `MailerGateway.php` + `MailDispatchException.php` centralisent le rendu Twig et la gestion des erreurs d’envoi. |
-| `Setup/` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial. |
+| `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTOs `RegisterUserInput` / `RegisterIdentityInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, CSRF, thème, redirect). |
+| `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique la vérification CSRF sur les routes sensibles (`/api/login`, reset password, logout, setup admin). |
+| `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `X-CSRF-TOKEN`; `CsrfTokenId.php` liste les ids UI/API; `CsrfTokenProvider.php` encapsule `csrf_token($id)`; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
+| `src/Setup` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial. |
+| `src/Mail` | `MailerGateway.php` + `MailDispatchException.php` centralisent l’appel à Notifuse et la gestion des erreurs d’envoi. |
 
 ### 2.3 Entités et Repositories
 
@@ -74,7 +69,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 > Tant qu’aucun utilisateur n’est présent en base, l’ensemble des formulaires publics redirigent vers `/setup` qui permet de créer l’administrateur initial (`POST /api/setup/admin`). Dès qu’un utilisateur existe, l’application revient aux flows suivants.
 
 ### 3.1 Connexion (UI)
-1. `GET /auth/login` → rendu Twig (`auth/login.html.twig` → `SignIn`), les props (`props.csrf`) contiennent les tokens Symfony (`authenticate`/`register`/`password_*`, etc.), plus les endpoints et le `redirect_uri` validé.
+1. `GET /login` → rendu Twig (`auth/login.html.twig` → `SignIn`), les props (`props.csrf`) contiennent les tokens Symfony (`authenticate`/`register`/`password_*`, etc.), plus les endpoints et le `redirect_uri` validé.
 2. Le formulaire envoie les identifiants à `POST /api/login` via Axios (`withCredentials: include`). L’intercepteur réseau ajoute le header `X-CSRF-TOKEN` à partir du token stocké et, en cas de 403 CSRF, rafraîchit l’ID ciblé puis réessaie automatiquement.
 3. En cas de succès, l’UI redirige vers la cible allowlistée (`redirect_uri`).
 
@@ -82,7 +77,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 - `POST /api/login` (header `X-CSRF-TOKEN` requis, id `authenticate`, à récupérer via `/api/auth/csrf/authenticate`) : réponse JSON `{ user, exp }`.
 - Cookies émis : `__Secure-at`, `__Host-rt`.
 
-- **UI** : `/auth/register` monte `SignUp.vue` qui utilise `props.csrf.register` (ou `GET /api/auth/csrf/register`) pour envoyer le header `X-CSRF-TOKEN` avec la requête `POST /api/auth/register`. Une notification informe de la réussite.
+- **UI** : `/register` monte `SignUp.vue` qui utilise `props.csrf.register` (ou `GET /api/auth/csrf/register`) pour envoyer le header `X-CSRF-TOKEN` avec la requête `POST /api/auth/register`. Une notification informe de la réussite.
 - **API** : `POST /api/auth/register` retourne `201` + payload utilisateur ; le header `X-CSRF-TOKEN` (id `register`) est requis et vérifié par `CsrfRequestValidator`.
 - Validation Symfony (group `user:register`), erreurs gérées par `RegistrationException`.
 - Email de bienvenue (Mailer) avec lien signé VerifyEmailBundle (`/verify-email?id=...`). Tant que l’utilisateur n’a pas cliqué, `User::isEmailVerified=false` et les tentatives de connexion renvoient `EMAIL_NOT_VERIFIED`.

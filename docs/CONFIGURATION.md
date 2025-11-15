@@ -18,7 +18,7 @@ Ce document résume les variables d'environnement clés à exposer lorsque le mo
 
 | Variable | Type | Défaut | Effet |
 | --- | --- | --- | --- |
-| `UI_ENABLED` | bool | `1` | Active l’interface Twig/Vue (`/auth`, `/auth/reset`). |
+| `UI_ENABLED` | bool | `1` | Active l’interface Twig/Vue (`/login`, `/register`, `/reset-password`). |
 | `REGISTRATION_ENABLED` | bool | `1` | Autorise l’inscription via UI/API. |
 | `UI_THEME_COLOR` | string | `red` | Couleur Tailwind par défaut (`emerald`, `indigo`, etc.). |
 | `UI_THEME_MODE` | string | `dark` | Définit le mode (light ou dark) appliqué à l’interface. Piloté par l’environnement uniquement (aucun changement côté utilisateur, pas de persistance locale). |

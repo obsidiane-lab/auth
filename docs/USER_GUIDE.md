@@ -271,18 +271,19 @@ intercept(req: HttpRequest<any>, next: HttpHandler) {
 
 ---
 
-## 14. Politiques de mot de passe & vérification d'email
+## 13. Politiques de mot de passe & vérification d'email
 
 - Politique par défaut:
   - Longueur minimale: 8 caractères (validée côté serveur et UI).
   - Recommandé: intégrer un indicateur de force (ex: zxcvbn) et bannir des mots de passe communs.
-- Vérification d’email (optionnelle):
-  - En production, il est recommandé d’exiger la confirmation d’adresse avant d’autoriser la connexion, afin d’éviter les abus via la fonctionnalité de reset.
-  - Implémentation suggérée: ajouter un champ `isVerified` à l’utilisateur, enregistrer une entité de validation avec un token temporel, et exiger `isVerified=true` lors du login.
+- Vérification d’email:
+  - Le module intègre la vérification d’email via VerifyEmailBundle : chaque nouvelle inscription déclenche l’envoi d’un lien signé `/verify-email`.
+  - Tant que `User::isEmailVerified=false`, le `UserChecker` bloque la connexion et le login renvoie `EMAIL_NOT_VERIFIED`.
+  - Le service `EmailVerifier` se charge de valider la signature et de persister `isEmailVerified=true` avant la redirection vers `/login`.
 
 ---
 
-## 15. En-têtes de sécurité (recommandations)
+## 14. En-têtes de sécurité (recommandations)
 
 - CSP stricte (Content-Security-Policy) avec `default-src 'self'` et directives pour `img-src`, `style-src` (hashes ou nonce), `script-src` (nonce), `connect-src` (origines API).
 - HSTS (Strict-Transport-Security) sur 6–12 mois avec `includeSubDomains; preload` si éligible.
@@ -295,7 +296,7 @@ Voir `infra/frankenphp/Caddyfile` pour ajouter ces en-têtes côté reverse‑pr
 
 ---
 
-## 13. Annexes
+## 15. Annexes
 
 - UI: `/login`, `/register` et `/reset-password`.
 - Les templates d’email de bienvenue et de réinitialisation se configureront directement depuis l’instance Notifuse ; leur ID est défini via `NOTIFUSE_TEMPLATE_WELCOME` et `NOTIFUSE_TEMPLATE_RESET_PASSWORD`.
