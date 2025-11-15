@@ -157,6 +157,7 @@ jobs:
               uses: danharrin/monorepo-split-github-action@v2.4.0
               with:
                   tag: ${{ github.ref_name }}
+                  branch: 'master'
                   package_directory: 'packages/auth-client-php'
                   repository_organization: 'obsidiane-lab'
                   repository_name: 'auth-php-sdk'
