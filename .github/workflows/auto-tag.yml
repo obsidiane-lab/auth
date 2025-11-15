@@ -17,6 +17,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.REPO_PUSH_TOKEN }}
 
       - name: Calculate next tag
         id: calc
@@ -32,7 +33,13 @@ jobs:
         if: steps.calc.outputs.tag != ''
         env:
           TAG: ${{ steps.calc.outputs.tag }}
+          REPO_PUSH_TOKEN: ${{ secrets.REPO_PUSH_TOKEN }}
         run: |
+          if [ -z "${REPO_PUSH_TOKEN:-}" ]; then
+            echo "Secret REPO_PUSH_TOKEN absent : impossible de pousser le tag."
+            exit 1
+          fi
+
           if git rev-parse "${TAG}" >/dev/null 2>&1; then
             echo "Tag ${TAG} already exists, skipping."
             exit 0
