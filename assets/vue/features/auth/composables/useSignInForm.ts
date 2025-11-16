@@ -33,7 +33,7 @@ export interface SignInFormProps {
 }
 
 export const useSignInForm = (props: SignInFormProps) => {
-  useCsrfTokens(props.csrf);
+  useCsrfTokens();
 
   const form = reactive<SignInForm>({
     email: props.prefillEmail ?? '',

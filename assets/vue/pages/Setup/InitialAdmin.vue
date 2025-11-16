@@ -155,7 +155,7 @@ const props = defineProps<{
   };
 }>();
 
-useCsrfTokens(props.csrf);
+useCsrfTokens();
 
 const submitEndpoint = computed(() => props.endpoints?.submit ?? '/api/setup/admin');
 const loginUrl = computed(() => props.pages?.login ?? '/login');

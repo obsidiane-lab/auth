@@ -26,30 +26,10 @@ export class AuthClient {
     return `${this.baseUrl}${path}`;
   }
 
-  async csrf(tokenId: string): Promise<string> {
-    const res = await this.doFetch(this.url(`/api/auth/csrf/${encodeURIComponent(tokenId)}`), {
-      method: 'GET',
-      credentials: 'include',
-      headers: { Accept: 'application/ld+json, application/json' },
-    });
-
-    if (!res.ok) {
-      throw new Error(`csrf_failed:${res.status}`);
-    }
-
-    const payload = (await res.json()) as { token?: string };
-
-    if (!payload.token) {
-      throw new Error('csrf_payload_invalid');
-    }
-
-    return payload.token;
-  }
-
   // Utility to build headers with optional CSRF token
   private headers(csrf?: string): Record<string, string> {
     const h: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (csrf) h['X-CSRF-TOKEN'] = csrf;
+    if (csrf) h['csrf-token'] = csrf;
     return h;
   }
 
@@ -132,12 +112,6 @@ export class AuthClient {
   }
 }
 
-// Helper to read the csrf-token cookie si vous utilisez encore le contrôleur Stimulus
-export function getCsrfFromCookie(): string | null {
-  if (typeof document === 'undefined') return null;
-  const map = document.cookie
-    .split('; ')
-    .map((c) => c.split('='))
-    .reduce<Record<string, string>>((acc, [k, v]) => ((acc[k] = decodeURIComponent(v)), acc), {});
-  return map['csrf-token'] ?? null;
-}
+// Stateless CSRF: callers are expected to generate a cryptographically
+// secure random token per request and pass it to SDK methods. This SDK
+// no longer fetches CSRF tokens from the backend.

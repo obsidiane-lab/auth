@@ -15,7 +15,6 @@ final readonly class AuthViewPropsBuilder
     public function __construct(
         private RedirectPolicy $redirectPolicy,
         private FeatureFlags $featureFlags,
-        private CsrfTokenProvider $csrfTokenProvider,
         private UrlGeneratorInterface $router,
         #[Autowire('%app.wording_name%')]
         private string $wordingName,
@@ -37,7 +36,6 @@ final readonly class AuthViewPropsBuilder
             'featureFlags' => $this->featureFlags->toFrontendConfig(),
             'themeColor' => $this->featureFlags->getThemeColor(),
             'themeMode' => $this->featureFlags->getThemeMode(),
-            'csrf' => $this->csrfTokenProvider->tokens($csrfTokenIds),
             'wordingName' => $this->wordingName,
         ];
 
@@ -76,7 +74,6 @@ final readonly class AuthViewPropsBuilder
             'request' => $this->router->generate('app_forgot_password_request'),
             'reset' => $this->router->generate('app_reset_password'),
             'refresh' => '/api/token/refresh',
-            'csrf' => '/api/auth/csrf',
         ];
     }
 

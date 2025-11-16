@@ -11,7 +11,7 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 - **API JSON** : endpoints sous `/api/auth/*` (me, logout, register) + `/api/login` (Lexik) et `/api/token/refresh`.
 - Gérer les sessions JWT short-lived + refresh tokens Gesdinet.
 - Appliquer les bonnes pratiques de sécurité : CSRF stateless Symfony, state signé, allowlist de redirections, rate limiting.
-  - Les formulaires UI reçoivent les tokens Symfony (`csrf_token('authenticate')`, etc.) via `props.csrf` et les renvoient dans l’en-tête `X-CSRF-TOKEN`. Les clients SPA/SDK utilisent le même endpoint `/api/auth/csrf/{id}` pour obtenir des jetons header-only.
+  - Les formulaires UI et les clients SPA génèrent un token aléatoire côté client par opération et l’envoient dans l’en-tête `csrf-token` (et, pour les apps web, via un cookie `csrf-token_<token>` / `__Host-csrf-token_<token>` pour la double-soumission).
 - Traduction (UI & emails) uniquement disponible en français via `translations/messages.fr.yaml`.
 
 ---
@@ -28,11 +28,11 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 | `src/Controller/ResetPasswordController.php` | Flow ResetPasswordBundle: `/reset-password`, `/reset-password/check-email`, `/reset-password/reset/{token}`. |
 | `src/Controller/Setup/InitialAdminPageController.php` | Page `/setup` pour créer l’administrateur initial quand aucun utilisateur n’existe. |
 | `src/Controller/Setup/InitialAdminController.php` | API `POST /api/setup/admin` (CSRF `initial_admin`) qui crée le premier compte admin. |
-| *(Lexik json_login)* | `POST /api/login` – authentifie via `json_login` (CSRF `authenticate`, header `X-CSRF-TOKEN`), un subscriber pose le cookie access. |
+| *(Lexik json_login)* | `POST /api/login` – authentifie via `json_login` (CSRF `authenticate`, header `csrf-token`), un subscriber pose le cookie access. |
 | `src/Controller/Auth/MeController.php` | `GET /api/auth/me` – retourne l’utilisateur courant. |
-| `src/Controller/Auth/LogoutController.php` | `POST /api/auth/logout` – invalide tokens et cookies (CSRF `logout`, header `X-CSRF-TOKEN`). |
+| `src/Controller/Auth/LogoutController.php` | `POST /api/auth/logout` – invalide tokens et cookies (CSRF `logout`, header `csrf-token`). |
 | _(Gesdinet)_ | `POST /api/token/refresh` – route gérée par JWTRefreshTokenBundle (`refresh_jwt` + cookie HttpOnly). |
-| `src/Controller/Auth/CsrfTokenController.php` | `GET /api/auth/csrf/{id}` – expose un token CSRF standard (`csrf_token($id)`) pour l’UI et les clients SPA/SDK. |
+| *(CSRF stateless)* | Les flux sensibles (login/register/logout/reset/invite) sont protégés via `SameOriginCsrfTokenManager` (Origin/Referer + header/cookie `csrf-token`). |
 | `src/Controller/Auth/VerifyEmailController.php` | `GET /verify-email` – consomme le lien signé VerifyEmailBundle puis redirige vers `/login` avec un flash. |
 
 Les contrôleurs délèguent aux couches métier (services dédiés) pour appliquer le SRP.
@@ -41,9 +41,9 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 
 | Zone | Contenu |
 | --- | --- |
-| `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTOs `RegisterUserInput` / `RegisterIdentityInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, CSRF, thème, redirect). |
+| `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTOs `RegisterUserInput` / `RegisterIdentityInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, thème, redirect). |
 | `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique la vérification CSRF sur les routes sensibles (`/api/login`, reset password, logout, setup admin). |
-| `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `X-CSRF-TOKEN`; `CsrfTokenId.php` liste les ids UI/API; `CsrfTokenProvider.php` encapsule `csrf_token($id)`; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
+| `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `csrf-token` via `SameOriginCsrfTokenManager`; `CsrfTokenId.php` liste les ids UI/API; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
 | `src/Setup` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial. |
 | `src/Mail` | `MailerGateway.php` + `MailDispatchException.php` centralisent l’appel à Notifuse et la gestion des erreurs d’envoi. |
 
@@ -69,16 +69,16 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 > Tant qu’aucun utilisateur n’est présent en base, l’ensemble des formulaires publics redirigent vers `/setup` qui permet de créer l’administrateur initial (`POST /api/setup/admin`). Dès qu’un utilisateur existe, l’application revient aux flows suivants.
 
 ### 3.1 Connexion (UI)
-1. `GET /login` → rendu Twig (`auth/login.html.twig` → `SignIn`), les props (`props.csrf`) contiennent les tokens Symfony (`authenticate`/`register`/`password_*`, etc.), plus les endpoints et le `redirect_uri` validé.
-2. Le formulaire envoie les identifiants à `POST /api/login` via Axios (`withCredentials: include`). L’intercepteur réseau ajoute le header `X-CSRF-TOKEN` à partir du token stocké et, en cas de 403 CSRF, rafraîchit l’ID ciblé puis réessaie automatiquement.
+1. `GET /login` → rendu Twig (`auth/login.html.twig` → `SignIn`), les props contiennent les endpoints et le `redirect_uri` validé.
+2. Le formulaire envoie les identifiants à `POST /api/login` via Axios (`withCredentials: include`). L’intercepteur réseau génère un token CSRF stateless, l’envoie dans le header `csrf-token` et, en cas de 403 CSRF, régénère le token ciblé puis réessaie automatiquement.
 3. En cas de succès, l’UI redirige vers la cible allowlistée (`redirect_uri`).
 
 ### 3.2 Connexion (API)
-- `POST /api/login` (header `X-CSRF-TOKEN` requis, id `authenticate`, à récupérer via `/api/auth/csrf/authenticate`) : réponse JSON `{ user, exp }`.
+- `POST /api/login` (header `csrf-token` requis, id logique `authenticate`, token généré côté client) : réponse JSON `{ user, exp }`.
 - Cookies émis : `__Secure-at`, `__Host-rt`.
 
-- **UI** : `/register` monte `SignUp.vue` qui utilise `props.csrf.register` (ou `GET /api/auth/csrf/register`) pour envoyer le header `X-CSRF-TOKEN` avec la requête `POST /api/auth/register`. Une notification informe de la réussite.
-- **API** : `POST /api/auth/register` retourne `201` + payload utilisateur ; le header `X-CSRF-TOKEN` (id `register`) est requis et vérifié par `CsrfRequestValidator`.
+- **UI** : `/register` monte `SignUp.vue` qui génère un token CSRF stateless côté client et l’envoie dans le header `csrf-token` avec la requête `POST /api/auth/register`. Une notification informe de la réussite.
+- **API** : `POST /api/auth/register` retourne `201` + payload utilisateur ; le header `csrf-token` (id logique `register`) est requis et vérifié par `CsrfRequestValidator`.
 - Validation Symfony (group `user:register`), erreurs gérées par `RegistrationException`.
 - Email de bienvenue (Mailer) avec lien signé VerifyEmailBundle (`/verify-email?id=...`). Tant que l’utilisateur n’a pas cliqué, `User::isEmailVerified=false` et les tentatives de connexion renvoient `EMAIL_NOT_VERIFIED`.
 
@@ -97,7 +97,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 
 ### 3.4 Token Refresh / Logout
 - `POST /api/token/refresh` : géré par Gesdinet (`refresh_jwt`). Le navigateur envoie uniquement le cookie HttpOnly `__Host-rt`, pas de CSRF requis. Rotation single-use et cookie automatiquement re-généré.
-- `POST /api/auth/logout` : header `X-CSRF-TOKEN` `logout`, blocklist access token, purge refresh token, expire cookies.
+- `POST /api/auth/logout` : header `csrf-token` (id logique `logout`), blocklist access token, purge refresh token, expire cookies.
 
 - Le flow de réinitialisation ne passe plus par `/api/auth/password/*`.
 
@@ -108,18 +108,18 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 - **JWT** : Lexik + Lcobucci (`JwtEventSubscriber`) enrichit les claims (`iss`, `aud`, `sub`, `iat`, `nbf`, `exp`, `jti`).
 - **Refresh tokens** : Gesdinet, single-use, stockés en DB, TTL configurable.
 - **CSRF** :
-- `CsrfTokenId.php` liste les identifiants (`authenticate`, `register`, `password_request`, `password_reset`, `logout`, `initial_admin`). `CsrfTokenProvider` encapsule `csrf_token($id)` (Symfony) et `CsrfRequestValidator` vérifie l’en-tête `X-CSRF-TOKEN` via `CsrfTokenManagerInterface`.
+- `CsrfTokenId.php` liste les identifiants (`authenticate`, `register`, `password_request`, `password_reset`, `logout`, `initial_admin`, `invite_user`, `invite_complete`). `CsrfRequestValidator` vérifie l’en-tête `csrf-token` via `SameOriginCsrfTokenManager` (stateless, Origin/Referer + header/cookie).
 - **Rate Limiting** : `login_throttling` (firewall `api`) via un service `app.login_rate_limiter` (DefaultLoginRateLimiter) basé sur deux limiters framework `login_local`/`login_global`.
 - **Redirect allowlist** : `RedirectPolicy` filtre les `redirect_uri`.
 - **Secure cookies** : HttpOnly + Secure (config dépend env). Access cookie `__Secure-at` (SameSite `lax`, domaine partagé) et refresh cookie `__Host-rt` (SameSite `strict`, host-only AUTH).
-- **Access Control** : les routes publiques couvrent `login`, `register`, `password/request`, `password/reset`, `csrf/*`, `token/refresh`, `logout`, `/setup`, `/api/setup/admin` et `/verify-email`; toutes les autres routes `/api` nécessitent une authentification applicative. `UserChecker` bloque la connexion tant que `User::isEmailVerified=false`.
+- **Access Control** : les routes publiques couvrent `login`, `register`, `password/request`, `password/reset`, `token/refresh`, `logout`, `/setup`, `/api/setup/admin` et `/verify-email`; toutes les autres routes `/api` nécessitent une authentification applicative. `UserChecker` bloque la connexion tant que `User::isEmailVerified=false`.
 
 ---
 
 ## 5. Tests & Outils
 
 - Pas de tests automatisés fournis pour l’instant.
-- Vérifications rapides : `php -l` sur fichiers modifiés, curl pour endpoints (voir README). Récupérez un token CSRF via `GET /api/auth/csrf/{id}` avant d’appeler les mutations.
+- Vérifications rapides : `php -l` sur fichiers modifiés, curl pour endpoints (voir README). Générez un token CSRF stateless (ex. `php -r 'echo bin2hex(random_bytes(16));'`) et envoyez-le dans le header `csrf-token` pour les mutations protégées.
 - Docker Compose : `docker compose up` lance FrankenPHP + MariaDB + Maildev.
 
 ---
@@ -129,7 +129,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 - Ajouter des tests fonctionnels/API pour sécuriser les flows critiques.
 - Prévoir la gestion d’activation de compte / confirmation si requis.
 - Gestion d’erreurs mailer : pour l’instant silencieuse (log éventuel à prévoir).
-- Documentation front (Angular) : s’assurer que les headers `X-CSRF-TOKEN` sont bien transmis.
+- Documentation front (Angular) : s’assurer que les headers `csrf-token` sont bien transmis.
 
 ---
 
@@ -139,8 +139,8 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 2. Lancer l’environnement : `docker compose up`.
 3. Appliquer migrations : `php bin/console doctrine:migrations:migrate`.
 4. Tester inscription :
-   - `CSRF=$(curl -s http://localhost/api/auth/csrf/register | jq -r '.token')`
-   - `curl -X POST http://localhost/api/auth/register -H 'Content-Type: application/json' -H "X-CSRF-TOKEN: $CSRF" -d '{"email":"test@demo.com","password":"Secret123!","displayName":"Test User"}'`.
+   - `CSRF=$(php -r 'echo bin2hex(random_bytes(16));')`
+   - `curl -X POST http://localhost/api/auth/register -H 'Content-Type: application/json' -H "csrf-token: $CSRF" -d '{"email":"test@demo.com","password":"Secret123!","displayName":"Test User"}'`.
    - Un email de confirmation contenant le lien `/verify-email` est envoyé via Notifuse.
 5. Vérifier:
    - UI Reset Password: http://localhost/reset-password

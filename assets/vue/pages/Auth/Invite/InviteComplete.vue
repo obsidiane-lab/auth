@@ -174,7 +174,7 @@ const props = defineProps<{
   csrf?: CsrfTokens;
 }>();
 
-useCsrfTokens(props.csrf);
+useCsrfTokens();
 
 interface InviteCompleteForm {
   displayName: string;

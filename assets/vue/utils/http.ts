@@ -8,7 +8,6 @@ import axios, {
 } from 'axios';
 import type { CsrfTokenId, CsrfTokens } from '../types/security';
 
-const CSRF_ENDPOINT_BASE = '/api/auth/csrf';
 const csrfTokens: Partial<Record<CsrfTokenId, string>> = {};
 
 const toAxiosHeaders = (headers?: unknown): AxiosHeaders => {
@@ -55,18 +54,6 @@ export const http: AxiosInstance = axios.create({
   },
 });
 
-export const initializeCsrfTokens = (tokens?: Partial<CsrfTokens>): void => {
-  if (!tokens) {
-    return;
-  }
-
-  Object.entries(tokens).forEach(([key, value]) => {
-    if (typeof value === 'string' && value !== '' && value !== 'csrf-token') {
-      csrfTokens[key] = value;
-    }
-  });
-};
-
 export const setCsrfToken = (tokenId: CsrfTokenId, token: string): void => {
   csrfTokens[tokenId] = token;
 };
@@ -83,13 +70,29 @@ const generateCsrfToken = (): string => {
   return Math.random().toString(36).slice(2) + Date.now().toString(36);
 };
 
+const setDoubleSubmitCookie = (token: string): void => {
+  if (typeof document === 'undefined' || typeof window === 'undefined') {
+    return;
+  }
+
+  const isSecure = window.location.protocol === 'https:';
+  const baseName = (isSecure ? '__Host-' : '') + 'csrf-token';
+  const cookieName = `${baseName}_${token}`;
+
+  const attributes = ['path=/', 'SameSite=Strict'];
+
+  if (isSecure) {
+    attributes.push('Secure');
+  }
+
+  document.cookie = `${cookieName}=csrf-token; ${attributes.join('; ')}`;
+};
+
 async function refreshCsrfToken(tokenId: CsrfTokenId): Promise<string> {
-  // Hit the CSRF endpoint mainly to keep behavior consistent (and allow
-  // future server-side checks), but generate the actual token client-side.
-  await http.get(`${CSRF_ENDPOINT_BASE}/${tokenId}`);
   const token = generateCsrfToken();
 
   setCsrfToken(tokenId, token);
+  setDoubleSubmitCookie(token);
 
   return token;
 }

@@ -6,7 +6,6 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
-use App\Controller\Auth\CsrfTokenController;
 use App\Controller\Auth\AcceptInvitationController;
 use App\Controller\Auth\InviteUserController;
 use App\Controller\Auth\LogoutController;
@@ -69,15 +68,6 @@ use Symfony\Component\HttpFoundation\Response;
             deserialize: false,
             validate: false,
             name: 'api_auth_me',
-        ),
-        new Get(
-            uriTemplate: '/auth/csrf/{tokenId}',
-            controller: CsrfTokenController::class,
-            description: 'Expose un token CSRF header-only.',
-            read: false,
-            deserialize: false,
-            validate: false,
-            name: 'api_auth_csrf_token',
         ),
     ],
     paginationEnabled: false,

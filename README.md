@@ -34,7 +34,7 @@ protection **CSRF stateless** (Symfony).
     - JWT court-terme en cookie `__Secure-at`.
     - Refresh token opaque en base + cookie `__Host-rt` rotatif (single-use).
 - **Sécurité** :
-    - CSRF stateless via `X-CSRF-TOKEN`.
+    - CSRF stateless via en-tête `csrf-token` + Origin/Referer (voir section dédiée).
     - Rate limiting sur login et reset.
     - Vérification d’email via lien signé `/verify-email`.
 - **Première exécution** :
@@ -60,7 +60,6 @@ protection **CSRF stateless** (Symfony).
     - `POST /api/auth/register`
     - `POST /api/auth/logout`
     - `POST /api/token/refresh`
-    - `GET /api/auth/csrf/{id}`
     - `POST /reset-password`
     - `POST /reset-password/reset`
     - `POST /api/auth/invite` – Inviter un utilisateur (admin uniquement).
@@ -87,9 +86,8 @@ protection **CSRF stateless** (Symfony).
     - Rotatif : à chaque `POST /api/token/refresh`, l’ancien est invalidé.
 
 - **CSRF stateless**
-    - Symfony génère les tokens (`csrf_token($id)`).
-    - UI : tokens injectés dans `props.csrf`.
-    - Clients externes : `GET /api/auth/csrf/{id}` → token à renvoyer dans `X-CSRF-TOKEN`.
+    - Protection basée sur `Origin`/`Referer` + jetons générés côté client.
+    - UI & SPA : génèrent un token aléatoire par requête et l’envoient dans l’en-tête `csrf-token` (et, pour les apps web, via un cookie `csrf-token_<token>` / `__Host-csrf-token_<token>`).
 
 - **Vérification d’email**
     - Chaque inscription envoie un email avec lien signé `/verify-email`.
@@ -129,19 +127,18 @@ php bin/console doctrine:migrations:migrate
     * `http://localhost:8000/api/login`
     * `http://localhost:8000/api/auth/me`
     * `http://localhost:8000/api/token/refresh`
-    * `http://localhost:8000/api/auth/csrf/{id}`
 
 ### Exemple minimal avec `curl`
 
 ```bash
-# Récupérer un token CSRF pour le login
-LOGIN_CSRF=$(curl -s http://localhost:8000/api/auth/csrf/authenticate | jq -r '.token')
+# Générer un token CSRF stateless côté client
+LOGIN_CSRF=$(php -r 'echo bin2hex(random_bytes(16));')
 
 # Login
 curl -i \
   -c cookiejar.txt \
   -H 'Content-Type: application/json' \
-  -H "X-CSRF-TOKEN: $LOGIN_CSRF" \
+  -H "csrf-token: $LOGIN_CSRF" \
   -d '{"email":"user@example.com","password":"Secret123!"}' \
   http://localhost:8000/api/login
 
@@ -166,7 +163,6 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 |    POST | `/api/token/refresh`    | Refresh JWT via cookie `__Host-rt`        |
 |    POST | `/api/auth/register`    | Inscription                               |
 |    POST | `/api/auth/logout`      | Logout + invalidation tokens              |
-|     GET | `/api/auth/csrf/{id}`   | Récupérer un token CSRF                   |
 |    POST | `/reset-password`       | Demande de reset (email)                  |
 |    POST | `/reset-password/reset` | Réinitialisation via token                |
 |     GET | `/verify-email`         | Validation d’email via lien signé         |
@@ -283,6 +279,35 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 ---
 
+## CSRF stateless (Symfony 7.2+)
+
+Ce projet utilise la protection **CSRF stateless** introduite dans Symfony 7.2 pour tous les endpoints sensibles (`authenticate`, `register`, `password_request`, `password_reset`, `logout`, `initial_admin`, `invite_user`, `invite_complete`) :
+
+- Aucun token CSRF n’est stocké en session.
+- Symfony s’appuie sur :
+  - les en-têtes `Origin` / `Referer` (même origine que le service d’auth) ;
+  - et, lorsque disponible, un jeton généré côté client envoyé dans le header `csrf-token`
+    (+ cookie `csrf-token_<token>` / `__Host-csrf-token_<token>` pour les apps web sur le même domaine).
+- Le backend utilise `SameOriginCsrfTokenManager` pour valider ces tokens (Origin + double-soumission).
+
+Conséquences :
+
+- Il **n’existe plus d’endpoint** de type `GET /api/auth/csrf/{id}` : les secrets sont générés côté client.
+- Les clients (UI Vue intégrée, SPA externes, SDKs) doivent :
+  - générer un token aléatoire par opération (par ex. via `crypto.getRandomValues`) ;
+  - l’envoyer dans l’en-tête `csrf-token` ;
+  - (optionnel, mais recommandé pour les apps web) écrire un cookie `csrf-token_<token>=csrf-token`
+    ou `__Host-csrf-token_<token>` en HTTPS.
+
+Pour les SPA sur sous-domaines :
+
+- Le header `csrf-token` suffit en pratique (le cookie double-submit ne peut pas toujours être partagé selon le domaine).
+- Vérifiez la configuration `trusted_proxies` / `X-Forwarded-*` pour que Symfony puisse déterminer correctement l’origine.
+
+Le code Vue de ce projet (login, register, reset, invite, setup) implémente déjà ce protocole : chaque requête protégée porte automatiquement un header `csrf-token` et un cookie de double-soumission, sans interaction avec le backend pour “récupérer” un token.
+
+---
+
 ## Intégration front (SPA)
 
 ### Cookies
@@ -296,35 +321,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 ### CSRF
 
-1. Récupérer un token via `GET /api/auth/csrf/{id}` (avec `credentials: 'include'`).
-2. L’ajouter dans l’en-tête `X-CSRF-TOKEN` sur la requête protégée.
-3. Identifiants disponibles : `authenticate`, `register`, `password_request`, `password_reset`, `logout`,
-   `initial_admin`.
-
-Pseudo-code minimal :
-
-```ts
-async function fetchCsrf(id: string) {
-    const res = await fetch(`/api/auth/csrf/${id}`, {credentials: 'include'});
-    return (await res.json()).token;
-}
-
-async function login(email: string, password: string) {
-    const csrf = await fetchCsrf('authenticate');
-
-    const res = await fetch('/api/login', {
-        method: 'POST',
-        credentials: 'include',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': csrf,
-        },
-        body: JSON.stringify({email, password}),
-    });
-
-    if (!res.ok) throw new Error('login_failed');
-}
-```
+Les endpoints sensibles (`/api/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token`. Reportez-vous à la section [CSRF stateless (Symfony 7.2+)](#csrf-stateless-symfony72) pour le protocole détaillé et un exemple de génération côté client.
 
 ### Refresh silencieux
 

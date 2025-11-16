@@ -5,7 +5,6 @@ SDK JavaScript minimal pour consommer l’API **Obsidiane Auth** depuis un navig
 Il gère automatiquement :
 
 - les appels `fetch` avec `credentials: 'include'` pour envoyer / recevoir les cookies `__Secure-at` / `__Host-rt` ;
-- la récupération des tokens CSRF via `GET /api/auth/csrf/{id}` ;
 - les opérations courantes : `login`, `me`, `refresh`, `logout`, `register`, `passwordRequest`, `passwordReset`, `listUsers`, `getUser`.
 
 ---
@@ -31,11 +30,12 @@ const auth = new AuthClient({
   baseUrl: 'https://auth.example.com', // ou '' si même origine
 });
 
-// 1) Récupérer un token CSRF pour le login
-const csrf = await auth.csrf('authenticate');
+// 1) Générer un token CSRF stateless pour le login
+const csrf = crypto.getRandomValues(new Uint8Array(16));
+const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
 
-// 2) Login
-await auth.login('user@example.com', 'Secret123!', csrf);
+// 2) Login (le token est envoyé dans l'en-tête `csrf-token`)
+await auth.login('user@example.com', 'Secret123!', csrfHex);
 
 // 3) Récupérer l'utilisateur courant
 const { user } = await auth.me<{ user: { id: number; email: string } }>();
@@ -70,21 +70,6 @@ const auth = new AuthClient({
 
 `baseUrl` doit pointer vers la racine de ton service d’authentification (sans trailing slash).
 
----
-
-### `csrf(id)`
-
-Récupère un token CSRF pour une opération donnée.
-
-```ts
-const token = await auth.csrf('authenticate');
-```
-
-* `id` ∈ `authenticate`, `register`, `password_request`, `password_reset`, `logout`, `initial_admin`.
-* Correspond à l’endpoint `GET /api/auth/csrf/{id}` du service.
-
----
-
 ### `login(email, password, csrf)`
 
 Effectue un login et laisse le serveur poser les cookies (`__Secure-at`, `__Host-rt`).
@@ -94,7 +79,7 @@ const csrf = await auth.csrf('authenticate');
 await auth.login('user@example.com', 'Secret123!', csrf);
 ```
 
-* Appelle `POST /api/login` avec le bon en-tête `X-CSRF-TOKEN`.
+* Appelle `POST /api/login` avec le bon en-tête `csrf-token`.
 * En cas de succès, les cookies sont stockés par le navigateur.
 
 ---
@@ -164,11 +149,12 @@ await auth.refresh();
 Effectue un logout complet (invalidations côté serveur + expiration cookies).
 
 ```ts
-const csrf = await auth.csrf('logout');
-await auth.logout(csrf);
+const csrf = crypto.getRandomValues(new Uint8Array(16));
+const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
+await auth.logout(csrfHex);
 ```
 
-* Appelle `POST /api/auth/logout` avec `X-CSRF-TOKEN`.
+* Appelle `POST /api/auth/logout` avec l'en-tête `csrf-token`.
 
 ---
 
@@ -177,13 +163,14 @@ await auth.logout(csrf);
 Crée un nouvel utilisateur.
 
 ```ts
-const csrf = await auth.csrf('register');
+const csrf = crypto.getRandomValues(new Uint8Array(16));
+const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
 
 await auth.register(
   'user@example.com',
   'Secret123!',
   'John Doe',
-  csrf,
+  csrfHex,
 );
 ```
 
@@ -201,8 +188,9 @@ Le flow repose sur les routes UI `/reset-password` du service principal, mais le
 Envoie l’email de réinitialisation.
 
 ```ts
-const csrf = await auth.csrf('password_request');
-await auth.passwordRequest('user@example.com', csrf);
+const csrf = crypto.getRandomValues(new Uint8Array(16));
+const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
+await auth.passwordRequest('user@example.com', csrfHex);
 ```
 
 * Appelle `POST /reset-password` avec `{ email }`.
@@ -213,8 +201,9 @@ await auth.passwordRequest('user@example.com', csrf);
 Soumet le nouveau mot de passe.
 
 ```ts
-const csrf = await auth.csrf('password_reset');
-await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!', csrf);
+const csrf = crypto.getRandomValues(new Uint8Array(16));
+const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
+await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!', csrfHex);
 ```
 
 * Appelle `POST /reset-password/reset` avec `{ token, password }`.

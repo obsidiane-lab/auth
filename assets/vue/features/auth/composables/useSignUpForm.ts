@@ -22,7 +22,7 @@ export interface SignUpFormProps {
 }
 
 export const useSignUpForm = (props: SignUpFormProps) => {
-  useCsrfTokens(props.csrf);
+  useCsrfTokens();
 
   const form = reactive<SignUpForm>({
     displayName: '',

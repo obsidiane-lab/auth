@@ -25,7 +25,7 @@ export interface NewPasswordFormProps {
 }
 
 export const useNewPasswordForm = (props: NewPasswordFormProps) => {
-  useCsrfTokens(props.csrf);
+  useCsrfTokens();
 
   const form = reactive<NewPasswordForm>({
     password: '',

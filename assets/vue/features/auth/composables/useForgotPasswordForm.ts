@@ -21,7 +21,7 @@ export interface ForgotPasswordFormProps {
 }
 
 export const useForgotPasswordForm = (props: ForgotPasswordFormProps) => {
-  useCsrfTokens(props.csrf);
+  useCsrfTokens();
 
   const form = reactive<ForgotPasswordForm>({ email: '' });
   const apiErrorKey = ref<string | null>(null);

@@ -42,7 +42,6 @@ security:
         - { path: ^/api/(login|token/refresh)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/auth/(register|logout)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/auth/invite/complete$, roles: PUBLIC_ACCESS, methods: [ POST ] }
-        - { path: ^/api/auth/csrf/, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/api/setup/admin$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/verify-email$, roles: PUBLIC_ACCESS, methods: [ GET ] }

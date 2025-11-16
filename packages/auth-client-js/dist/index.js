@@ -14,26 +14,11 @@ export class AuthClient {
     url(path) {
         return `${this.baseUrl}${path}`;
     }
-    async csrf(tokenId) {
-        const res = await this.doFetch(this.url(`/api/auth/csrf/${encodeURIComponent(tokenId)}`), {
-            method: 'GET',
-            credentials: 'include',
-            headers: { Accept: 'application/ld+json, application/json' },
-        });
-        if (!res.ok) {
-            throw new Error(`csrf_failed:${res.status}`);
-        }
-        const payload = (await res.json());
-        if (!payload.token) {
-            throw new Error('csrf_payload_invalid');
-        }
-        return payload.token;
-    }
     // Utility to build headers with optional CSRF token
     headers(csrf) {
         const h = { 'Content-Type': 'application/json' };
         if (csrf)
-            h['X-CSRF-TOKEN'] = csrf;
+            h['csrf-token'] = csrf;
         return h;
     }
     // GET /api/auth/me
