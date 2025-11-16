@@ -3,7 +3,7 @@
 
 parameters:
     app.wording_name: '%env(BRANDING_NAME)%'
-    app.password_strength_level: '%env(default:2:int:PASSWORD_STRENGTH_LEVEL)%'
+    app.password_strength_level: '%env(PASSWORD_STRENGTH_LEVEL)%'
 
 services:
     # default configuration for services in *this* file
