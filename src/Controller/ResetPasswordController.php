@@ -9,7 +9,6 @@ use App\Mail\MailDispatchException;
 use App\Mail\MailerGateway;
 use App\Repository\RefreshTokenRepository;
 use App\Repository\UserRepository;
-use App\Security\CsrfTokenId;
 use App\Setup\InitialAdminManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;

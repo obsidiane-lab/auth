@@ -10,6 +10,8 @@ set -euo pipefail
 # - admin invitation + invite completion (manual link)
 
 BASE_URL="${BASE_URL:-http://localhost:8000}"
+# Origin used for CSRF validation (defaults to BASE_URL).
+ORIGIN="${ORIGIN:-$BASE_URL}"
 
 # Admin account used for tests
 ADMIN_EMAIL="${ADMIN_EMAIL:-admin+e2e@example.com}"
@@ -93,6 +95,7 @@ step_initial_admin() {
   csrf=$(generate_csrf)
   curl -s -i \
     -H 'Content-Type: application/json' \
+    -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\",\"displayName\":\"Admin E2E\"}" \
     "${BASE_URL}/api/setup/admin"
@@ -104,6 +107,7 @@ step_login_admin() {
   curl -s -i \
     -c "${ADMIN_COOKIES}" \
     -H 'Content-Type: application/json' \
+    -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
     "${BASE_URL}/api/login"
@@ -125,6 +129,7 @@ step_logout_admin() {
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
     -H 'Content-Type: application/json' \
+    -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -X POST "${BASE_URL}/api/auth/logout"
 }
@@ -134,6 +139,7 @@ step_register_user() {
   csrf=$(generate_csrf)
   curl -s -i \
     -H 'Content-Type: application/json' \
+    -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${REGISTER_EMAIL}\",\"password\":\"${REGISTER_PASSWORD}\",\"displayName\":\"${REGISTER_DISPLAY_NAME}\"}" \
     "${BASE_URL}/api/auth/register"
@@ -148,6 +154,7 @@ step_password_reset_flow() {
   csrf=$(generate_csrf)
   curl -s -i \
     -H 'Content-Type: application/json' \
+    -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${REGISTER_EMAIL}\"}" \
     "${BASE_URL}/reset-password"
@@ -168,6 +175,7 @@ step_invite_user() {
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
     -H 'Content-Type: application/json' \
+    -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${INVITE_EMAIL}\"}" \
     "${BASE_URL}/api/auth/invite"

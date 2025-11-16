@@ -1,7 +1,7 @@
 /*
  Lightweight JS SDK for Obsidiane Auth
  - Uses fetch with credentials: 'include' so cookies flow as required
- - Gère automatiquement les tokens CSRF stateless (header `csrf-token` + cookie double-submit)
+ - Gère automatiquement les tokens CSRF stateless (header `csrf-token`)
  - Types sont générés depuis OpenAPI dans ./types.gen.ts par le script prepublishOnly
 */
 export class AuthClient {
@@ -31,22 +31,8 @@ export class AuthClient {
         }
         return Math.random().toString(36).slice(2) + Date.now().toString(36);
     }
-    setDoubleSubmitCookie(token) {
-        if (typeof document === 'undefined' || typeof window === 'undefined') {
-            return;
-        }
-        const isSecure = window.location.protocol === 'https:';
-        const baseName = (isSecure ? '__Host-' : '') + 'csrf-token';
-        const cookieName = `${baseName}_${token}`;
-        const attributes = ['path=/', 'SameSite=Strict'];
-        if (isSecure) {
-            attributes.push('Secure');
-        }
-        document.cookie = `${cookieName}=csrf-token; ${attributes.join('; ')}`;
-    }
     buildCsrfHeaders() {
         const token = this.generateCsrfToken();
-        this.setDoubleSubmitCookie(token);
         return this.headers(token);
     }
     // GET /api/auth/me

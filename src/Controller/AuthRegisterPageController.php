@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Auth\View\AuthViewPropsBuilder;
 use App\Config\FeatureFlags;
-use App\Security\CsrfTokenId;
 use App\Setup\InitialAdminManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;

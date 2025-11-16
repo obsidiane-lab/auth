@@ -68,8 +68,7 @@ protection **CSRF stateless** (Symfony).
 - **Cookies & tokens**
     - `__Secure-at` : access token JWT (HttpOnly).
     - `__Host-rt` : refresh token opaque, single-use (HttpOnly).
-    - CSRF stateless : jetons par opération (`authenticate`, `register`, `password_request`, `password_reset`, `logout`,
-      `initial_admin`, `invite_user`, `invite_complete`).
+    - CSRF stateless : jetons aléatoires générés côté client et envoyés dans l’en-tête `csrf-token` pour chaque requête sensible.
 
 ---
 
@@ -206,7 +205,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 ### Logout – `POST /api/auth/logout`
 
-* Auth + CSRF `logout`.
+* Auth + CSRF.
 * Effets :
 
     * Blocklist de l’access token.
@@ -216,7 +215,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 ### Inscription – `POST /api/auth/register`
 
-* CSRF : `register`.
+* CSRF requis.
 * Corps : `{ "email", "password", "displayName" }`
 * Réponse : `201 { "user": { ... } }`
 * Envoie un email de vérification (`/verify-email`).
@@ -224,7 +223,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 ### Invitation administrateur – `POST /api/auth/invite`
 
 - Accessible uniquement aux administrateurs (`ROLE_ADMIN`).
-- CSRF : `invite_user`.
+- CSRF requis.
 - Corps :
 
   ```json
@@ -244,7 +243,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 ### Compléter une invitation – `POST /api/auth/invite/complete`
 
 - Endpoint public (accessible via le lien d’invitation).
-- CSRF : `invite_complete`.
+- CSRF requis.
 - Corps :
 
   ```json
@@ -267,44 +266,41 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 * `POST /reset-password`
 
-    * CSRF : `password_request`.
+    * CSRF requis.
     * Corps : `{ "email" }`
     * Réponse : `202 { "status": "OK" }` (pas de fuite sur l’existence du compte).
 
 * `POST /reset-password/reset`
 
-    * CSRF : `password_reset`.
+    * CSRF requis.
     * Corps : `{ "token", "password" }`
     * Réponse : `204` + invalidation des sessions de l’utilisateur.
 
 ---
 
-## CSRF stateless (Symfony 7.2+)
+## CSRF stateless
 
-Ce projet utilise la protection **CSRF stateless** introduite dans Symfony 7.2 pour tous les endpoints sensibles (`authenticate`, `register`, `password_request`, `password_reset`, `logout`, `initial_admin`, `invite_user`, `invite_complete`) :
+Ce projet utilise une protection **CSRF stateless** pour tous les endpoints sensibles (login, register, reset password, logout, setup admin, invitation) :
 
-- Aucun token CSRF n’est stocké en session.
-- Symfony s’appuie sur :
-  - les en-têtes `Origin` / `Referer` (même origine que le service d’auth) ;
-  - et, lorsque disponible, un jeton généré côté client envoyé dans le header `csrf-token`
-    (+ cookie `csrf-token_<token>` / `__Host-csrf-token_<token>` pour les apps web sur le même domaine).
-- Le backend utilise `SameOriginCsrfTokenManager` pour valider ces tokens (Origin + double-soumission).
+- Aucun token CSRF n’est stocké en session ni émis par le backend.
+- Le backend vérifie simplement :
+  - la présence d’un jeton aléatoire suffisamment long dans l’en-tête `csrf-token` ;
+  - et une origine HTTP valide (en-tête `Origin` ou, à défaut, `Referer`) :
+    - soit exactement la même origine que le service d’auth (UI intégrée) ;
+    - soit une origine autorisée par `ALLOWED_ORIGINS` (SPA sur sous-domaine).
 
 Conséquences :
 
-- Il **n’existe plus d’endpoint** de type `GET /api/auth/csrf/{id}` : les secrets sont générés côté client.
+- Il **n’existe plus d’endpoint** de type `GET /api/auth/csrf/{id}` : tous les secrets CSRF sont générés côté client.
 - Les clients (UI Vue intégrée, SPA externes, SDKs) doivent :
-  - générer un token aléatoire par opération (par ex. via `crypto.getRandomValues`) ;
+  - générer un token aléatoire par requête sensible (par ex. via `crypto.getRandomValues` ou `random_bytes`) ;
   - l’envoyer dans l’en-tête `csrf-token` ;
-  - (optionnel, mais recommandé pour les apps web) écrire un cookie `csrf-token_<token>=csrf-token`
-    ou `__Host-csrf-token_<token>` en HTTPS.
+  - laisser le navigateur gérer l’en-tête `Origin` (pour les frontends web).
 
-Pour les SPA sur sous-domaines :
+Pour les SPA sur sous-domaines (ex. `app.example.com` → `auth.example.com`) :
 
-- Le header `csrf-token` suffit en pratique (le cookie double-submit ne peut pas toujours être partagé selon le domaine).
-- Vérifiez la configuration `trusted_proxies` / `X-Forwarded-*` pour que Symfony puisse déterminer correctement l’origine.
-
-Le code Vue de ce projet (login, register, reset, invite, setup) implémente déjà ce protocole : chaque requête protégée porte automatiquement un header `csrf-token` et un cookie de double-soumission, sans interaction avec le backend pour “récupérer” un token.
+- le header `csrf-token` + une origine autorisée via `ALLOWED_ORIGINS` (CORS) suffisent ;
+- aucune synchronisation de cookies CSRF n’est requise entre les sous-domaines.
 
 ---
 
@@ -321,7 +317,7 @@ Le code Vue de ce projet (login, register, reset, invite, setup) implémente dé
 
 ### CSRF
 
-Les endpoints sensibles (`/api/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token`. Reportez-vous à la section [CSRF stateless (Symfony 7.2+)](#csrf-stateless-symfony72) pour le protocole détaillé et un exemple de génération côté client.
+Les endpoints sensibles (`/api/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token`. Reportez-vous à la section [CSRF stateless](#csrf-stateless) pour le protocole détaillé et un exemple de génération côté client.
 
 ### Refresh silencieux
 

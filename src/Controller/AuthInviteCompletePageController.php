@@ -4,7 +4,6 @@ namespace App\Controller;
 
 use App\Auth\View\AuthViewPropsBuilder;
 use App\Repository\InviteUserRepository;
-use App\Security\CsrfTokenId;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
