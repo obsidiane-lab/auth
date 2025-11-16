@@ -5,7 +5,7 @@ SDK JavaScript minimal pour consommer l’API **Obsidiane Auth** dans n’import
 Il gère automatiquement :
 
 - les appels `fetch` avec `credentials: 'include'` pour envoyer / recevoir les cookies `__Secure-at` / `__Host-rt` ;
-- les opérations courantes : `login`, `me`, `refresh`, `logout`, `register`, `passwordRequest`, `passwordReset`, `listUsers`, `getUser`.
+- les opérations courantes : `login`, `me`, `refresh`, `logout`, `register`, `passwordRequest`, `passwordReset`.
 
 ---
 
@@ -37,13 +37,7 @@ await auth.login('user@example.com', 'Secret123!');
 const { user } = await auth.me<{ user: { id: number; email: string } }>();
 console.log(user.email);
 
-// 4) Récupérer la liste des utilisateurs (admin)
-const users = await auth.listUsers<{ 'hydra:member': Array<{ id: number; email: string }> }>({
-  itemsPerPage: 20,
-});
-for (const u of users['hydra:member']) {
-  console.log(u.email);
-}
+// 4) Le reste des appels (refresh, logout, reset password, etc.) restent pilotés par le SDK.
 ```
 
 Le client :
@@ -90,40 +84,6 @@ console.log(me.user.email, me.user.roles);
 
 * Appelle `GET /api/auth/me`.
 * Utilise le cookie `__Secure-at` automatiquement (via `credentials: 'include'`).
-
----
-
-### `listUsers(params?)`
-
-Récupère la collection d'utilisateurs (ROLE_ADMIN requis côté API).
-
-```ts
-const users = await auth.listUsers<{ 'hydra:member': Array<{ id: number; email: string }> }>({
-  itemsPerPage: 50,
-});
-for (const user of users['hydra:member']) {
-  console.log(user.id, user.email);
-}
-```
-
-* Appelle `GET /api/users` (via API Platform).
-* Supporte des paramètres de pagination / filtrage (ex. `itemsPerPage`, `page`, etc.).
-
----
-
-### `getUser(id)`
-
-Récupère un utilisateur par son identifiant.
-
-```ts
-const user = await auth.getUser<{ id: number; email: string; displayName: string }>(1);
-console.log(user.email, user.displayName);
-```
-
-* Appelle `GET /api/users/{id}`.
-* Nécessite les droits appropriés côté API (`ROLE_ADMIN` ou voteur `USER_READ`).
-
----
 
 ### `refresh()`
 

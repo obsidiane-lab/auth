@@ -376,6 +376,12 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
   ^https?://(app\.example\.com|localhost)(:[0-9]+)?$
   ```
 
+**Politique de mot de passe**
+
+* La robustesse des mots de passe est vérifiée via la contrainte Symfony `PasswordStrength`.
+* Le niveau minimal requis est piloté par la variable d’environnement :
+  * `PASSWORD_STRENGTH_LEVEL` : entier de `1` (faible) à `4` (très fort), valeur par défaut `2` (niveau moyen).
+
 **Rate limiting**
 
 * `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`.
