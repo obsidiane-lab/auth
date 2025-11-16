@@ -11,30 +11,31 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 
-final readonly class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
+final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
 {
+    /**
+     * @var array<string, array{token: CsrfTokenId, soft?: bool, response?: array<mixed>|null, status?: int}>
+     */
+    private array $routeMap = [
+        'api_login' => ['token' => CsrfTokenId::AUTHENTICATE],
+        'api_auth_register' => ['token' => CsrfTokenId::REGISTER],
+        'api_setup_initial_admin' => ['token' => CsrfTokenId::INITIAL_ADMIN],
+        'api_auth_invite' => ['token' => CsrfTokenId::INVITE_USER],
+        'api_auth_invite_complete' => ['token' => CsrfTokenId::INVITE_COMPLETE],
+        // Password reset flow via ResetPasswordBundle UI routes
+        'app_forgot_password_request' => [
+            'token' => CsrfTokenId::PASSWORD_REQUEST,
+            'soft' => true,
+            'response' => ['status' => 'OK'],
+            'status' => Response::HTTP_ACCEPTED,
+        ],
+        'app_reset_password' => ['token' => CsrfTokenId::PASSWORD_RESET],
+        'api_auth_logout' => ['token' => CsrfTokenId::LOGOUT],
+    ];
+
     public function __construct(
         private CsrfRequestValidator $csrfValidator,
         private ApiResponseFactory $responses,
-        /**
-         * @var array<string, array{token: CsrfTokenId, soft?: bool, response?: array, status?: int}>
-         */
-        private array $routeMap = [
-            'api_login' => ['token' => CsrfTokenId::AUTHENTICATE],
-            'api_auth_register' => ['token' => CsrfTokenId::REGISTER],
-            'api_setup_initial_admin' => ['token' => CsrfTokenId::INITIAL_ADMIN],
-            'api_auth_invite' => ['token' => CsrfTokenId::INVITE_USER],
-            'api_auth_invite_complete' => ['token' => CsrfTokenId::INVITE_COMPLETE],
-            // Password reset flow via ResetPasswordBundle UI routes
-            'app_forgot_password_request' => [
-                'token' => CsrfTokenId::PASSWORD_REQUEST,
-                'soft' => true,
-                'response' => ['status' => 'OK'],
-                'status' => Response::HTTP_ACCEPTED,
-            ],
-            'app_reset_password' => ['token' => CsrfTokenId::PASSWORD_RESET],
-            'api_auth_logout' => ['token' => CsrfTokenId::LOGOUT],
-        ],
     ) {
     }
 

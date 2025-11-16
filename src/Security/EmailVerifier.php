@@ -27,11 +27,13 @@ final readonly class EmailVerifier
             throw new \LogicException('Unable to generate verification link for user without identifier or email.');
         }
 
+        $userIdString = (string) $userId;
+
         return $this->verifyEmailHelper->generateSignature(
             $this->verifyRoute,
-            $userId,
+            $userIdString,
             $email,
-            ['id' => $userId],
+            ['id' => $userIdString],
         );
     }
 
@@ -47,7 +49,7 @@ final readonly class EmailVerifier
             throw new \LogicException('Unable to verify an email for a user without identifier or email.');
         }
 
-        $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, $userId, $email);
+        $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $userId, $email);
 
         $user->setIsEmailVerified(true);
 

@@ -32,7 +32,7 @@ final class AuthRegisterPageController extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        $context = $this->viewPropsBuilder->build($request, [CsrfTokenId::REGISTER]);
+        $context = $this->viewPropsBuilder->build($request);
 
         return $this->render('auth/register.html.twig', [
             'component_props' => $context['props'],

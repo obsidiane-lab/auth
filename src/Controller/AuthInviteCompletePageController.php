@@ -39,7 +39,7 @@ final class AuthInviteCompletePageController extends AbstractController
             }
         }
 
-        $context = $this->viewPropsBuilder->build($request, [CsrfTokenId::INVITE_COMPLETE]);
+        $context = $this->viewPropsBuilder->build($request);
         $props = $context['props'];
         $props['inviteToken'] = $tokenInSession;
         $props['invitedEmail'] = $invitedEmail;

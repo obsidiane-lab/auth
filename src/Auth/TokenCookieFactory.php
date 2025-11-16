@@ -7,14 +7,17 @@ use Symfony\Component\HttpFoundation\Cookie;
 
 final readonly class TokenCookieFactory
 {
-    /** @var array{name: string, path: string, domain: ?string, same_site: string, secure: bool} */
+    /** @var array{name: string, path: string, domain: ?string, same_site: 'lax'|'strict'|'none', secure: bool} */
     private array $accessCookieConfig;
 
-    /** @var array{name: string, path: string, domain: ?string, same_site: string, secure: bool} */
+    /** @var array{name: string, path: string, domain: ?string, same_site: 'lax'|'strict'|'none', secure: bool} */
     private array $refreshCookieConfig;
 
     private int $accessTtl;
 
+    /**
+     * @param array<string, mixed> $refreshCookieOptions
+     */
     public function __construct(
         #[Autowire('%env(string:ACCESS_COOKIE_NAME)%')] string $accessCookieName,
         #[Autowire('%env(string:ACCESS_COOKIE_PATH)%')] string $accessCookiePath,
@@ -22,6 +25,7 @@ final readonly class TokenCookieFactory
         #[Autowire('%env(string:ACCESS_COOKIE_SAMESITE)%')] string $accessCookieSameSite,
         #[Autowire('%env(bool:ACCESS_COOKIE_SECURE)%')] bool $accessCookieSecure,
         #[Autowire('%gesdinet_jwt_refresh_token.token_parameter_name%')] string $refreshCookieName,
+        /** @var array<string, mixed> $refreshCookieOptions */
         #[Autowire('%gesdinet_jwt_refresh_token.cookie%')] array $refreshCookieOptions,
         #[Autowire('%env(int:JWT_ACCESS_TTL)%')] int $accessTtl,
     ) {
@@ -77,7 +81,7 @@ final readonly class TokenCookieFactory
     }
 
     /**
-     * @param array{name: string, path: string, domain: ?string, same_site: string, secure: bool} $config
+     * @param array{name: string, path: string, domain: ?string, same_site: 'lax'|'strict'|'none', secure: bool} $config
      */
     private function createCookie(array $config, string $value, int $ttl, bool $httpOnly = true): Cookie
     {
@@ -106,7 +110,7 @@ final readonly class TokenCookieFactory
     }
 
     /**
-     * @return array{name: string, path: string, domain: ?string, same_site: string, secure: bool}
+     * @return array{name: string, path: string, domain: ?string, same_site: 'lax'|'strict'|'none', secure: bool}
      */
     private function buildCookieConfig(
         string $rawName,
@@ -140,6 +144,10 @@ final readonly class TokenCookieFactory
         ];
     }
 
+    /**
+     * @param string $value
+     * @return 'lax'|'strict'|'none'
+     */
     private function normalizeSameSite(string $value): string
     {
         return match (strtolower(trim($value))) {
@@ -172,7 +180,7 @@ final readonly class TokenCookieFactory
     }
 
     /**
-     * @return array{name: string, path: string, domain: ?string, same_site: string, secure: bool}
+     * @return array{name: string, path: string, domain: ?string, same_site: 'lax'|'strict'|'none', secure: bool}
      */
     private function matchCookieConfig(string $name): array
     {

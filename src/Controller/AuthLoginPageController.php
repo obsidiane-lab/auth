@@ -32,7 +32,7 @@ final class AuthLoginPageController extends AbstractController
             throw new NotFoundHttpException();
         }
 
-        $context = $this->viewPropsBuilder->build($request, [CsrfTokenId::AUTHENTICATE]);
+        $context = $this->viewPropsBuilder->build($request);
 
         return $this->render('auth/login.html.twig', [
             'component_props' => $context['props'],

@@ -47,7 +47,7 @@ final class FeatureFlags
     }
 
     /**
-     * @return array<string, bool>
+     * @return array<string, bool|string>
      */
     public function toFrontendConfig(): array
     {

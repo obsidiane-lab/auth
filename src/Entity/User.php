@@ -66,6 +66,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     #[Groups(['user:update'])]
     private ?string $plainPassword = null;
 
+    /**
+     * @var list<string>
+     */
     #[ORM\Column(type: 'json', nullable: false)]
     private array $roles = [];
 
@@ -127,6 +130,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
         return $this;
     }
 
+    /**
+     * @return list<string>
+     */
     public function getRoles(): array
     {
         $roles = $this->roles;
@@ -136,6 +142,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
         return array_unique($roles);
     }
 
+    /**
+     * @param list<string> $roles
+     */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
@@ -148,9 +157,16 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
         $this->plainPassword = null;
     }
 
+    /**
+     * @return non-empty-string
+     */
     public function getUserIdentifier(): string
     {
-        return (string)$this->email;
+        if ($this->email === null || $this->email === '') {
+            throw new \LogicException('User email is not set.');
+        }
+
+        return $this->email;
     }
 
     public function getDisplayName(): ?string

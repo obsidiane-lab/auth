@@ -61,7 +61,7 @@ final class ResetPasswordController extends AbstractController
                 throw new NotFoundHttpException();
             }
 
-            $context = $this->viewPropsBuilder->build($request, [CsrfTokenId::PASSWORD_REQUEST]);
+        $context = $this->viewPropsBuilder->build($request);
 
             return $this->render('reset_password/request.html.twig', [
                 'component_props' => $context['props'],
@@ -164,7 +164,7 @@ final class ResetPasswordController extends AbstractController
 
             $tokenInSession = (string)$request->getSession()->get(self::RESET_TOKEN_SESSION_KEY, '');
 
-            $context = $this->viewPropsBuilder->build($request, [CsrfTokenId::PASSWORD_RESET]);
+        $context = $this->viewPropsBuilder->build($request);
             $props = $context['props'];
             $props['resetToken'] = $tokenInSession;
 

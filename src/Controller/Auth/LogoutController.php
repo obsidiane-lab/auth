@@ -36,7 +36,7 @@ final class LogoutController extends AbstractController
 
         $refreshTokenValue = $request->cookies->get($this->cookieFactory->getRefreshCookieName());
 
-        if ($refreshTokenValue) {
+        if (is_string($refreshTokenValue) && $refreshTokenValue !== '') {
             $model = $this->refreshTokenManager->get($refreshTokenValue);
 
             if ($model instanceof RefreshTokenInterface) {
@@ -59,7 +59,7 @@ final class LogoutController extends AbstractController
 
         $cookie = $request->cookies->get($this->cookieFactory->getAccessCookieName());
 
-        return $cookie ?: null;
+        return is_string($cookie) && $cookie !== '' ? $cookie : null;
     }
 
     private function expireCookies(Response $response): Response

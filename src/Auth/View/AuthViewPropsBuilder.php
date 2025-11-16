@@ -20,11 +20,14 @@ final readonly class AuthViewPropsBuilder
     }
 
     /**
-     * @param list<CsrfTokenId> $csrfTokenIds
-     *
-     * @return array{redirect_target: string, theme_color: string, props: array<string, mixed>}
+     * @return array{
+     *     redirect_target: string,
+     *     theme_color: string,
+     *     theme_mode: string,
+     *     props: array<string, mixed>
+     * }
      */
-    public function build(Request $request, array $csrfTokenIds = []): array
+    public function build(Request $request): array
     {
         $redirectTarget = $this->resolveRedirectTarget($request);
         $props = [

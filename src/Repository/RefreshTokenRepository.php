@@ -6,9 +6,6 @@ use App\Entity\RefreshToken;
 use Doctrine\ORM\NonUniqueResultException;
 use Gesdinet\JWTRefreshTokenBundle\Entity\RefreshTokenRepository as BaseRefreshTokenRepository;
 
-/**
- * @extends BaseRefreshTokenRepository<RefreshToken>
- */
 class RefreshTokenRepository extends BaseRefreshTokenRepository
 {
     public function deleteAllForUser(string $username): void

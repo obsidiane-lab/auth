@@ -13,7 +13,6 @@ use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -24,7 +23,6 @@ final readonly class UserRegistration
         private UserPasswordHasherInterface $passwordHasher,
         private EntityManagerInterface      $entityManager,
         private MailerGateway               $mailer,
-        private UrlGeneratorInterface       $urlGenerator,
         private EmailVerifier               $emailVerifier,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
         private string                      $welcomeTemplateId = 'welcome',

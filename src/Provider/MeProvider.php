@@ -8,7 +8,7 @@ use App\Entity\User;
 use Symfony\Bundle\SecurityBundle\Security;
 
 /**
- * @implements ProviderInterface<User|null>
+ * @implements ProviderInterface<User>
  */
 final readonly class MeProvider implements ProviderInterface
 {
@@ -17,8 +17,13 @@ final readonly class MeProvider implements ProviderInterface
     {
     }
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
+    /**
+     * @return User|null
+     */
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): ?User
     {
-        return $this->security->getUser();
+        $user = $this->security->getUser();
+
+        return $user instanceof User ? $user : null;
     }
 }

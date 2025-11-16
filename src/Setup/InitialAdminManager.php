@@ -33,7 +33,7 @@ final class InitialAdminManager
     }
 
     /**
-     * @throws RegistrationException
+     * @throws RegistrationException|\LogicException
      */
     public function createInitialAdmin(RegisterUserInput $input): User
     {
@@ -49,6 +49,9 @@ final class InitialAdminManager
         return $user;
     }
 
+    /**
+     * @param array<string, mixed> $payload
+     */
     public function createInputFromPayload(array $payload): RegisterUserInput
     {
         $input = new RegisterUserInput();
