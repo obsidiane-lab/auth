@@ -1,8 +1,8 @@
 /*
  Lightweight JS SDK for Obsidiane Auth
  - Uses fetch with credentials: 'include' so cookies flow as required
- - Expects caller to provide a CSRF token when needed
- - Types are generated from OpenAPI into ./types.gen.ts by the prepublishOnly script
+ - Gère automatiquement les tokens CSRF stateless (header `csrf-token` + cookie double-submit)
+ - Types sont générés depuis OpenAPI dans ./types.gen.ts par le script prepublishOnly
 */
 
 export type FetchLike = typeof fetch;

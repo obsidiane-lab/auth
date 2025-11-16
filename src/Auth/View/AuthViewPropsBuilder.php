@@ -4,8 +4,6 @@ namespace App\Auth\View;
 
 use App\Auth\RedirectPolicy;
 use App\Config\FeatureFlags;
-use App\Security\CsrfTokenId;
-use App\Security\CsrfTokenProvider;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;

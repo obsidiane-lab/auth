@@ -1,8 +1,8 @@
 /*
  Lightweight JS SDK for Obsidiane Auth
  - Uses fetch with credentials: 'include' so cookies flow as required
- - Expects caller to provide a CSRF token when needed
- - Types are generated from OpenAPI into ./types.gen.ts by the prepublishOnly script
+ - Gère automatiquement les tokens CSRF stateless (header `csrf-token` + cookie double-submit)
+ - Types sont générés depuis OpenAPI dans ./types.gen.ts par le script prepublishOnly
 */
 export class AuthClient {
     constructor(opts = {}) {
@@ -125,14 +125,4 @@ export class AuthClient {
         if (!res.ok && res.status !== 204)
             throw new Error(`password_reset_failed:${res.status}`);
     }
-}
-// Helper to read the csrf-token cookie si vous utilisez encore le contrôleur Stimulus
-export function getCsrfFromCookie() {
-    if (typeof document === 'undefined')
-        return null;
-    const map = document.cookie
-        .split('; ')
-        .map((c) => c.split('='))
-        .reduce((acc, [k, v]) => ((acc[k] = decodeURIComponent(v)), acc), {});
-    return map['csrf-token'] ?? null;
 }
