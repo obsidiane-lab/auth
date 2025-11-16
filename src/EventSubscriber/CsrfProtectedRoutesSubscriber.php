@@ -28,6 +28,12 @@ final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
         ],
         'app_reset_password' => [],
         'api_auth_logout' => [],
+        'api_auth_password_forgot' => [
+            'soft' => true,
+            'response' => ['status' => 'OK'],
+            'status' => Response::HTTP_ACCEPTED,
+        ],
+        'api_auth_password_reset' => [],
     ];
 
     public function __construct(
@@ -62,6 +68,7 @@ final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
         }
 
         $config = $this->routeMap[$routeName];
+
         if ($this->csrfValidator->isValid($request)) {
             return;
         }

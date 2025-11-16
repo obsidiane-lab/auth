@@ -45,7 +45,7 @@ final class AuthRoutesDecorator implements OpenApiFactoryInterface
             security: []
         );
 
-        $paths->addPath('/api/token/refresh', new PathItem(post: $refreshOperation));
+        $paths->addPath('/api/auth/refresh', new PathItem(post: $refreshOperation));
 
         return $openApi;
     }

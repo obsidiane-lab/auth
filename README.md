@@ -29,7 +29,7 @@ protection **CSRF stateless** (Symfony).
 
 - **Dual-mode** :
     - UI : pages `/login`, `/register`, `/reset-password`.
-    - API : endpoints sous `/api/auth/...` + `/api/token/refresh` pour front SPA/mobile.
+    - API : endpoints sous `/api/auth/...` (login, me, register, logout, refresh, password, invite) pour front SPA/mobile.
 - **Sessions** :
     - JWT court-terme en cookie `__Secure-at`.
     - Refresh token opaque en base + cookie `__Host-rt` rotatif (single-use).
@@ -55,13 +55,13 @@ protection **CSRF stateless** (Symfony).
     - `GET /invite/complete` – Compléter une invitation (création de mot de passe).
 
 - **API JSON**
-    - `POST /api/login`
+    - `POST /api/auth/login`
     - `GET /api/auth/me`
     - `POST /api/auth/register`
     - `POST /api/auth/logout`
-    - `POST /api/token/refresh`
-    - `POST /reset-password`
-    - `POST /reset-password/reset`
+    - `POST /api/auth/refresh`
+    - `POST /api/auth/password/forgot`
+    - `POST /api/auth/password/reset`
     - `POST /api/auth/invite` – Inviter un utilisateur (admin uniquement).
     - `POST /api/auth/invite/complete` – Compléter une invitation (définir profil + mot de passe).
 
@@ -82,7 +82,7 @@ protection **CSRF stateless** (Symfony).
 - **Refresh token (opaque)**
     - Persisté en base, associé à l’utilisateur.
     - Stocké en cookie `__Host-rt` (HttpOnly, host-only, `SameSite=strict`).
-    - Rotatif : à chaque `POST /api/token/refresh`, l’ancien est invalidé.
+    - Rotatif : à chaque `POST /api/auth/refresh`, l’ancien est invalidé.
 
 - **CSRF stateless**
     - Protection basée sur `Origin`/`Referer` + jetons générés côté client.
@@ -123,9 +123,9 @@ php bin/console doctrine:migrations:migrate
     * `http://localhost:8000/setup` (tant que la base ne contient aucun user).
 * API :
 
-    * `http://localhost:8000/api/login`
+    * `http://localhost:8000/api/auth/login`
     * `http://localhost:8000/api/auth/me`
-    * `http://localhost:8000/api/token/refresh`
+    * `http://localhost:8000/api/auth/refresh`
 
 ### Exemple minimal avec `curl`
 
@@ -139,13 +139,13 @@ curl -i \
   -H 'Content-Type: application/json' \
   -H "csrf-token: $LOGIN_CSRF" \
   -d '{"email":"user@example.com","password":"Secret123!"}' \
-  http://localhost:8000/api/login
+  http://localhost:8000/api/auth/login
 
 # Profil courant
 curl -i -b cookiejar.txt http://localhost:8000/api/auth/me
 
 # Refresh
-curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
+curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 ```
 
 ---
@@ -154,19 +154,19 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 ### Vue d’ensemble
 
-| Méthode | Route                   | Description                               |
-|--------:|-------------------------|-------------------------------------------|
-|    POST | `/api/setup/admin`      | Créer l’admin initial                     |
-|    POST | `/api/login`            | Login (création cookies access + refresh) |
-|     GET | `/api/auth/me`          | Utilisateur courant                       |
-|    POST | `/api/token/refresh`    | Refresh JWT via cookie `__Host-rt`        |
-|    POST | `/api/auth/register`    | Inscription                               |
-|    POST | `/api/auth/logout`      | Logout + invalidation tokens              |
-|    POST | `/reset-password`       | Demande de reset (email)                  |
-|    POST | `/reset-password/reset` | Réinitialisation via token                |
-|     GET | `/verify-email`         | Validation d’email via lien signé         |
-|    POST | `/api/auth/invite`      | Inviter un utilisateur (admin)            |
-|    POST | `/api/auth/invite/complete` | Compléter une invitation                |
+| Méthode | Route                        | Description                               |
+|--------:|------------------------------|-------------------------------------------|
+|    POST | `/api/setup/admin`           | Créer l’admin initial                     |
+|    POST | `/api/auth/login`            | Login (création cookies access + refresh) |
+|     GET | `/api/auth/me`               | Utilisateur courant                       |
+|    POST | `/api/auth/refresh`          | Refresh JWT via cookie `__Host-rt`        |
+|    POST | `/api/auth/register`         | Inscription                               |
+|    POST | `/api/auth/logout`           | Logout + invalidation tokens              |
+|    POST | `/api/auth/password/forgot`  | Demande de reset (email)                  |
+|    POST | `/api/auth/password/reset`   | Réinitialisation via token                |
+|     GET | `/verify-email`              | Validation d’email via lien signé         |
+|    POST | `/api/auth/invite`           | Inviter un utilisateur (admin)            |
+|    POST | `/api/auth/invite/complete`  | Compléter une invitation                  |
 
 ### Setup initial – `POST /api/setup/admin`
 
@@ -175,7 +175,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 * Corps : `{ "email", "password", "displayName" }`
 * Crée l’administrateur (`ROLE_ADMIN`) et débloque les autres flux.
 
-### Login – `POST /api/login`
+### Login – `POST /api/auth/login`
 
 * Corps :
 
@@ -197,7 +197,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 * Requiert un JWT valide dans `__Secure-at`.
 * Réponse : `{ "user": { id, email, roles, displayName } }`.
 
-### Refresh – `POST /api/token/refresh`
+### Refresh – `POST /api/auth/refresh`
 
 * Requiert uniquement le cookie `__Host-rt` valide.
 * Pas de CSRF.
@@ -264,13 +264,13 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 ### Reset password
 
-* `POST /reset-password`
+* `POST /api/auth/password/forgot`
 
     * CSRF requis.
     * Corps : `{ "email" }`
     * Réponse : `202 { "status": "OK" }` (pas de fuite sur l’existence du compte).
 
-* `POST /reset-password/reset`
+* `POST /api/auth/password/reset`
 
     * CSRF requis.
     * Corps : `{ "token", "password" }`
@@ -317,11 +317,11 @@ Pour les SPA sur sous-domaines (ex. `app.example.com` → `auth.example.com`) :
 
 ### CSRF
 
-Les endpoints sensibles (`/api/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token`. Reportez-vous à la section [CSRF stateless](#csrf-stateless) pour le protocole détaillé et un exemple de génération côté client.
+Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token`. Reportez-vous à la section [CSRF stateless](#csrf-stateless) pour le protocole détaillé et un exemple de génération côté client.
 
 ### Refresh silencieux
 
-* Appeler périodiquement `POST /api/token/refresh` (avec `credentials: 'include'`) avant l’expiration (`exp`).
+* Appeler périodiquement `POST /api/auth/refresh` (avec `credentials: 'include'`) avant l’expiration (`exp`).
 * Aucun CSRF requis sur ce endpoint.
 
 ---
@@ -379,19 +379,18 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
 **Rate limiting**
 
 * `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`.
-* `RATE_FORGOT_LIMIT`, `RATE_FORGOT_INTERVAL`.
+* `RATE_FORGOT_LIMIT`, `RATE_FORGOT_INTERVAL` (réservés pour une configuration fine du rate limiting sur le reset password, non utilisés dans la configuration actuelle).
 
 ### Emails transactionnels (Notifuse)
 
 * Emails de bienvenue et de reset envoyés via Notifuse :
 
     * `NOTIFUSE_API_BASE_URL`
-    * `NOTIFUSE_NOTIFICATION_CENTER_URL`
     * `NOTIFUSE_WORKSPACE_ID`
     * `NOTIFUSE_API_KEY`
     * `NOTIFUSE_TEMPLATE_WELCOME`
-    * `NOTIFUSE_TEMPLATE_RESET_PASSWORD`
-* Placeholders fournis :
+    * (d’autres variables telles que `NOTIFUSE_NOTIFICATION_CENTER_URL` ou `NOTIFUSE_TEMPLATE_RESET_PASSWORD` peuvent être utilisées selon votre configuration Notifuse, mais ne sont pas consommées directement par ce projet).
+* Placeholders typiques côté Notifuse :
 
     * `user_name`, `user_email`, `login_url`, `reset_url`, `reset_token`, `ttl_minutes`, `locale`, `brand_name`.
 
@@ -399,12 +398,12 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
 
 ## Tests & SDKs
 
-### Tests end-to-end – `test/e2e.sh`
+### Tests end-to-end – `tests/e2e.sh`
 
 Un script Bash est fourni pour tester rapidement les principaux parcours (setup initial, login/logout, inscription + vérification d’email, reset password, invitation) :
 
 ```bash
-./test/e2e.sh
+./tests/e2e.sh
 ```
 
 - Le script est interactif : il te demande la base URL, les emails/mots de passe à utiliser pour l’admin, l’utilisateur d’inscription et l’utilisateur invité.

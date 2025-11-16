@@ -39,7 +39,7 @@ export const messages = {
           separator: 'ou',
           email: {
             label: 'Adresse email',
-            placeholder: 'prenom.nom@@entreprise.com',
+            placeholder: 'prenom.nom@entreprise.com',
           },
           password: {
             label: 'Mot de passe',
@@ -86,7 +86,7 @@ export const messages = {
           },
           email: {
             label: 'Adresse email professionnelle',
-            placeholder: 'prenom.nom@@entreprise.com',
+            placeholder: 'prenom.nom@entreprise.com',
           },
           password: {
             label: 'Mot de passe',
@@ -145,7 +145,7 @@ export const messages = {
         form: {
           email: {
             label: 'Adresse email',
-            placeholder: 'prenom.nom@@entreprise.com',
+            placeholder: 'prenom.nom@entreprise.com',
           },
           submit: 'Recevoir le lien de réinitialisation',
           back_to_login: 'Retour à la connexion',

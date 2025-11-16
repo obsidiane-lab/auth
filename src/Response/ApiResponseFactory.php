@@ -8,21 +8,23 @@ use Symfony\Component\HttpFoundation\Response;
 final class ApiResponseFactory
 {
     private const ERROR_MESSAGES = [
-        'CSRF_TOKEN_INVALID' => 'Invalid CSRF token.',
-        'INVALID_PAYLOAD' => 'Invalid request payload.',
-        'INVALID_CREDENTIALS' => 'Invalid credentials.',
-        'RATE_LIMIT' => 'Too many requests. Please try again later.',
-        'INVALID_REGISTRATION' => 'Registration failed due to invalid data.',
-        'REFRESH_TOKEN_MISSING' => 'Refresh token missing or expired.',
-        'REFRESH_TOKEN_INVALID' => 'Refresh token invalid.',
-        'INVALID_REQUEST' => 'Request data is missing or invalid.',
-        'EMPTY_PASSWORD' => 'Password must not be empty.',
-        'INVALID_TOKEN' => 'The provided token is invalid or expired.',
-        'INVALID_USER' => 'The token does not belong to a known user.',
-        'EMAIL_MISSING' => 'Email address is missing.',
-        'EMAIL_SEND_FAILED' => 'Unable to send the email at the moment.',
-        'INITIAL_ADMIN_REQUIRED' => 'An administrator must be created before using this endpoint.',
-        'INITIAL_ADMIN_ALREADY_CREATED' => 'An administrator already exists.',
+        'CSRF_TOKEN_INVALID' => 'Jeton CSRF invalide. Merci de réessayer.',
+        'INVALID_PAYLOAD' => 'Requête invalide.',
+        'INVALID_CREDENTIALS' => 'Identifiants invalides.',
+        'RATE_LIMIT' => 'Trop de tentatives. Réessayez plus tard.',
+        'INVALID_REGISTRATION' => 'Données d’inscription invalides.',
+        'REFRESH_TOKEN_MISSING' => 'Refresh token manquant ou expiré.',
+        'REFRESH_TOKEN_INVALID' => 'Refresh token invalide.',
+        'INVALID_REQUEST' => 'Requête invalide.',
+        'EMPTY_PASSWORD' => 'Le mot de passe ne doit pas être vide.',
+        'INVALID_TOKEN' => 'Le jeton fourni est invalide ou expiré.',
+        'INVALID_USER' => 'Le jeton ne correspond à aucun utilisateur connu.',
+        'EMAIL_MISSING' => 'Adresse email manquante.',
+        'EMAIL_SEND_FAILED' => 'Impossible d’envoyer l’email pour le moment.',
+        'INITIAL_ADMIN_REQUIRED' => 'Un administrateur doit être créé avant d’utiliser cet endpoint.',
+        'INITIAL_ADMIN_ALREADY_CREATED' => 'Un administrateur existe déjà.',
+        'INVALID_INVITATION' => 'Invitation invalide ou expirée.',
+        'INVALID_INVITATION_PAYLOAD' => 'Données d’invitation invalides.',
     ];
 
     /**
@@ -30,7 +32,7 @@ final class ApiResponseFactory
      */
     public function error(string $errorCode, int $statusCode = Response::HTTP_BAD_REQUEST, array $payload = []): JsonResponse
     {
-        $message = self::ERROR_MESSAGES[$errorCode] ?? 'An unexpected error occurred. Please try again.';
+        $message = self::ERROR_MESSAGES[$errorCode] ?? 'Un problème est survenu. Merci de réessayer.';
 
         $body = array_merge(
             ['error' => $errorCode, 'message' => $message],

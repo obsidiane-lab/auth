@@ -61,9 +61,9 @@ export class AuthClient {
         return (await res.json()) as T;
     }
 
-    // POST /api/login — CSRF required
+    // POST /api/auth/login — CSRF required
     async login<T = unknown>(email: string, password: string): Promise<T> {
-        const res = await this.doFetch(this.url('/api/login'), {
+        const res = await this.doFetch(this.url('/api/auth/login'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
@@ -73,9 +73,9 @@ export class AuthClient {
         return (await res.json()) as T;
     }
 
-    // POST /api/token/refresh — cookie-based, CSRF optional
+    // POST /api/auth/refresh — cookie-based, CSRF optional
     async refresh<T = unknown>(csrf?: string): Promise<T> {
-        const res = await this.doFetch(this.url('/api/token/refresh'), {
+        const res = await this.doFetch(this.url('/api/auth/refresh'), {
             method: 'POST',
             credentials: 'include',
             headers: this.headers(csrf),
@@ -106,9 +106,9 @@ export class AuthClient {
         return (await res.json()) as T;
     }
 
-    // POST /reset-password — CSRF required (password_request)
+    // POST /api/auth/password/forgot — CSRF required
     async passwordRequest<T = unknown>(email: string): Promise<T> {
-        const res = await this.doFetch(this.url('/reset-password'), {
+        const res = await this.doFetch(this.url('/api/auth/password/forgot'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
@@ -118,9 +118,9 @@ export class AuthClient {
         return (await res.json()) as T;
     }
 
-    // POST /reset-password/reset — CSRF required (password_reset)
+    // POST /api/auth/password/reset — CSRF required
     async passwordReset(token: string, password: string): Promise<void> {
-        const res = await this.doFetch(this.url('/reset-password/reset'), {
+        const res = await this.doFetch(this.url('/api/auth/password/reset'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
@@ -129,4 +129,3 @@ export class AuthClient {
         if (!res.ok && res.status !== 204) throw new Error(`password_reset_failed:${res.status}`);
     }
 }
-

@@ -33,7 +33,7 @@ final class AuthPageController extends AbstractController
         $route = match ($view) {
             'register' => 'auth_register_page',
             'forgot' => 'app_forgot_password_request',
-            'reset' => 'app_forgot_password_request',
+            'reset' => 'app_reset_password',
             default => 'auth_login_page',
         };
 

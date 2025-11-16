@@ -7,6 +7,7 @@ use App\Auth\Dto\RegisterUserInput;
 use App\Auth\Exception\RegistrationException;
 use App\Auth\UserRegistration;
 use App\Config\FeatureFlags;
+use App\Http\JsonRequestDecoderTrait;
 use App\Response\ApiResponseFactory;
 use App\Setup\InitialAdminManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -18,6 +19,8 @@ use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 
 final class RegisterController extends AbstractController
 {
+    use JsonRequestDecoderTrait;
+
     public function __construct(
         private readonly UserRegistration $registration,
         private readonly FeatureFlags $featureFlags,
@@ -70,25 +73,5 @@ final class RegisterController extends AbstractController
                 'roles' => $user->getRoles(),
             ],
         ], Response::HTTP_CREATED);
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function decodeJson(Request $request): array
-    {
-        $content = $request->getContent();
-
-        if ($content === '') {
-            return [];
-        }
-
-        $data = json_decode($content, true);
-
-        if (!is_array($data)) {
-            throw new NotEncodableValueException('Invalid JSON payload.');
-        }
-
-        return $data;
     }
 }

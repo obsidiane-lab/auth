@@ -3,10 +3,10 @@ controllers:
     type: attribute
 
 api_token_refresh:
-    path: /api/token/refresh
+    path: /api/auth/refresh
 
 api_login:
-    path: /api/login
+    path: /api/auth/login
 
 api_platform:
     resource: .
@@ -16,6 +16,16 @@ api_platform:
 _security_logout:
     resource: security.route_loader.logout
     type: service
+
+api_auth_password_forgot:
+    path: /api/auth/password/forgot
+    controller: App\Controller\ResetPasswordController::request
+    methods: [ POST ]
+
+api_auth_password_reset:
+    path: /api/auth/password/reset
+    controller: App\Controller\ResetPasswordController::reset
+    methods: [ POST ]
 
 when@dev:
     _errors:

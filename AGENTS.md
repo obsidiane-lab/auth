@@ -8,7 +8,7 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 
 - Fournir une authentification sécurisée « dual-mode » :
 - **UI** : formulaires Twig accessibles via `/login`, `/register` et `/reset-password` (réinitialisation via ResetPasswordBundle).
-- **API JSON** : endpoints sous `/api/auth/*` (me, logout, register) + `/api/login` (Lexik) et `/api/token/refresh`.
+- **API JSON** : endpoints sous `/api/auth/*` (login, me, logout, register, password, invite) + `/api/setup/admin`.
 - Gérer les sessions JWT short-lived + refresh tokens Gesdinet.
 - Appliquer les bonnes pratiques de sécurité : CSRF stateless Symfony, state signé, allowlist de redirections, rate limiting.
   - Les formulaires UI et les clients SPA génèrent un token aléatoire côté client par requête sensible et l’envoient dans l’en-tête `csrf-token`. Aucun token CSRF n’est stocké côté backend.
@@ -28,10 +28,10 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 | `src/Controller/ResetPasswordController.php` | Flow ResetPasswordBundle: `/reset-password`, `/reset-password/check-email`, `/reset-password/reset/{token}`. |
 | `src/Controller/Setup/InitialAdminPageController.php` | Page `/setup` pour créer l’administrateur initial quand aucun utilisateur n’existe. |
 | `src/Controller/Setup/InitialAdminController.php` | API `POST /api/setup/admin` (CSRF `initial_admin`) qui crée le premier compte admin. |
-| *(Lexik json_login)* | `POST /api/login` – authentifie via `json_login` (CSRF `authenticate`, header `csrf-token`), un subscriber pose le cookie access. |
+| *(Lexik json_login)* | `POST /api/auth/login` – authentifie via `json_login` (CSRF `authenticate`, header `csrf-token`), un subscriber pose le cookie access. |
 | `src/Controller/Auth/MeController.php` | `GET /api/auth/me` – retourne l’utilisateur courant. |
 | `src/Controller/Auth/LogoutController.php` | `POST /api/auth/logout` – invalide tokens et cookies (CSRF `logout`, header `csrf-token`). |
-| _(Gesdinet)_ | `POST /api/token/refresh` – route gérée par JWTRefreshTokenBundle (`refresh_jwt` + cookie HttpOnly). |
+| _(Gesdinet)_ | `POST /api/auth/refresh` – route gérée par JWTRefreshTokenBundle (`refresh_jwt` + cookie HttpOnly). |
 | *(CSRF stateless)* | Les flux sensibles (login/register/logout/reset/invite) sont protégés via un validator custom (`CsrfRequestValidator`) qui vérifie l’en-tête `csrf-token` (jeton aléatoire) et l’origine HTTP (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`. |
 | `src/Controller/Auth/VerifyEmailController.php` | `GET /verify-email` – consomme le lien signé VerifyEmailBundle puis redirige vers `/login` avec un flash. |
 
@@ -42,7 +42,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 | Zone | Contenu |
 | --- | --- |
 | `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTOs `RegisterUserInput` / `RegisterIdentityInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, thème, redirect). |
-| `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique une vérification CSRF stateless sur les routes sensibles (`/api/login`, reset password, logout, setup admin). |
+| `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique une vérification CSRF stateless sur les routes sensibles (`/api/auth/login`, reset password, logout, setup admin, invitation). |
 | `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `csrf-token` (token aléatoire stateless) et contrôle l’origine (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
 | `src/Setup` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial. |
 | `src/Mail` | `MailerGateway.php` + `MailDispatchException.php` centralisent l’appel à Notifuse et la gestion des erreurs d’envoi. |
@@ -70,11 +70,11 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 
 ### 3.1 Connexion (UI)
 1. `GET /login` → rendu Twig (`auth/login.html.twig` → `SignIn`), les props contiennent les endpoints et le `redirect_uri` validé.
-2. Le formulaire envoie les identifiants à `POST /api/login` via Axios (`withCredentials: include`). L’intercepteur réseau génère un token CSRF stateless, l’envoie dans le header `csrf-token` et, en cas de 403 CSRF, régénère le token ciblé puis réessaie automatiquement.
+2. Le formulaire envoie les identifiants à `POST /api/auth/login` via Axios (`withCredentials: include`). L’intercepteur réseau génère un token CSRF stateless, l’envoie dans le header `csrf-token` et, en cas de 403 CSRF, régénère le token ciblé puis réessaie automatiquement.
 3. En cas de succès, l’UI redirige vers la cible allowlistée (`redirect_uri`).
 
 ### 3.2 Connexion (API)
-- `POST /api/login` (header `csrf-token` requis, id logique `authenticate`, token généré côté client) : réponse JSON `{ user, exp }`.
+- `POST /api/auth/login` (header `csrf-token` requis, id logique `authenticate`, token généré côté client) : réponse JSON `{ user, exp }`.
 - Cookies émis : `__Secure-at`, `__Host-rt`.
 
 - **UI** : `/register` monte `SignUp.vue` qui génère un token CSRF stateless côté client et l’envoie dans le header `csrf-token` avec la requête `POST /api/auth/register`. Une notification informe de la réussite.
@@ -90,16 +90,15 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 ### 3.3 Réinitialisation du mot de passe (UI)
 - Flow ResetPasswordBundle standard:
   1. `GET /reset-password` : formulaire pour saisir l’adresse e‑mail.
-  2. `POST /reset-password` : si l’utilisateur existe, un e‑mail est envoyé avec un lien signé.
+  2. `POST /api/auth/password/forgot` (ou `POST /reset-password`) : si l’utilisateur existe, un e‑mail est envoyé avec un lien signé.
   3. `GET /reset-password/check-email` : page d’information (TTL du lien).
-  4. `GET /reset-password/reset/{token}` puis `POST /reset-password/reset` : définition du nouveau mot de passe, invalidation des refresh tokens.
-- Aucune API dédiée n’est exposée pour ce flow.
+  4. `GET /reset-password/reset/{token}` puis `POST /api/auth/password/reset` (ou `POST /reset-password/reset`) : définition du nouveau mot de passe, invalidation des refresh tokens.
 
 ### 3.4 Token Refresh / Logout
-- `POST /api/token/refresh` : géré par Gesdinet (`refresh_jwt`). Le navigateur envoie uniquement le cookie HttpOnly `__Host-rt`, pas de CSRF requis. Rotation single-use et cookie automatiquement re-généré.
+- `POST /api/auth/refresh` : géré par Gesdinet (`refresh_jwt`). Le navigateur envoie uniquement le cookie HttpOnly `__Host-rt`, pas de CSRF requis. Rotation single-use et cookie automatiquement re-généré.
 - `POST /api/auth/logout` : header `csrf-token` (id logique `logout`), blocklist access token, purge refresh token, expire cookies.
 
-- Le flow de réinitialisation ne passe plus par `/api/auth/password/*`.
+- Le flow de réinitialisation dispose désormais d’API dédiées sous `/api/auth/password/*`.
 
 ---
 
@@ -112,7 +111,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 - **Rate Limiting** : `login_throttling` (firewall `api`) via un service `app.login_rate_limiter` (DefaultLoginRateLimiter) basé sur deux limiters framework `login_local`/`login_global`.
 - **Redirect allowlist** : `RedirectPolicy` filtre les `redirect_uri`.
 - **Secure cookies** : HttpOnly + Secure (config dépend env). Access cookie `__Secure-at` (SameSite `lax`, domaine partagé) et refresh cookie `__Host-rt` (SameSite `strict`, host-only AUTH).
-- **Access Control** : les routes publiques couvrent `login`, `register`, `password/request`, `password/reset`, `token/refresh`, `logout`, `/setup`, `/api/setup/admin` et `/verify-email`; toutes les autres routes `/api` nécessitent une authentification applicative. `UserChecker` bloque la connexion tant que `User::isEmailVerified=false`.
+- **Access Control** : les routes publiques couvrent `login`, `register`, `password/request`, `password/reset`, `api/auth/login`, `api/auth/refresh`, `logout`, `/setup`, `/api/setup/admin` et `/verify-email`; toutes les autres routes `/api` nécessitent une authentification applicative. `UserChecker` bloque la connexion tant que `User::isEmailVerified=false`.
 
 ---
 
@@ -139,7 +138,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 2. Lancer l’environnement : `docker compose up`.
 3. Appliquer migrations : `php bin/console doctrine:migrations:migrate`.
 4. Lancer les tests end-to-end interactifs :
-   - `./test/e2e.sh`
+   - `./tests/e2e.sh`
    - Le script demande les emails/mots de passe (admin, utilisateur, invité), joue les flows principaux (setup initial, login/logout, inscription, reset password, invitation) et indique quand une action manuelle est nécessaire (clic sur lien d’email).
 5. Vérifier manuellement si besoin avec `curl` (voir README pour des exemples ciblés).
 
@@ -157,9 +156,7 @@ Les fonctionnalités clés sont pilotées par variables d’environnement (Docke
 | `UI_THEME_MODE` | Définit le mode (light/dark) de l’interface (défaut `dark`). Piloté par l’environnement, non modifiable par l’utilisateur. |
 | `BRANDING_NAME` | Détermine le nom affiché dans les titres UI/emails (défaut `Obsidiane Auth`). |
 
-La UI masque automatiquement l’inscription si désactivée. Consultez `docs/CONFIGURATION.md` pour un pas-à-pas container + variables.
-
-Consultez également `docs/USER_GUIDE.md` pour le guide d’usage (cookies/tokens, CSRF, CORS, intégration SPA) et `docs/CONFIGURATION.md` pour la configuration avancée.
+La UI masque automatiquement l’inscription si désactivée. Référez-vous au `README.md` pour un pas-à-pas container + variables et les détails d’usage (cookies/tokens, CSRF, CORS, intégration SPA).
 
 ---
 

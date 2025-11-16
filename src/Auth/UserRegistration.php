@@ -9,6 +9,7 @@ use App\Entity\User;
 use App\Mail\MailDispatchException;
 use App\Mail\MailerGateway;
 use App\Security\EmailVerifier;
+use App\Security\PasswordStrengthChecker;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -24,6 +25,7 @@ final readonly class UserRegistration
         private EntityManagerInterface      $entityManager,
         private MailerGateway               $mailer,
         private EmailVerifier               $emailVerifier,
+        private PasswordStrengthChecker     $passwordStrengthChecker,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
         private string                      $welcomeTemplateId = 'welcome',
     ) {
@@ -50,11 +52,17 @@ final readonly class UserRegistration
         $identity = $this->resolveIdentity($input->identity ?? null);
         $displayName = $identity->displayName;
 
+        $plainPassword = (string) ($input->plainPassword ?? '');
+
+        if (!$this->passwordStrengthChecker->isStrongEnough($plainPassword)) {
+            throw new RegistrationException(['plainPassword' => 'INVALID_PASSWORD']);
+        }
+
         $user = new User();
         $normalizedEmail = is_string($input->email) ? mb_strtolower(trim($input->email)) : '';
         $user->setEmail($normalizedEmail);
         $user->setDisplayName($displayName);
-        $user->setPassword($this->passwordHasher->hashPassword($user, $input->plainPassword ?? ''));
+        $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $user->eraseCredentials();
         $user->setRoles([]);
 

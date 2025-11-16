@@ -11,6 +11,7 @@ use App\Mail\MailDispatchException;
 use App\Mail\MailerGateway;
 use App\Repository\InviteUserRepository;
 use App\Repository\UserRepository;
+use App\Security\PasswordStrengthChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -30,6 +31,7 @@ final readonly class InvitationManager
         private MailerGateway $mailer,
         private UrlGeneratorInterface $router,
         private Security $security,
+        private PasswordStrengthChecker $passwordStrengthChecker,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
         private string $welcomeTemplateId = 'welcome',
     ) {
@@ -98,6 +100,10 @@ final readonly class InvitationManager
         }
 
         $user = $invite->getUser();
+
+        if (!$this->passwordStrengthChecker->isStrongEnough($plainPassword)) {
+            throw new RegistrationException(['plainPassword' => 'INVALID_PASSWORD']);
+        }
 
         $input = new RegisterUserInput();
         $identity = new RegisterIdentityInput();

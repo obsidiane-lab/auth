@@ -13,7 +13,6 @@ final class RegisterUserInput
     public ?string $email = null;
 
     #[Assert\NotBlank]
-    #[Assert\Length(min: 8)]
     #[Groups(['user:register'])]
     public ?string $plainPassword = null;
 

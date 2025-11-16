@@ -20,6 +20,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use App\Security\PasswordStrengthChecker;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
@@ -40,8 +41,8 @@ final class ResetPasswordController extends AbstractController
         private readonly FeatureFlags                 $featureFlags,
         private readonly AuthViewPropsBuilder         $viewPropsBuilder,
         private readonly InitialAdminManager          $initialAdminManager,
-    )
-    {
+        private readonly PasswordStrengthChecker      $passwordStrengthChecker,
+    ) {
     }
 
     #[Route('', name: 'app_forgot_password_request', methods: ['GET', 'POST'])]
@@ -69,9 +70,9 @@ final class ResetPasswordController extends AbstractController
             ]);
         }
 
-        // JSON submission from Vue component
+        // JSON submission from Vue component / API client
         $data = $this->decodeJson($request);
-        $email = isset($data['email']) ? trim(mb_strtolower((string)$data['email'])) : '';
+        $email = isset($data['email']) ? trim(mb_strtolower((string) $data['email'])) : '';
 
         if ($email !== '') {
             $user = $this->userRepository->findOneBy(['email' => $email]);
@@ -176,11 +177,19 @@ final class ResetPasswordController extends AbstractController
 
         // JSON submission from Vue component
         $data = $this->decodeJson($request);
-        $tokenInSession = isset($data['token']) ? (string)$data['token'] : '';
-        $plainPassword = isset($data['password']) ? (string)$data['password'] : '';
+        $tokenInSession = isset($data['token']) ? (string) $data['token'] : '';
+        $plainPassword = isset($data['password']) ? (string) $data['password'] : '';
 
-        if ($tokenInSession === '' || $plainPassword === '') {
+        if ($tokenInSession === '') {
             return new JsonResponse(['error' => 'INVALID_REQUEST'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($plainPassword === '') {
+            return new JsonResponse(['error' => 'EMPTY_PASSWORD'], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (!$this->passwordStrengthChecker->isStrongEnough($plainPassword)) {
+            return new JsonResponse(['error' => 'INVALID_PASSWORD'], Response::HTTP_BAD_REQUEST);
         }
 
         try {

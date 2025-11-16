@@ -4,6 +4,7 @@ namespace App\Controller\Auth;
 
 use App\Auth\Exception\RegistrationException;
 use App\Auth\InvitationManager;
+use App\Http\JsonRequestDecoderTrait;
 use App\Response\ApiResponseFactory;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -13,6 +14,8 @@ use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 
 final class AcceptInvitationController extends AbstractController
 {
+    use JsonRequestDecoderTrait;
+
     public function __construct(
         private readonly InvitationManager $invitationManager,
         private readonly ApiResponseFactory $responses,
@@ -41,13 +44,10 @@ final class AcceptInvitationController extends AbstractController
         } catch (RegistrationException $exception) {
             $errors = $exception->getErrors();
             $errorCode = $exception->getMessage();
-
-            return new JsonResponse(
-                [
-                    'error' => $errorCode,
-                    'details' => $errors,
-                ],
-                Response::HTTP_UNPROCESSABLE_ENTITY
+            return $this->responses->error(
+                $errorCode,
+                Response::HTTP_UNPROCESSABLE_ENTITY,
+                ['details' => $errors]
             );
         }
 
@@ -60,25 +60,4 @@ final class AcceptInvitationController extends AbstractController
             ],
         ], Response::HTTP_CREATED);
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function decodeJson(Request $request): array
-    {
-        $content = $request->getContent();
-
-        if ($content === '') {
-            return [];
-        }
-
-        $data = json_decode($content, true);
-
-        if (!is_array($data)) {
-            throw new NotEncodableValueException('Invalid JSON payload.');
-        }
-
-        return $data;
-    }
 }
-

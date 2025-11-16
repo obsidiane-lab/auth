@@ -45,6 +45,7 @@ export const PASSWORD_RESET_ERROR_KEYS: Record<string, string> = {
   INVALID_REQUEST: 'password.reset.error.api.INVALID_REQUEST',
   INVALID_TOKEN: 'password.reset.error.api.INVALID_TOKEN',
   EMPTY_PASSWORD: 'password.reset.error.api.EMPTY_PASSWORD',
+  INVALID_PASSWORD: 'register.error.invalid_password',
   EMAIL_MISSING: 'password.reset.error.api.UNKNOWN',
   UNKNOWN: 'password.reset.error.api.UNKNOWN',
   CSRF_TOKEN_INVALID: 'common.error.csrf_token_invalid',

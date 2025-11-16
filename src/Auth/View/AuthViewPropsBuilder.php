@@ -70,11 +70,11 @@ final readonly class AuthViewPropsBuilder
     private function endpoints(): array
     {
         return [
-            'login' => '/api/login',
+            'login' => '/api/auth/login',
             'register' => $this->router->generate('api_auth_register'),
-            'request' => $this->router->generate('app_forgot_password_request'),
-            'reset' => $this->router->generate('app_reset_password'),
-            'refresh' => '/api/token/refresh',
+            'request' => $this->router->generate('api_auth_password_forgot'),
+            'reset' => $this->router->generate('api_auth_password_reset'),
+            'refresh' => '/api/auth/refresh',
         ];
     }
 

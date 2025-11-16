@@ -110,7 +110,7 @@ step_login_admin() {
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
-    "${BASE_URL}/api/login"
+    "${BASE_URL}/api/auth/login"
 }
 
 step_me_admin() {
@@ -120,7 +120,7 @@ step_me_admin() {
 
 step_refresh_admin() {
   info "Refreshing admin token"
-  curl -s -i -b "${ADMIN_COOKIES}" -X POST "${BASE_URL}/api/token/refresh"
+  curl -s -i -b "${ADMIN_COOKIES}" -X POST "${BASE_URL}/api/auth/refresh"
 }
 
 step_logout_admin() {
@@ -157,7 +157,7 @@ step_password_reset_flow() {
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${REGISTER_EMAIL}\"}" \
-    "${BASE_URL}/reset-password"
+    "${BASE_URL}/api/auth/password/forgot"
 
   warn "A reset-password email should be available for ${REGISTER_EMAIL}."
   warn "Open Maildev / Notifuse, retrieve the reset link (/reset-password/reset/{token}), and test it manually in the browser."

@@ -74,7 +74,7 @@ Effectue un login et laisse le serveur poser les cookies (`__Secure-at`, `__Host
 await auth.login('user@example.com', 'Secret123!');
 ```
 
-* Appelle `POST /api/login` avec un token stateless généré côté client dans l’en-tête `csrf-token`.
+* Appelle `POST /api/auth/login` avec un token stateless généré côté client dans l’en-tête `csrf-token`.
 * En cas de succès, les cookies sont stockés par le navigateur.
 
 ---
@@ -133,7 +133,7 @@ Rafraîchit le token d’accès.
 await auth.refresh();
 ```
 
-* Appelle `POST /api/token/refresh`.
+* Appelle `POST /api/auth/refresh`.
 * Utilise automatiquement le cookie `__Host-rt`.
 * Ne nécessite pas de CSRF.
 
@@ -170,7 +170,7 @@ await auth.register(
 
 ### Réinitialisation de mot de passe
 
-Le flow repose sur les routes UI `/reset-password` du service principal, mais le client fournit des helpers HTTP :
+Le flow repose sur l’UI `/reset-password` du service principal, mais le client fournit des helpers HTTP pour les appels API :
 
 #### `passwordRequest(email)`
 
@@ -180,7 +180,7 @@ Envoie l’email de réinitialisation.
 await auth.passwordRequest('user@example.com');
 ```
 
-* Appelle `POST /reset-password` avec `{ email }`.
+* Appelle `POST /api/auth/password/forgot` avec `{ email }`.
 * Réponse côté API : `202 { status: 'OK' }` (pas de fuite sur l’existence du compte).
 
 #### `passwordReset(token, password)`
@@ -191,7 +191,7 @@ Soumet le nouveau mot de passe.
 await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!');
 ```
 
-* Appelle `POST /reset-password/reset` avec `{ token, password }`.
+* Appelle `POST /api/auth/password/reset` avec `{ token, password }`.
 * Invalide les sessions actives de l’utilisateur (côté service).
 
 ---

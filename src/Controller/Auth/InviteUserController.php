@@ -5,6 +5,7 @@ namespace App\Controller\Auth;
 use App\Auth\InvitationManager;
 use App\Auth\Exception\RegistrationException;
 use App\Config\FeatureFlags;
+use App\Http\JsonRequestDecoderTrait;
 use App\Mail\MailDispatchException;
 use App\Response\ApiResponseFactory;
 use App\Setup\InitialAdminManager;
@@ -18,6 +19,8 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 final class InviteUserController extends AbstractController
 {
+    use JsonRequestDecoderTrait;
+
     public function __construct(
         private readonly InvitationManager $invitationManager,
         private readonly FeatureFlags $featureFlags,
@@ -63,25 +66,4 @@ final class InviteUserController extends AbstractController
 
         return new JsonResponse(['status' => 'INVITE_SENT'], Response::HTTP_ACCEPTED);
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private function decodeJson(Request $request): array
-    {
-        $content = $request->getContent();
-
-        if ($content === '') {
-            return [];
-        }
-
-        $data = json_decode($content, true);
-
-        if (!is_array($data)) {
-            throw new NotEncodableValueException('Invalid JSON payload.');
-        }
-
-        return $data;
-    }
 }
-

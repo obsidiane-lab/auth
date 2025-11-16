@@ -45,9 +45,9 @@ export class AuthClient {
             throw new Error(`me_failed:${res.status}`);
         return (await res.json());
     }
-    // POST /api/login — CSRF required
+    // POST /api/auth/login — CSRF required
     async login(email, password) {
-        const res = await this.doFetch(this.url('/api/login'), {
+        const res = await this.doFetch(this.url('/api/auth/login'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
@@ -57,9 +57,9 @@ export class AuthClient {
             throw new Error(`login_failed:${res.status}`);
         return (await res.json());
     }
-    // POST /api/token/refresh — cookie-based, CSRF optional
+    // POST /api/auth/refresh — cookie-based, CSRF optional
     async refresh(csrf) {
-        const res = await this.doFetch(this.url('/api/token/refresh'), {
+        const res = await this.doFetch(this.url('/api/auth/refresh'), {
             method: 'POST',
             credentials: 'include',
             headers: this.headers(csrf),
@@ -90,9 +90,9 @@ export class AuthClient {
             throw new Error(`register_failed:${res.status}`);
         return (await res.json());
     }
-    // POST /reset-password — CSRF required (password_request)
+    // POST /api/auth/password/forgot — CSRF required
     async passwordRequest(email) {
-        const res = await this.doFetch(this.url('/reset-password'), {
+        const res = await this.doFetch(this.url('/api/auth/password/forgot'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
@@ -102,9 +102,9 @@ export class AuthClient {
             throw new Error(`password_request_failed:${res.status}`);
         return (await res.json());
     }
-    // POST /reset-password/reset — CSRF required (password_reset)
+    // POST /api/auth/password/reset — CSRF required
     async passwordReset(token, password) {
-        const res = await this.doFetch(this.url('/reset-password/reset'), {
+        const res = await this.doFetch(this.url('/api/auth/password/reset'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
