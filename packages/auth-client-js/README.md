@@ -1,6 +1,6 @@
 # Obsidiane Auth – Client JS
 
-SDK JavaScript minimal pour consommer l’API **Obsidiane Auth** depuis un navigateur ou un environnement **Node/SSR**.
+SDK JavaScript minimal pour consommer l’API **Obsidiane Auth** dans n’importe quel framework front (React, Angular, Vue, Svelte, etc.) exécuté dans un navigateur.
 
 Il gère automatiquement :
 
