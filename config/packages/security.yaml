@@ -11,8 +11,8 @@ security:
         dev: { pattern: ^/(_(profiler|wdt)|css|images|js)/, security: false }
 
         auth_pages:
-            # Public UI routes (login/register/reset password)
-            pattern: ^/(?:login|register|reset-password(?:/.*)?)$
+            # Public UI routes (login/register/reset password/invite completion)
+            pattern: ^/(?:login|register|reset-password(?:/.*)?|invite/complete(?:/.*)?)$
             security: false
         api:
             pattern: ^/api
@@ -36,14 +36,19 @@ security:
         # UI pages
         - { path: ^/(login|register)$, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/reset-password(?:/.*)?$, roles: PUBLIC_ACCESS, methods: [ GET, POST ] }
+        - { path: ^/invite/complete(?:/.*)?$, roles: PUBLIC_ACCESS, methods: [ GET ] }
 
         # Public API endpoints
         - { path: ^/api/(login|token/refresh)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/auth/(register|logout)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
+        - { path: ^/api/auth/invite/complete$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/auth/csrf/, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/api/setup/admin$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/verify-email$, roles: PUBLIC_ACCESS, methods: [ GET ] }
+
+        # Admin-only API endpoints
+        - { path: ^/api/auth/invite$, roles: ROLE_ADMIN, methods: [ POST ] }
 
         # Everything else requires authentication
         - { path: ^/, roles: IS_AUTHENTICATED_FULLY }

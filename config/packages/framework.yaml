@@ -15,6 +15,8 @@ framework:
             - password_reset
             - logout
             - initial_admin
+            - invite_user
+            - invite_complete
         cookie_name: 'csrf-token'
         check_header: true
     form:

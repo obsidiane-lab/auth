@@ -10,6 +10,8 @@ enum CsrfTokenId: string
     case PASSWORD_RESET = 'password_reset';
     case LOGOUT = 'logout';
     case INITIAL_ADMIN = 'initial_admin';
+    case INVITE_USER = 'invite_user';
+    case INVITE_COMPLETE = 'invite_complete';
 
     /**
      * @return list<string>

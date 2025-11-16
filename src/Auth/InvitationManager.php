@@ -1,0 +1,187 @@
+<?php
+
+namespace App\Auth;
+
+use App\Auth\Dto\RegisterIdentityInput;
+use App\Auth\Dto\RegisterUserInput;
+use App\Auth\Exception\RegistrationException;
+use App\Entity\InviteUser;
+use App\Entity\User;
+use App\Mail\MailDispatchException;
+use App\Mail\MailerGateway;
+use App\Repository\InviteUserRepository;
+use App\Repository\UserRepository;
+use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Bundle\SecurityBundle\Security;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Validator\ConstraintViolationInterface;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+
+final readonly class InvitationManager
+{
+    public function __construct(
+        private UserRepository $userRepository,
+        private InviteUserRepository $inviteRepository,
+        private EntityManagerInterface $entityManager,
+        private UserPasswordHasherInterface $passwordHasher,
+        private ValidatorInterface $validator,
+        private MailerGateway $mailer,
+        private UrlGeneratorInterface $router,
+        private Security $security,
+        #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
+        private string $welcomeTemplateId = 'welcome',
+    ) {
+    }
+
+    /**
+     * @throws RegistrationException
+     * @throws MailDispatchException
+     */
+    public function invite(string $email): InviteUser
+    {
+        $normalizedEmail = mb_strtolower(trim($email));
+
+        if ($normalizedEmail === '') {
+            throw new RegistrationException(['email' => 'INVALID_EMAIL']);
+        }
+
+        $existingUser = $this->userRepository->findOneBy(['email' => $normalizedEmail]);
+
+        if ($existingUser instanceof User && $existingUser->isEmailVerified()) {
+            throw new RegistrationException(['email' => 'EMAIL_ALREADY_USED']);
+        }
+
+        $user = $existingUser ?? $this->createInvitedUser($normalizedEmail);
+
+        $invite = new InviteUser();
+        $invite->setEmail($normalizedEmail);
+        $invite->setUser($user);
+
+        $now = new \DateTimeImmutable();
+        $invite->setCreatedAt($now);
+        $invite->setExpiresAt($now->modify('+7 days'));
+        $invite->setToken(bin2hex(random_bytes(32)));
+
+        $actor = $this->security->getUser();
+        if ($actor instanceof User) {
+            $invite->setCreatedBy($actor);
+        }
+
+        $this->entityManager->persist($user);
+        $this->entityManager->persist($invite);
+        $this->entityManager->flush();
+
+        $this->sendInvitationEmail($invite);
+
+        return $invite;
+    }
+
+    /**
+     * @throws RegistrationException
+     */
+    public function complete(string $token, string $displayName, string $plainPassword): User
+    {
+        $invite = $this->inviteRepository->findOneBy(['token' => $token]);
+
+        if (!$invite instanceof InviteUser) {
+            throw new RegistrationException(['token' => 'INVALID_INVITATION'], 'INVALID_INVITATION');
+        }
+
+        if ($invite->isAccepted()) {
+            throw new RegistrationException(['token' => 'INVITATION_ALREADY_USED'], 'INVITATION_ALREADY_USED');
+        }
+
+        if ($invite->isExpired()) {
+            throw new RegistrationException(['token' => 'INVITATION_EXPIRED'], 'INVITATION_EXPIRED');
+        }
+
+        $user = $invite->getUser();
+
+        $input = new RegisterUserInput();
+        $identity = new RegisterIdentityInput();
+
+        $input->email = $user->getEmail();
+        $input->plainPassword = $plainPassword;
+        $identity->displayName = $displayName;
+        $input->identity = $identity;
+
+        $violations = $this->validator->validate($input, groups: ['user:register']);
+
+        if (count($violations) > 0) {
+            $errors = [];
+
+            foreach ($violations as $violation) {
+                $path = $violation->getPropertyPath();
+                $errors[$path] = $this->mapViolationToCode($path, $violation);
+            }
+
+            throw new RegistrationException($errors);
+        }
+
+        $user->setDisplayName(trim((string) $displayName));
+        $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
+        $user->eraseCredentials();
+        $user->setIsEmailVerified(true);
+
+        $invite->setAcceptedAt(new \DateTimeImmutable());
+
+        $this->entityManager->flush();
+
+        return $user;
+    }
+
+    private function createInvitedUser(string $email): User
+    {
+        $user = new User();
+        $user->setEmail($email);
+
+        // Placeholder display name to satisfy DB constraints, replaced on completion.
+        $user->setDisplayName($email);
+
+        $randomPassword = bin2hex(random_bytes(16));
+        $user->setPassword($this->passwordHasher->hashPassword($user, $randomPassword));
+        $user->eraseCredentials();
+        $user->setRoles([]);
+        $user->setIsEmailVerified(false);
+
+        return $user;
+    }
+
+    /**
+     * @throws MailDispatchException
+     */
+    private function sendInvitationEmail(InviteUser $invite): void
+    {
+        $recipient = $invite->getEmail();
+
+        if ($recipient === '') {
+            return;
+        }
+
+        $displayName = $invite->getUser()->getDisplayName() ?? $recipient;
+
+        $url = $this->router->generate(
+            'auth_invite_complete_page',
+            ['token' => $invite->getToken()],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+
+        $this->mailer->dispatch($recipient, $this->welcomeTemplateId, [
+            'first_name' => $displayName ?: $recipient,
+            'activate_link' => $url,
+        ]);
+    }
+
+    private function mapViolationToCode(string $path, ConstraintViolationInterface $violation): string
+    {
+        return match ($path) {
+            'email' => 'INVALID_EMAIL',
+            'plainPassword' => 'INVALID_PASSWORD',
+            'identity' => 'MISSING_IDENTITY',
+            'identity.displayName' => 'DISPLAY_NAME_REQUIRED',
+            default => $violation->getMessage(),
+        };
+    }
+}

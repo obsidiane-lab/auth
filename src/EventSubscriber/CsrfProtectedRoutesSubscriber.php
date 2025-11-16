@@ -23,6 +23,8 @@ final readonly class CsrfProtectedRoutesSubscriber implements EventSubscriberInt
             'api_login' => ['token' => CsrfTokenId::AUTHENTICATE],
             'api_auth_register' => ['token' => CsrfTokenId::REGISTER],
             'api_setup_initial_admin' => ['token' => CsrfTokenId::INITIAL_ADMIN],
+            'api_auth_invite' => ['token' => CsrfTokenId::INVITE_USER],
+            'api_auth_invite_complete' => ['token' => CsrfTokenId::INVITE_COMPLETE],
             // Password reset flow via ResetPasswordBundle UI routes
             'app_forgot_password_request' => [
                 'token' => CsrfTokenId::PASSWORD_REQUEST,

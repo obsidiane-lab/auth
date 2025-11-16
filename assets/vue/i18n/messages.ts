@@ -113,6 +113,21 @@ export const messages = {
         success: 'Adresse email confirmée. Vous pouvez maintenant vous connecter.',
         error: 'Le lien de confirmation est invalide ou expiré.',
       },
+      invite: {
+        view: {
+          heading: 'Complétez votre',
+          heading_suffix: ' compte',
+          subtitle: 'Définissez votre profil et votre mot de passe pour activer votre accès.',
+          email_label: 'Adresse email invitée',
+          display_name_label: 'Nom complet',
+          password_label: 'Mot de passe',
+          confirm_password_label: 'Confirmez le mot de passe',
+          submit: 'Activer mon compte',
+          already_completed:
+            'Ce lien a déjà été utilisé et votre compte est activé. Vous pouvez vous connecter avec vos identifiants.',
+          back_to_login: 'Retour à la connexion',
+        },
+      },
     },
     register: {
       error: {

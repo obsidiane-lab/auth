@@ -52,6 +52,7 @@ protection **CSRF stateless** (Symfony).
     - `GET /reset-password` – Demande de réinitialisation.
     - `GET /reset-password/reset/{token}` – Saisie du nouveau mot de passe.
     - `GET /setup` – Création de l’admin initial si la base est vide.
+    - `GET /invite/complete` – Compléter une invitation (création de mot de passe).
 
 - **API JSON**
     - `POST /api/login`
@@ -62,12 +63,14 @@ protection **CSRF stateless** (Symfony).
     - `GET /api/auth/csrf/{id}`
     - `POST /reset-password`
     - `POST /reset-password/reset`
+    - `POST /api/auth/invite` – Inviter un utilisateur (admin uniquement).
+    - `POST /api/auth/invite/complete` – Compléter une invitation (définir profil + mot de passe).
 
 - **Cookies & tokens**
     - `__Secure-at` : access token JWT (HttpOnly).
     - `__Host-rt` : refresh token opaque, single-use (HttpOnly).
     - CSRF stateless : jetons par opération (`authenticate`, `register`, `password_request`, `password_reset`, `logout`,
-      `initial_admin`).
+      `initial_admin`, `invite_user`, `invite_complete`).
 
 ---
 
@@ -167,6 +170,8 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 |    POST | `/reset-password`       | Demande de reset (email)                  |
 |    POST | `/reset-password/reset` | Réinitialisation via token                |
 |     GET | `/verify-email`         | Validation d’email via lien signé         |
+|    POST | `/api/auth/invite`      | Inviter un utilisateur (admin)            |
+|    POST | `/api/auth/invite/complete` | Compléter une invitation                |
 
 ### Setup initial – `POST /api/setup/admin`
 
@@ -219,6 +224,48 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 * Corps : `{ "email", "password", "displayName" }`
 * Réponse : `201 { "user": { ... } }`
 * Envoie un email de vérification (`/verify-email`).
+
+### Invitation administrateur – `POST /api/auth/invite`
+
+- Accessible uniquement aux administrateurs (`ROLE_ADMIN`).
+- CSRF : `invite_user`.
+- Corps :
+
+  ```json
+  { "email": "nouvel.utilisateur@entreprise.com" }
+  ```
+
+- Effets :
+  - Crée (ou réutilise) un `User` non activé pour cet email (`isEmailVerified = false`, mot de passe aléatoire).
+  - Crée une entrée `InviteUser` avec un token et une date d’expiration (7 jours).
+  - Envoie un email d’invitation en réutilisant le template de bienvenue, avec un lien d’activation pointant vers `/invite/complete?token=...`.
+- Réponse :
+
+  ```json
+  { "status": "INVITE_SENT" }
+  ```
+
+### Compléter une invitation – `POST /api/auth/invite/complete`
+
+- Endpoint public (accessible via le lien d’invitation).
+- CSRF : `invite_complete`.
+- Corps :
+
+  ```json
+  {
+    "token": "<token d'invitation>",
+    "displayName": "Prénom Nom",
+    "password": "Secret123!",
+    "confirmPassword": "Secret123!"
+  }
+  ```
+
+- Effets :
+  - Valide le token d’invitation (non expiré, non déjà utilisé).
+  - Applique les mêmes règles de validation que l’inscription (mot de passe, nom d’affichage).
+  - Met à jour le `User` associé (displayName + mot de passe) et marque l’email comme vérifié.
+  - Marque l’invitation comme acceptée.
+- Réponse : `201 { "user": { ... } }`.
 
 ### Reset password
 
@@ -397,4 +444,3 @@ Les contributions sont les bienvenues ❤️
 ## Licence
 
 Ce projet est distribué sous les termes de la licence indiquée dans [`LICENSE`](./LICENSE).
-

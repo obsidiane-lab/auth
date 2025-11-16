@@ -7,6 +7,8 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use App\Controller\Auth\CsrfTokenController;
+use App\Controller\Auth\AcceptInvitationController;
+use App\Controller\Auth\InviteUserController;
 use App\Controller\Auth\LogoutController;
 use App\Controller\Auth\MeController;
 use App\Controller\Auth\RegisterController;
@@ -25,6 +27,28 @@ use Symfony\Component\HttpFoundation\Response;
             validate: false,
             write: false,
             name: 'api_auth_register',
+        ),
+        new Post(
+            uriTemplate: '/auth/invite',
+            status: Response::HTTP_ACCEPTED,
+            controller: InviteUserController::class,
+            description: 'Invite un utilisateur (admin uniquement, CSRF `invite_user`).',
+            read: false,
+            deserialize: false,
+            validate: false,
+            write: false,
+            name: 'api_auth_invite',
+        ),
+        new Post(
+            uriTemplate: '/auth/invite/complete',
+            status: Response::HTTP_CREATED,
+            controller: AcceptInvitationController::class,
+            description: 'Complète une invitation (mot de passe + profil).',
+            read: false,
+            deserialize: false,
+            validate: false,
+            write: false,
+            name: 'api_auth_invite_complete',
         ),
         new Post(
             uriTemplate: '/auth/logout',

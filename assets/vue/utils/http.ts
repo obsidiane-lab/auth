@@ -61,7 +61,7 @@ export const initializeCsrfTokens = (tokens?: Partial<CsrfTokens>): void => {
   }
 
   Object.entries(tokens).forEach(([key, value]) => {
-    if (typeof value === 'string' && value !== '') {
+    if (typeof value === 'string' && value !== '' && value !== 'csrf-token') {
       csrfTokens[key] = value;
     }
   });
@@ -73,13 +73,21 @@ export const setCsrfToken = (tokenId: CsrfTokenId, token: string): void => {
 
 export const getCsrfToken = (tokenId: CsrfTokenId): string | undefined => csrfTokens[tokenId];
 
-async function refreshCsrfToken(tokenId: CsrfTokenId): Promise<string> {
-  const response = await http.get(`${CSRF_ENDPOINT_BASE}/${tokenId}`);
-  const token = response.data?.token;
-
-  if (typeof token !== 'string' || token === '') {
-    throw new Error('Unable to refresh CSRF token.');
+const generateCsrfToken = (): string => {
+  if (typeof crypto !== 'undefined' && 'getRandomValues' in crypto) {
+    const bytes = new Uint8Array(16);
+    crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
   }
+
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+};
+
+async function refreshCsrfToken(tokenId: CsrfTokenId): Promise<string> {
+  // Hit the CSRF endpoint mainly to keep behavior consistent (and allow
+  // future server-side checks), but generate the actual token client-side.
+  await http.get(`${CSRF_ENDPOINT_BASE}/${tokenId}`);
+  const token = generateCsrfToken();
 
   setCsrfToken(tokenId, token);
 
@@ -105,7 +113,7 @@ http.interceptors.request.use(async (config) => {
 
   const token = await ensureCsrfToken(request.csrfTokenId);
   const headers = toAxiosHeaders(request.headers);
-  headers.set('X-CSRF-TOKEN', token);
+  headers.set('csrf-token', token);
   request.headers = headers;
 
   return request;
@@ -120,7 +128,7 @@ http.interceptors.response.use(
       request._csrfRetry = true;
       const token = await refreshCsrfToken(request.csrfTokenId);
       const headers = toAxiosHeaders(request.headers);
-      headers.set('X-CSRF-TOKEN', token);
+      headers.set('csrf-token', token);
       request.headers = headers;
 
       return http(request);
