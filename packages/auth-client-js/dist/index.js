@@ -7,9 +7,11 @@
 export class AuthClient {
     constructor(opts = {}) {
         this.baseUrl = (opts.baseUrl ?? '').replace(/\/$/, '');
-        this.doFetch = opts.fetch ?? globalThis.fetch;
-        if (!this.doFetch)
+        const baseFetch = opts.fetch ?? globalThis.fetch;
+        if (!baseFetch) {
             throw new Error('No fetch implementation available');
+        }
+        this.doFetch = baseFetch.bind(globalThis);
     }
     url(path) {
         return `${this.baseUrl}${path}`;

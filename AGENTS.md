@@ -138,13 +138,10 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 1. Installer dépendances : `composer install`.
 2. Lancer l’environnement : `docker compose up`.
 3. Appliquer migrations : `php bin/console doctrine:migrations:migrate`.
-4. Tester inscription :
-   - `CSRF=$(php -r 'echo bin2hex(random_bytes(16));')`
-   - `curl -X POST http://localhost/api/auth/register -H 'Content-Type: application/json' -H "csrf-token: $CSRF" -d '{"email":"test@demo.com","password":"Secret123!","displayName":"Test User"}'`.
-   - Un email de confirmation contenant le lien `/verify-email` est envoyé via Notifuse.
-5. Vérifier:
-   - UI Reset Password: http://localhost/reset-password
-   - Login UI ou API comme décrit dans le README.
+4. Lancer les tests end-to-end interactifs :
+   - `./test/e2e.sh`
+   - Le script demande les emails/mots de passe (admin, utilisateur, invité), joue les flows principaux (setup initial, login/logout, inscription, reset password, invitation) et indique quand une action manuelle est nécessaire (clic sur lien d’email).
+5. Vérifier manuellement si besoin avec `curl` (voir README pour des exemples ciblés).
 
 ---
 

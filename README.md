@@ -401,7 +401,20 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
 
 ---
 
-## SDKs
+## Tests & SDKs
+
+### Tests end-to-end – `test/e2e.sh`
+
+Un script Bash est fourni pour tester rapidement les principaux parcours (setup initial, login/logout, inscription + vérification d’email, reset password, invitation) :
+
+```bash
+./test/e2e.sh
+```
+
+- Le script est interactif : il te demande la base URL, les emails/mots de passe à utiliser pour l’admin, l’utilisateur d’inscription et l’utilisateur invité.
+- À chaque étape nécessitant une action sur l’email (clic sur `/verify-email`, `/reset-password/reset/...`, `/invite/complete?...`), il affiche un message du type :
+  - `Attente de confirmation d’email… Ouvrez Maildev/Notifuse et cliquez sur le lien`, puis attend `ENTER`.
+- Il utilise la même mécanique CSRF stateless que le reste du projet (`csrf-token` + cookies).
 
 ### Client JS – `@obsidiane/auth-sdk`
 

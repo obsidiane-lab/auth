@@ -18,8 +18,11 @@ export class AuthClient {
 
   constructor(opts: AuthClientOptions = {}) {
     this.baseUrl = (opts.baseUrl ?? '').replace(/\/$/, '');
-    this.doFetch = opts.fetch ?? (globalThis.fetch as FetchLike);
-    if (!this.doFetch) throw new Error('No fetch implementation available');
+    const baseFetch = opts.fetch ?? (globalThis.fetch as FetchLike | undefined);
+    if (!baseFetch) {
+      throw new Error('No fetch implementation available');
+    }
+    this.doFetch = baseFetch.bind(globalThis) as FetchLike;
   }
 
   private url(path: string): string {
