@@ -8,14 +8,15 @@ export declare class AuthClient {
     private readonly doFetch;
     constructor(opts?: AuthClientOptions);
     private url;
-    csrf(tokenId: string): Promise<string>;
     private headers;
+    private generateCsrfToken;
+    private setDoubleSubmitCookie;
+    private buildCsrfHeaders;
     me<T = unknown>(): Promise<T>;
-    login<T = unknown>(email: string, password: string, csrf: string): Promise<T>;
+    login<T = unknown>(email: string, password: string): Promise<T>;
     refresh<T = unknown>(csrf?: string): Promise<T>;
-    logout(csrf: string): Promise<void>;
-    register<T = unknown>(input: Record<string, unknown>, csrf: string): Promise<T>;
-    passwordRequest<T = unknown>(email: string, csrf: string): Promise<T>;
-    passwordReset(token: string, password: string, csrf: string): Promise<void>;
+    logout(): Promise<void>;
+    register<T = unknown>(input: Record<string, unknown>): Promise<T>;
+    passwordRequest<T = unknown>(email: string): Promise<T>;
+    passwordReset(token: string, password: string): Promise<void>;
 }
-export declare function getCsrfFromCookie(): string | null;
