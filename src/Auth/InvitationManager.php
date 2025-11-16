@@ -54,8 +54,8 @@ final readonly class InvitationManager
         }
 
         $user = $existingUser ?? $this->createInvitedUser($normalizedEmail);
+        $invite = $this->inviteRepository->findOneBy(['user' => $user]) ?? new InviteUser();
 
-        $invite = new InviteUser();
         $invite->setEmail($normalizedEmail);
         $invite->setUser($user);
 

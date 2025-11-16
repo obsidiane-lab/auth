@@ -233,7 +233,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/token/refresh
 
 - Effets :
   - Crée (ou réutilise) un `User` non activé pour cet email (`isEmailVerified = false`, mot de passe aléatoire).
-  - Crée une entrée `InviteUser` avec un token et une date d’expiration (7 jours).
+  - Crée ou remplace l’invitation `InviteUser` associée avec un nouveau token et une date d’expiration (7 jours).
   - Envoie un email d’invitation en réutilisant le template de bienvenue, avec un lien d’activation pointant vers `/invite/complete?token=...`.
 - Réponse :
 
