@@ -1,4 +1,3 @@
-import type { CsrfTokens as SecurityCsrfTokens, CsrfTokenId } from '../../types/security';
 
 export interface AuthEndpoints {
   login: string;
@@ -6,7 +5,6 @@ export interface AuthEndpoints {
   request: string;
   reset: string;
   refresh?: string;
-  csrf: string;
 }
 
 export interface AuthPages {
@@ -19,9 +17,6 @@ export interface AuthPages {
 export interface FeatureFlagsConfig {
   registrationEnabled: boolean;
 }
-
-export type CsrfTokens = SecurityCsrfTokens;
-export type AuthCsrfTokenId = CsrfTokenId;
 
 export interface SignInForm {
   email: string;

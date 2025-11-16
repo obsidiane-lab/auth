@@ -4,25 +4,21 @@ import { email as emailRule, required } from '@vuelidate/validators';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
 import { useFormStatus } from './useFormStatus';
 import { useAuthNavigation } from './useAuthNavigation';
-import { useCsrfTokens } from './useCsrfTokens';
 import {
   COMMON_UNEXPECTED_ERROR_KEY,
   PASSWORD_REQUEST_ERROR_KEYS,
   PASSWORD_REQUEST_SUCCESS_KEY,
 } from '../constants';
-import type { AuthEndpoints, AuthPages, CsrfTokens, ForgotPasswordForm } from '../types';
+import type { AuthEndpoints, AuthPages, ForgotPasswordForm } from '../types';
 import { createAuthApi, AuthApiError } from '../api';
 import { getApiErrorMessage, resolveApiErrorKey } from './useApiErrors';
 
 export interface ForgotPasswordFormProps {
   endpoints: AuthEndpoints;
   pages: AuthPages;
-  csrf?: CsrfTokens;
 }
 
 export const useForgotPasswordForm = (props: ForgotPasswordFormProps) => {
-  useCsrfTokens();
-
   const form = reactive<ForgotPasswordForm>({ email: '' });
   const apiErrorKey = ref<string | null>(null);
 

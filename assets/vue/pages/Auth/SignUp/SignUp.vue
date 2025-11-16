@@ -168,7 +168,7 @@ import AlreadyLog from '../../../components/auth/AlreadyLog.vue';
 import FormStatusMessage from '../../../components/form/FormStatusMessage.vue';
 import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../../composables/usePasswordVisibility';
-import type { AuthEndpoints, AuthPages, CsrfTokens } from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages } from '../../../features/auth/types';
 import { REGISTER_ERROR_KEYS } from '../../../features/auth/constants';
 import { useSignUpForm } from '../../../features/auth/composables/useSignUpForm';
 
@@ -177,7 +177,6 @@ const props = defineProps<{
   pages: AuthPages;
   redirectTarget: string;
   resetToken?: string;
-  csrf?: CsrfTokens;
 }>();
 
 const {
@@ -201,4 +200,3 @@ const {
 
 const { t } = useI18n();
 </script>
-

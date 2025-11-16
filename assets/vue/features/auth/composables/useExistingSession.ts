@@ -45,7 +45,7 @@ export const useExistingSession = (options: ExistingSessionOptions = {}) => {
     logoutLoading.value = true;
 
     try {
-      await http.post('/api/auth/logout', undefined, jsonConfig('logout'));
+      await http.post('/api/auth/logout', undefined, jsonConfig(true));
     } catch {
       // Even si l'appel échoue, on force un rechargement pour invalider le contexte local.
     } finally {
@@ -69,4 +69,3 @@ export const useExistingSession = (options: ExistingSessionOptions = {}) => {
     logout,
   };
 };
-

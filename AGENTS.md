@@ -11,7 +11,7 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 - **API JSON** : endpoints sous `/api/auth/*` (me, logout, register) + `/api/login` (Lexik) et `/api/token/refresh`.
 - Gérer les sessions JWT short-lived + refresh tokens Gesdinet.
 - Appliquer les bonnes pratiques de sécurité : CSRF stateless Symfony, state signé, allowlist de redirections, rate limiting.
-  - Les formulaires UI et les clients SPA génèrent un token aléatoire côté client par opération et l’envoient dans l’en-tête `csrf-token` (et, pour les apps web, via un cookie `csrf-token_<token>` / `__Host-csrf-token_<token>` pour la double-soumission).
+  - Les formulaires UI et les clients SPA génèrent un token aléatoire côté client par requête sensible et l’envoient dans l’en-tête `csrf-token`. Aucun token CSRF n’est stocké côté backend.
 - Traduction (UI & emails) uniquement disponible en français via `translations/messages.fr.yaml`.
 
 ---
@@ -32,7 +32,7 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 | `src/Controller/Auth/MeController.php` | `GET /api/auth/me` – retourne l’utilisateur courant. |
 | `src/Controller/Auth/LogoutController.php` | `POST /api/auth/logout` – invalide tokens et cookies (CSRF `logout`, header `csrf-token`). |
 | _(Gesdinet)_ | `POST /api/token/refresh` – route gérée par JWTRefreshTokenBundle (`refresh_jwt` + cookie HttpOnly). |
-| *(CSRF stateless)* | Les flux sensibles (login/register/logout/reset/invite) sont protégés via `SameOriginCsrfTokenManager` (Origin/Referer + header/cookie `csrf-token`). |
+| *(CSRF stateless)* | Les flux sensibles (login/register/logout/reset/invite) sont protégés via un validator custom (`CsrfRequestValidator`) qui vérifie l’en-tête `csrf-token` (jeton aléatoire) et l’origine HTTP (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`. |
 | `src/Controller/Auth/VerifyEmailController.php` | `GET /verify-email` – consomme le lien signé VerifyEmailBundle puis redirige vers `/login` avec un flash. |
 
 Les contrôleurs délèguent aux couches métier (services dédiés) pour appliquer le SRP.
@@ -42,8 +42,8 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 | Zone | Contenu |
 | --- | --- |
 | `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTOs `RegisterUserInput` / `RegisterIdentityInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, thème, redirect). |
-| `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique la vérification CSRF sur les routes sensibles (`/api/login`, reset password, logout, setup admin). |
-| `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `csrf-token` via `SameOriginCsrfTokenManager`; `CsrfTokenId.php` liste les ids UI/API; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
+| `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique une vérification CSRF stateless sur les routes sensibles (`/api/login`, reset password, logout, setup admin). |
+| `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `csrf-token` (token aléatoire stateless) et contrôle l’origine (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
 | `src/Setup` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial. |
 | `src/Mail` | `MailerGateway.php` + `MailDispatchException.php` centralisent l’appel à Notifuse et la gestion des erreurs d’envoi. |
 
@@ -108,7 +108,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 - **JWT** : Lexik + Lcobucci (`JwtEventSubscriber`) enrichit les claims (`iss`, `aud`, `sub`, `iat`, `nbf`, `exp`, `jti`).
 - **Refresh tokens** : Gesdinet, single-use, stockés en DB, TTL configurable.
 - **CSRF** :
-- `CsrfTokenId.php` liste les identifiants (`authenticate`, `register`, `password_request`, `password_reset`, `logout`, `initial_admin`, `invite_user`, `invite_complete`). `CsrfRequestValidator` vérifie l’en-tête `csrf-token` via `SameOriginCsrfTokenManager` (stateless, Origin/Referer + header/cookie).
+- `CsrfRequestValidator` vérifie l’en-tête `csrf-token` (jeton aléatoire stateless) et l’origine HTTP (`Origin`/`Referer`) : même host que le service d’auth ou origin autorisée par `ALLOWED_ORIGINS`.
 - **Rate Limiting** : `login_throttling` (firewall `api`) via un service `app.login_rate_limiter` (DefaultLoginRateLimiter) basé sur deux limiters framework `login_local`/`login_global`.
 - **Redirect allowlist** : `RedirectPolicy` filtre les `redirect_uri`.
 - **Secure cookies** : HttpOnly + Secure (config dépend env). Access cookie `__Secure-at` (SameSite `lax`, domaine partagé) et refresh cookie `__Host-rt` (SameSite `strict`, host-only AUTH).

@@ -8,8 +8,6 @@ export const INITIAL_ADMIN_ERROR_KEYS: Record<string, string> = {
   INITIAL_ADMIN_REQUIRED: 'setup.initial_admin.error.required',
   CSRF_TOKEN_INVALID: 'common.error.csrf_token_invalid',
   INVALID_PAYLOAD: 'common.error.invalid_payload',
-  TOKEN_ID_INVALID: 'common.error.invalid_csrf_token_id',
   EMAIL_SEND_FAILED: 'setup.initial_admin.message.error',
   UNKNOWN: 'setup.initial_admin.message.error',
 };
-

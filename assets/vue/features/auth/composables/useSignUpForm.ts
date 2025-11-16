@@ -4,26 +4,22 @@ import { email as emailRule, helpers, minLength, required, sameAs } from '@vueli
 import { useSubmissionState } from '../../../composables/useSubmissionState';
 import { useFormStatus } from './useFormStatus';
 import { useAuthNavigation } from './useAuthNavigation';
-import { useCsrfTokens } from './useCsrfTokens';
 import { usePasswordStrength } from '../../../composables/usePasswordStrength';
 import {
   COMMON_UNEXPECTED_ERROR_KEY,
   REGISTER_ERROR_KEYS,
   REGISTER_SUCCESS_KEY,
 } from '../constants';
-import type { AuthEndpoints, AuthPages, CsrfTokens, SignUpForm } from '../types';
+import type { AuthEndpoints, AuthPages, SignUpForm } from '../types';
 import { createAuthApi, AuthApiError } from '../api';
 import { handleApiError } from './useApiErrors';
 
 export interface SignUpFormProps {
   endpoints: AuthEndpoints;
   pages: AuthPages;
-  csrf?: CsrfTokens;
 }
 
 export const useSignUpForm = (props: SignUpFormProps) => {
-  useCsrfTokens();
-
   const form = reactive<SignUpForm>({
     displayName: '',
     email: '',

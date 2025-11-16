@@ -125,12 +125,7 @@ import AlreadyLog from '../../../components/auth/AlreadyLog.vue';
 import FormStatusMessage from '../../../components/form/FormStatusMessage.vue';
 import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../../composables/usePasswordVisibility';
-import type {
-  AuthEndpoints,
-  AuthPages,
-  CsrfTokens,
-  FeatureFlagsConfig,
-} from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages, FeatureFlagsConfig } from '../../../features/auth/types';
 import { useSignInForm } from '../../../features/auth/composables/useSignInForm';
 
 const props = defineProps<{
@@ -141,7 +136,6 @@ const props = defineProps<{
   prefillEmail?: string;
   resetToken?: string;
   featureFlags?: FeatureFlagsConfig;
-  csrf?: CsrfTokens;
 }>();
 
 const {

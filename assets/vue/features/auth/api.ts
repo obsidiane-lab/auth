@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { http, jsonConfig } from '../../utils/http';
-import type { CsrfTokenId } from '../../types/security';
 import type {
   AuthEndpoints,
   ForgotPasswordForm,
@@ -41,13 +40,6 @@ export class AuthApiError extends Error {
   }
 }
 
-const CSRF_TOKEN_IDS: Record<'login' | 'register' | 'request' | 'reset', CsrfTokenId> = {
-  login: 'authenticate',
-  register: 'register',
-  request: 'password_request',
-  reset: 'password_reset',
-};
-
 const assertEndpoint = (endpoint: string, name: string): string => {
   if (typeof endpoint !== 'string' || endpoint.trim() === '') {
     throw new Error(`Missing auth endpoint for "${name}".`);
@@ -82,7 +74,7 @@ export const createAuthApi = (endpoints: AuthEndpoints): AuthApiClient => {
           email: payload.email,
           password: payload.password,
         },
-        jsonConfig(CSRF_TOKEN_IDS.login),
+        jsonConfig(true),
       );
     } catch (error) {
       throw normalizeApiError(error);
@@ -98,7 +90,7 @@ export const createAuthApi = (endpoints: AuthEndpoints): AuthApiClient => {
           password: payload.password,
           displayName: payload.displayName,
         },
-        jsonConfig(CSRF_TOKEN_IDS.register),
+        jsonConfig(true),
       );
     } catch (error) {
       throw normalizeApiError(error);
@@ -112,7 +104,7 @@ export const createAuthApi = (endpoints: AuthEndpoints): AuthApiClient => {
         {
           email: payload.email,
         },
-        jsonConfig(CSRF_TOKEN_IDS.request),
+        jsonConfig(true),
       );
     } catch (error) {
       throw normalizeApiError(error);
@@ -127,7 +119,7 @@ export const createAuthApi = (endpoints: AuthEndpoints): AuthApiClient => {
           token: payload.token,
           password: payload.password,
         },
-        jsonConfig(CSRF_TOKEN_IDS.reset),
+        jsonConfig(true),
       );
     } catch (error) {
       throw normalizeApiError(error);

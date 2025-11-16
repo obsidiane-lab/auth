@@ -15,7 +15,6 @@ final class ApiResponseFactory
         'INVALID_REGISTRATION' => 'Registration failed due to invalid data.',
         'REFRESH_TOKEN_MISSING' => 'Refresh token missing or expired.',
         'REFRESH_TOKEN_INVALID' => 'Refresh token invalid.',
-        'TOKEN_ID_INVALID' => 'Invalid CSRF token identifier.',
         'INVALID_REQUEST' => 'Request data is missing or invalid.',
         'EMPTY_PASSWORD' => 'Password must not be empty.',
         'INVALID_TOKEN' => 'The provided token is invalid or expired.',

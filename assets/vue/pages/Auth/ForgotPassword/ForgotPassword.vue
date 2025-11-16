@@ -55,14 +55,13 @@ import { useI18n } from 'vue-i18n';
 import AppButton from '../../../components/AppButton.vue';
 import FormStatusMessage from '../../../components/form/FormStatusMessage.vue';
 import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
-import type { AuthEndpoints, AuthPages, CsrfTokens } from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages } from '../../../features/auth/types';
 import { useForgotPasswordForm } from '../../../features/auth/composables/useForgotPasswordForm';
 
 const props = defineProps<{
   endpoints: AuthEndpoints;
   pages: AuthPages;
   resetToken?: string;
-  csrf?: CsrfTokens;
 }>();
 
 const {

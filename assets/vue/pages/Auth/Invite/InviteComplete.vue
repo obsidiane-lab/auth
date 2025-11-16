@@ -156,12 +156,11 @@ import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../../composables/usePasswordVisibility';
 import { usePasswordStrength } from '../../../composables/usePasswordStrength';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
-import type { AuthEndpoints, AuthPages, CsrfTokens } from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages } from '../../../features/auth/types';
 import { PASSWORD_MISMATCH_KEY, REGISTER_ERROR_KEYS } from '../../../features/auth/constants';
 import { createAuthApi, AuthApiError } from '../../../features/auth/api';
 import { useFormStatus } from '../../../features/auth/composables/useFormStatus';
 import { useAuthNavigation } from '../../../features/auth/composables/useAuthNavigation';
-import { useCsrfTokens } from '../../../features/auth/composables/useCsrfTokens';
 import { handleApiError } from '../../../features/auth/composables/useApiErrors';
 import { http, jsonConfig } from '../../../utils/http';
 
@@ -171,10 +170,7 @@ const props = defineProps<{
   inviteToken: string;
   invitedEmail?: string | null;
   inviteAlreadyAccepted?: boolean;
-  csrf?: CsrfTokens;
 }>();
-
-useCsrfTokens();
 
 interface InviteCompleteForm {
   displayName: string;
@@ -276,7 +272,7 @@ const onSubmit = async () => {
           password: form.password,
           confirmPassword: form.confirmPassword,
         },
-        jsonConfig('invite_complete'),
+        jsonConfig(true),
       );
 
       setSuccess('auth.register.message.success');

@@ -86,7 +86,7 @@ protection **CSRF stateless** (Symfony).
 
 - **CSRF stateless**
     - Protection basée sur `Origin`/`Referer` + jetons générés côté client.
-    - UI & SPA : génèrent un token aléatoire par requête et l’envoient dans l’en-tête `csrf-token` (et, pour les apps web, via un cookie `csrf-token_<token>` / `__Host-csrf-token_<token>`).
+    - UI & SPA : génèrent un token aléatoire par requête et l’envoient dans l’en-tête `csrf-token`.
 
 - **Vérification d’email**
     - Chaque inscription envoie un email avec lien signé `/verify-email`.

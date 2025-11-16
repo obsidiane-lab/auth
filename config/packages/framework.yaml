@@ -8,20 +8,6 @@ framework:
 
     csrf_protection:
         enabled: true
-        stateless_token_ids:
-            - authenticate
-            - register
-            - password_request
-            - password_reset
-            - logout
-            - initial_admin
-            - invite_user
-            - invite_complete
-        cookie_name: 'csrf-token'
-        check_header: true
-    form:
-        csrf_protection:
-            enabled: true
 
     # Note that the session will be started ONLY if you read or write from it.
     session:

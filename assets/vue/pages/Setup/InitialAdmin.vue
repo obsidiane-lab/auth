@@ -141,11 +141,8 @@ import { computed } from 'vue';
 import { useFormFieldClasses } from '../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../composables/usePasswordVisibility';
 import { useInitialAdminForm } from '../../features/setup/composables/useInitialAdminForm';
-import { useCsrfTokens } from '../../features/auth/composables/useCsrfTokens';
-import type { CsrfTokens } from '../../features/auth/types';
 
 const props = defineProps<{
-  csrf?: CsrfTokens;
   wordingName?: string;
   endpoints?: {
     submit: string;
@@ -154,8 +151,6 @@ const props = defineProps<{
     login: string;
   };
 }>();
-
-useCsrfTokens();
 
 const submitEndpoint = computed(() => props.endpoints?.submit ?? '/api/setup/admin');
 const loginUrl = computed(() => props.pages?.login ?? '/login');

@@ -1,6 +1,5 @@
 import axios from 'axios';
 import { http, jsonConfig } from '../../utils/http';
-import type { CsrfTokenId } from '../../types/security';
 import { AuthApiError } from '../auth/api';
 import type { ApiErrorPayload } from '../auth/composables/useApiErrors';
 
@@ -9,8 +8,6 @@ export interface InitialAdminPayload {
   email: string;
   password: string;
 }
-
-export const INITIAL_ADMIN_CSRF_ID: CsrfTokenId = 'initial_admin';
 
 export const createInitialAdmin = async (endpoint: string, payload: InitialAdminPayload) => {
   try {
@@ -21,7 +18,7 @@ export const createInitialAdmin = async (endpoint: string, payload: InitialAdmin
         email: payload.email,
         password: payload.password,
       },
-      jsonConfig(INITIAL_ADMIN_CSRF_ID),
+      jsonConfig(true),
     );
   } catch (error) {
     if (axios.isAxiosError(error)) {

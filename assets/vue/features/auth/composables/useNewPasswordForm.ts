@@ -4,7 +4,6 @@ import { helpers, minLength, required, sameAs } from '@vuelidate/validators';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
 import { useFormStatus } from './useFormStatus';
 import { useAuthNavigation } from './useAuthNavigation';
-import { useCsrfTokens } from './useCsrfTokens';
 import { usePasswordStrength } from '../../../composables/usePasswordStrength';
 import {
   COMMON_UNEXPECTED_ERROR_KEY,
@@ -13,7 +12,7 @@ import {
   PASSWORD_RESET_ERROR_KEYS,
   PASSWORD_RESET_SUCCESS_KEY,
 } from '../constants';
-import type { AuthEndpoints, AuthPages, CsrfTokens, NewPasswordForm } from '../types';
+import type { AuthEndpoints, AuthPages, NewPasswordForm } from '../types';
 import { createAuthApi, AuthApiError } from '../api';
 import { handleApiError } from './useApiErrors';
 
@@ -21,12 +20,9 @@ export interface NewPasswordFormProps {
   endpoints: AuthEndpoints;
   pages: AuthPages;
   resetToken: string;
-  csrf?: CsrfTokens;
 }
 
 export const useNewPasswordForm = (props: NewPasswordFormProps) => {
-  useCsrfTokens();
-
   const form = reactive<NewPasswordForm>({
     password: '',
     confirmPassword: '',

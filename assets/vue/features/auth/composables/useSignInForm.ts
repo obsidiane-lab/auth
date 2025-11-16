@@ -4,7 +4,6 @@ import { email as emailRule, required } from '@vuelidate/validators';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
 import { useFormStatus } from './useFormStatus';
 import { useAuthNavigation } from './useAuthNavigation';
-import { useCsrfTokens } from './useCsrfTokens';
 import {
   COMMON_UNEXPECTED_ERROR_KEY,
   DEFAULT_FEATURE_FLAGS,
@@ -12,13 +11,7 @@ import {
   LOGIN_REDIRECT_KEY,
   LOGIN_SUCCESS_KEY,
 } from '../constants';
-import type {
-  AuthEndpoints,
-  AuthPages,
-  CsrfTokens,
-  FeatureFlagsConfig,
-  SignInForm,
-} from '../types';
+import type { AuthEndpoints, AuthPages, FeatureFlagsConfig, SignInForm } from '../types';
 import { createAuthApi, AuthApiError } from '../api';
 import { handleApiError } from './useApiErrors';
 
@@ -29,12 +22,9 @@ export interface SignInFormProps {
   flashMessageKey?: string | null;
   prefillEmail?: string;
   featureFlags?: FeatureFlagsConfig;
-  csrf?: CsrfTokens;
 }
 
 export const useSignInForm = (props: SignInFormProps) => {
-  useCsrfTokens();
-
   const form = reactive<SignInForm>({
     email: props.prefillEmail ?? '',
     password: '',

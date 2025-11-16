@@ -7,14 +7,13 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final readonly class CsrfRequestValidator
 {
-    private const string HEADER_NAME = 'csrf-token';
-    private const int TOKEN_MIN_LENGTH = 24;
+    private const HEADER_NAME = 'csrf-token';
+    private const TOKEN_MIN_LENGTH = 24;
 
     public function __construct(
         #[Autowire('%env(string:ALLOWED_ORIGINS)%')]
         private string $allowedOriginsPattern,
-    )
-    {
+    ) {
     }
 
     public function isValid(Request $request): bool
@@ -25,11 +24,7 @@ final readonly class CsrfRequestValidator
             return false;
         }
 
-        if (!$this->isAllowedOrigin($request)) {
-            return false;
-        }
-
-        return $this->isValidDoubleSubmit($request, $tokenValue);
+        return $this->isAllowedOrigin($request);
     }
 
     private function getTokenFromHeader(Request $request): ?string
@@ -92,24 +87,5 @@ final readonly class CsrfRequestValidator
         $port = isset($parts['port']) ? ':' . $parts['port'] : '';
 
         return sprintf('%s://%s%s', $parts['scheme'], $parts['host'], $port);
-    }
-
-    private function isValidDoubleSubmit(Request $request, string $tokenValue): bool
-    {
-        $headerValue = $request->headers->get(self::HEADER_NAME);
-
-        if (!is_string($headerValue) || $headerValue !== $tokenValue) {
-            return false;
-        }
-
-        $baseName = ($request->isSecure() ? '__Host-' : '') . 'csrf-token';
-        $cookieName = $baseName . '_' . $tokenValue;
-        $cookieValue = $request->cookies->get($cookieName);
-
-        if ($cookieValue === null) {
-            return true;
-        }
-
-        return $cookieValue === 'csrf-token';
     }
 }

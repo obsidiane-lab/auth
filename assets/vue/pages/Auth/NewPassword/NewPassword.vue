@@ -122,7 +122,7 @@ import AppButton from '../../../components/AppButton.vue';
 import FormStatusMessage from '../../../components/form/FormStatusMessage.vue';
 import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../../composables/usePasswordVisibility';
-import type { AuthEndpoints, AuthPages, CsrfTokens } from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages } from '../../../features/auth/types';
 import {
   PASSWORD_MISMATCH_KEY,
   PASSWORD_POLICY_KEY,
@@ -133,7 +133,6 @@ const props = defineProps<{
   endpoints: AuthEndpoints;
   pages: AuthPages;
   resetToken: string;
-  csrf?: CsrfTokens;
 }>();
 
 const {

@@ -22,7 +22,6 @@ export const REGISTER_ERROR_KEYS: Record<string, string> = {
   MISSING_IDENTITY: 'register.error.missing_identity',
   CSRF_TOKEN_INVALID: 'common.error.csrf_token_invalid',
   INVALID_PAYLOAD: 'common.error.invalid_payload',
-  TOKEN_ID_INVALID: 'common.error.invalid_csrf_token_id',
   EMAIL_SEND_FAILED: 'password.request.error.email_send_failed',
   INITIAL_ADMIN_REQUIRED: 'register.error.initial_admin_required',
   INITIAL_ADMIN_ALREADY_CREATED: 'register.error.initial_admin_required',
