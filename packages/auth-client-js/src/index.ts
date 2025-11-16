@@ -33,6 +33,40 @@ export class AuthClient {
     return h;
   }
 
+  private generateCsrfToken(): string {
+    if (typeof globalThis.crypto !== 'undefined' && 'getRandomValues' in globalThis.crypto) {
+      const bytes = new Uint8Array(16);
+      globalThis.crypto.getRandomValues(bytes);
+      return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  private setDoubleSubmitCookie(token: string): void {
+    if (typeof document === 'undefined' || typeof window === 'undefined') {
+      return;
+    }
+
+    const isSecure = window.location.protocol === 'https:';
+    const baseName = (isSecure ? '__Host-' : '') + 'csrf-token';
+    const cookieName = `${baseName}_${token}`;
+
+    const attributes = ['path=/', 'SameSite=Strict'];
+
+    if (isSecure) {
+      attributes.push('Secure');
+    }
+
+    document.cookie = `${cookieName}=csrf-token; ${attributes.join('; ')}`;
+  }
+
+  private buildCsrfHeaders(): Record<string, string> {
+    const token = this.generateCsrfToken();
+    this.setDoubleSubmitCookie(token);
+    return this.headers(token);
+  }
+
   // GET /api/auth/me
   async me<T = unknown>(): Promise<T> {
     const res = await this.doFetch(this.url('/api/auth/me'), {
@@ -44,11 +78,11 @@ export class AuthClient {
   }
 
   // POST /api/login — CSRF required
-  async login<T = unknown>(email: string, password: string, csrf: string): Promise<T> {
+  async login<T = unknown>(email: string, password: string): Promise<T> {
     const res = await this.doFetch(this.url('/api/login'), {
       method: 'POST',
       credentials: 'include',
-      headers: this.headers(csrf),
+      headers: this.buildCsrfHeaders(),
       body: JSON.stringify({ email, password }),
     });
     if (!res.ok) throw new Error(`login_failed:${res.status}`);
@@ -67,21 +101,21 @@ export class AuthClient {
   }
 
   // POST /api/auth/logout — CSRF required
-  async logout(csrf: string): Promise<void> {
+  async logout(): Promise<void> {
     const res = await this.doFetch(this.url('/api/auth/logout'), {
       method: 'POST',
       credentials: 'include',
-      headers: this.headers(csrf),
+      headers: this.buildCsrfHeaders(),
     });
     if (!res.ok && res.status !== 204) throw new Error(`logout_failed:${res.status}`);
   }
 
   // POST /api/auth/register — CSRF required
-  async register<T = unknown>(input: Record<string, unknown>, csrf: string): Promise<T> {
+  async register<T = unknown>(input: Record<string, unknown>): Promise<T> {
     const res = await this.doFetch(this.url('/api/auth/register'), {
       method: 'POST',
       credentials: 'include',
-      headers: this.headers(csrf),
+      headers: this.buildCsrfHeaders(),
       body: JSON.stringify(input),
     });
     if (!res.ok) throw new Error(`register_failed:${res.status}`);
@@ -89,11 +123,11 @@ export class AuthClient {
   }
 
   // POST /reset-password — CSRF required (password_request)
-  async passwordRequest<T = unknown>(email: string, csrf: string): Promise<T> {
+  async passwordRequest<T = unknown>(email: string): Promise<T> {
     const res = await this.doFetch(this.url('/reset-password'), {
       method: 'POST',
       credentials: 'include',
-      headers: this.headers(csrf),
+      headers: this.buildCsrfHeaders(),
       body: JSON.stringify({ email }),
     });
     if (!res.ok) throw new Error(`password_request_failed:${res.status}`);
@@ -101,11 +135,11 @@ export class AuthClient {
   }
 
   // POST /reset-password/reset — CSRF required (password_reset)
-  async passwordReset(token: string, password: string, csrf: string): Promise<void> {
+  async passwordReset(token: string, password: string): Promise<void> {
     const res = await this.doFetch(this.url('/reset-password/reset'), {
       method: 'POST',
       credentials: 'include',
-      headers: this.headers(csrf),
+      headers: this.buildCsrfHeaders(),
       body: JSON.stringify({ token, password }),
     });
     if (!res.ok && res.status !== 204) throw new Error(`password_reset_failed:${res.status}`);

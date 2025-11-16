@@ -30,12 +30,8 @@ const auth = new AuthClient({
   baseUrl: 'https://auth.example.com', // ou '' si même origine
 });
 
-// 1) Générer un token CSRF stateless pour le login
-const csrf = crypto.getRandomValues(new Uint8Array(16));
-const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
-
-// 2) Login (le token est envoyé dans l'en-tête `csrf-token`)
-await auth.login('user@example.com', 'Secret123!', csrfHex);
+// 1) Login (le SDK génère automatiquement un token CSRF stateless et l'envoie dans l'en-tête `csrf-token`)
+await auth.login('user@example.com', 'Secret123!');
 
 // 3) Récupérer l'utilisateur courant
 const { user } = await auth.me<{ user: { id: number; email: string } }>();
@@ -70,16 +66,15 @@ const auth = new AuthClient({
 
 `baseUrl` doit pointer vers la racine de ton service d’authentification (sans trailing slash).
 
-### `login(email, password, csrf)`
+### `login(email, password)`
 
 Effectue un login et laisse le serveur poser les cookies (`__Secure-at`, `__Host-rt`).
 
 ```ts
-const csrf = await auth.csrf('authenticate');
-await auth.login('user@example.com', 'Secret123!', csrf);
+await auth.login('user@example.com', 'Secret123!');
 ```
 
-* Appelle `POST /api/login` avec le bon en-tête `csrf-token`.
+* Appelle `POST /api/login` avec un token stateless généré côté client dans l’en-tête `csrf-token`.
 * En cas de succès, les cookies sont stockés par le navigateur.
 
 ---
@@ -144,33 +139,27 @@ await auth.refresh();
 
 ---
 
-### `logout(csrf)`
+### `logout()`
 
 Effectue un logout complet (invalidations côté serveur + expiration cookies).
 
 ```ts
-const csrf = crypto.getRandomValues(new Uint8Array(16));
-const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
-await auth.logout(csrfHex);
+await auth.logout();
 ```
 
-* Appelle `POST /api/auth/logout` avec l'en-tête `csrf-token`.
+* Appelle `POST /api/auth/logout` avec un token stateless généré côté client dans l’en-tête `csrf-token`.
 
 ---
 
-### `register(email, password, displayName, csrf)`
+### `register(email, password, displayName)`
 
 Crée un nouvel utilisateur.
 
 ```ts
-const csrf = crypto.getRandomValues(new Uint8Array(16));
-const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
-
 await auth.register(
   'user@example.com',
   'Secret123!',
   'John Doe',
-  csrfHex,
 );
 ```
 
@@ -183,27 +172,23 @@ await auth.register(
 
 Le flow repose sur les routes UI `/reset-password` du service principal, mais le client fournit des helpers HTTP :
 
-#### `passwordRequest(email, csrf)`
+#### `passwordRequest(email)`
 
 Envoie l’email de réinitialisation.
 
 ```ts
-const csrf = crypto.getRandomValues(new Uint8Array(16));
-const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
-await auth.passwordRequest('user@example.com', csrfHex);
+await auth.passwordRequest('user@example.com');
 ```
 
 * Appelle `POST /reset-password` avec `{ email }`.
 * Réponse côté API : `202 { status: 'OK' }` (pas de fuite sur l’existence du compte).
 
-#### `passwordReset(token, password, csrf)`
+#### `passwordReset(token, password)`
 
 Soumet le nouveau mot de passe.
 
 ```ts
-const csrf = crypto.getRandomValues(new Uint8Array(16));
-const csrfHex = Array.from(csrf, (b) => b.toString(16).padStart(2, '0')).join('');
-await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!', csrfHex);
+await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!');
 ```
 
 * Appelle `POST /reset-password/reset` avec `{ token, password }`.
