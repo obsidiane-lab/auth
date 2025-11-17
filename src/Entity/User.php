@@ -70,6 +70,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
      * @var list<string>
      */
     #[ORM\Column(type: 'json', nullable: false)]
+    #[Groups(['user:read'])]
     private array $roles = [];
 
     #[Assert\NotBlank]
@@ -86,7 +87,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
 
     public function __toString(): string
     {
-        return (string) ($this->email ?? '');
+        return (string)($this->email ?? '');
     }
 
     public function getId(): ?int
