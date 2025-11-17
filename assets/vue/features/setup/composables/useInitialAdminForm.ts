@@ -1,6 +1,6 @@
 import { computed, reactive } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
-import { email as emailRule, minLength, required, sameAs } from '@vuelidate/validators';
+import { email as emailRule, helpers, required, sameAs } from '@vuelidate/validators';
 import axios from 'axios';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
 import { useFormStatus } from '../../auth/composables/useFormStatus';
@@ -12,14 +12,19 @@ import { INITIAL_ADMIN_ERROR_KEYS } from '../constants';
 import type { InitialAdminPayload } from '../api';
 import type { ApiErrorPayload } from '../../auth/composables/useApiErrors';
 import { AuthApiError } from '../../auth/api';
+import type { PasswordPolicyConfig } from '../../auth/types';
+import { meetsPasswordPolicy } from '../../../utils/passwordStrength';
 
 export interface InitialAdminForm extends InitialAdminPayload {
   confirmPassword: string;
 }
 
-export const useInitialAdminForm = (endpoint: string, onSuccess?: () => void) => {
+export const useInitialAdminForm = (
+  endpoint: string,
+  passwordPolicy?: PasswordPolicyConfig | null,
+  onSuccess?: () => void,
+) => {
   const form = reactive<InitialAdminForm>({
-    displayName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -31,13 +36,19 @@ export const useInitialAdminForm = (endpoint: string, onSuccess?: () => void) =>
   const { status, setError, setSuccess, resetStatus } = useFormStatus();
 
   const passwordValue = computed(() => form.password);
-  const { passwordStrength } = usePasswordStrength(passwordValue);
+  const { passwordStrength } = usePasswordStrength(passwordValue, passwordPolicy);
 
   const v$ = useVuelidate(
     {
-      displayName: { required },
       email: { required, email: emailRule },
-      password: { required, minLength: minLength(8) },
+      password: {
+        required,
+        strongEnough: helpers.withMessage(
+          () => 'setup.initial_admin.error.password',
+          (value: string) =>
+            meetsPasswordPolicy(typeof value === 'string' ? value : '', passwordPolicy),
+        ),
+      },
       confirmPassword: {
         required,
         sameAsPassword: sameAs(passwordValue),
@@ -79,7 +90,6 @@ export const useInitialAdminForm = (endpoint: string, onSuccess?: () => void) =>
             fallbackKey: 'setup.initial_admin.message.error',
             fieldMap: {
               email: 'email',
-              'identity.displayName': 'displayName',
               plainPassword: 'password',
               password: 'password',
             },

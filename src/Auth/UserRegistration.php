@@ -2,7 +2,6 @@
 
 namespace App\Auth;
 
-use App\Auth\Dto\RegisterIdentityInput;
 use App\Auth\Dto\RegisterUserInput;
 use App\Auth\Exception\RegistrationException;
 use App\Entity\User;
@@ -49,9 +48,6 @@ final readonly class UserRegistration
             throw new RegistrationException($errors);
         }
 
-        $identity = $this->resolveIdentity($input->identity ?? null);
-        $displayName = $identity->displayName;
-
         $plainPassword = (string) ($input->plainPassword ?? '');
 
         if (!$this->passwordStrengthChecker->isStrongEnough($plainPassword)) {
@@ -61,7 +57,6 @@ final readonly class UserRegistration
         $user = new User();
         $normalizedEmail = is_string($input->email) ? mb_strtolower(trim($input->email)) : '';
         $user->setEmail($normalizedEmail);
-        $user->setDisplayName($displayName);
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $user->eraseCredentials();
         $user->setRoles([]);
@@ -85,33 +80,11 @@ final readonly class UserRegistration
         return $user;
     }
 
-    /**
-     * @throws RegistrationException
-     */
-    private function resolveIdentity(?RegisterIdentityInput $identity): RegisterIdentityInput
-    {
-        if (!$identity instanceof RegisterIdentityInput) {
-            throw new RegistrationException(['identity' => 'MISSING_IDENTITY']);
-        }
-
-        $displayName = trim((string) $identity->displayName);
-
-        if ($displayName === '') {
-            throw new RegistrationException(['identity.displayName' => 'DISPLAY_NAME_REQUIRED']);
-        }
-
-        $identity->displayName = $displayName;
-
-        return $identity;
-    }
-
     private function mapViolationToCode(string $path, ConstraintViolationInterface $violation): string
     {
         return match ($path) {
             'email' => 'INVALID_EMAIL',
             'plainPassword' => 'INVALID_PASSWORD',
-            'identity' => 'MISSING_IDENTITY',
-            'identity.displayName' => 'DISPLAY_NAME_REQUIRED',
             default => $violation->getMessage(),
         };
     }
@@ -127,11 +100,10 @@ final readonly class UserRegistration
             return;
         }
 
-        $displayName = $user->getDisplayName();
         $signature = $this->emailVerifier->generateSignature($user);
 
         $context = [
-            'first_name' => $displayName ?: $recipient,
+            'first_name' => $recipient,
             'activate_link' => $signature->getSignedUrl(),
         ];
 

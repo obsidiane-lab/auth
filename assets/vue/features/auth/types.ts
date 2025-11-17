@@ -1,4 +1,6 @@
 
+import type { PasswordPolicyConfig } from '../../types/password';
+
 export interface AuthEndpoints {
   login: string;
   register: string;
@@ -24,7 +26,6 @@ export interface SignInForm {
 }
 
 export interface SignUpForm {
-  displayName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -38,3 +39,5 @@ export interface NewPasswordForm {
   password: string;
   confirmPassword: string;
 }
+
+export type { PasswordPolicyConfig };

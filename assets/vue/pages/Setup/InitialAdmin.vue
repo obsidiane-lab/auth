@@ -14,28 +14,6 @@
       <div class="form__group">
         <div class="form__field">
           <input
-            id="setup-display-name"
-            v-model="form.displayName"
-            :class="inputClass(submitted && v$.displayName.$invalid)"
-            type="text"
-            autocomplete="name"
-            placeholder=" "
-            :aria-invalid="submitted && v$.displayName.$invalid"
-            required
-          />
-          <label :class="labelClass(submitted && v$.displayName.$invalid)" for="setup-display-name">
-            {{ t('setup.initial_admin.form.display_name') }}
-          </label>
-        </div>
-        <p v-if="apiFieldErrors.displayName || (submitted && v$.displayName.$error)" :class="validationErrorClass">
-          <span v-if="apiFieldErrors.displayName">{{ t(apiFieldErrors.displayName!) }}</span>
-          <span v-else>{{ t('setup.initial_admin.error.display_name') }}</span>
-        </p>
-      </div>
-
-      <div class="form__group">
-        <div class="form__field">
-          <input
             id="setup-email"
             v-model="form.email"
             :class="inputClass(submitted && v$.email.$invalid)"
@@ -141,6 +119,7 @@ import { computed } from 'vue';
 import { useFormFieldClasses } from '../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../composables/usePasswordVisibility';
 import { useInitialAdminForm } from '../../features/setup/composables/useInitialAdminForm';
+import type { PasswordPolicyConfig } from '../../features/auth/types';
 
 const props = defineProps<{
   wordingName?: string;
@@ -150,6 +129,7 @@ const props = defineProps<{
   pages?: {
     login: string;
   };
+  passwordPolicy?: PasswordPolicyConfig | null;
 }>();
 
 const submitEndpoint = computed(() => props.endpoints?.submit ?? '/api/setup/admin');
@@ -164,7 +144,7 @@ const {
   passwordStrength,
   apiFieldErrors,
   onSubmit,
-} = useInitialAdminForm(submitEndpoint.value, () => {
+} = useInitialAdminForm(submitEndpoint.value, props.passwordPolicy, () => {
   window.location.href = loginUrl.value;
 });
 const { inputClass, labelClass, validationErrorClass } = useFormFieldClasses();

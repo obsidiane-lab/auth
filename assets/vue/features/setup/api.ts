@@ -4,7 +4,6 @@ import { AuthApiError } from '../auth/api';
 import type { ApiErrorPayload } from '../auth/composables/useApiErrors';
 
 export interface InitialAdminPayload {
-  displayName: string;
   email: string;
   password: string;
 }
@@ -14,7 +13,6 @@ export const createInitialAdmin = async (endpoint: string, payload: InitialAdmin
     await http.post(
       endpoint,
       {
-        displayName: payload.displayName,
         email: payload.email,
         password: payload.password,
       },

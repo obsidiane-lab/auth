@@ -35,7 +35,7 @@ export const messages = {
       login: {
         form: {
           title: 'Connexion',
-          subtitle: 'Identifiez-vous avec votre adresse professionnelle.',
+          subtitle: 'Identifiez-vous avec votre adresse.',
           separator: 'ou',
           email: {
             label: 'Adresse email',
@@ -80,17 +80,13 @@ export const messages = {
         form: {
           title: 'Créer un compte',
           subtitle: 'Complétez les informations ci-dessous pour démarrer.',
-          display_name: {
-            label: 'Nom complet',
-            placeholder: 'Ex. Alex Martin',
-          },
           email: {
-            label: 'Adresse email professionnelle',
+            label: 'Adresse email',
             placeholder: 'prenom.nom@entreprise.com',
           },
           password: {
             label: 'Mot de passe',
-            placeholder: 'Minimum 8 caractères',
+            placeholder: 'Mot de passe sécurisé',
           },
           submit: 'Créer mon compte',
           already_registered: 'Déjà inscrit ? <a href="%loginUrl%">Connectez-vous</a>',
@@ -100,7 +96,7 @@ export const messages = {
           heading_suffix: '!',
           subtitle: 'Créez votre compte pour aller plus loin',
           password_hint:
-            'Utilisez 8 caractères ou plus avec un mélange de lettres, de chiffres et de symboles.',
+            'Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.',
           confirm_password: 'Confirmez le mot de passe',
           already: 'Déjà un compte ?',
           sign_in: 'Se connecter',
@@ -119,7 +115,6 @@ export const messages = {
           heading_suffix: ' compte',
           subtitle: 'Définissez votre profil et votre mot de passe pour activer votre accès.',
           email_label: 'Adresse email invitée',
-          display_name_label: 'Nom complet',
           password_label: 'Mot de passe',
           confirm_password_label: 'Confirmez le mot de passe',
           submit: 'Activer mon compte',
@@ -134,8 +129,6 @@ export const messages = {
         invalid_email: 'Adresse email invalide.',
         email_exists: 'Cette adresse email est déjà utilisée.',
         invalid_password: 'Mot de passe invalide.',
-        display_name_required: 'Le nom affiché est requis.',
-        missing_identity: 'Informations d’identification manquantes.',
         generic: 'Impossible de créer le compte. Vérifiez les informations saisies.',
         initial_admin_required: 'Créez d’abord l’administrateur initial.',
       },
@@ -178,7 +171,7 @@ export const messages = {
         form: {
           password: {
             label: 'Nouveau mot de passe',
-            placeholder: 'Minimum 8 caractères',
+            placeholder: 'Mot de passe sécurisé',
           },
           confirm: {
             label: 'Confirmer le mot de passe',
@@ -208,17 +201,15 @@ export const messages = {
         title: 'Créer le premier administrateur',
         subtitle: 'Aucun compte n’est encore présent. Créez l’administrateur initial de <strong>{brand}</strong>.',
         form: {
-          display_name: 'Nom complet',
           email: 'Adresse email',
           password: 'Mot de passe',
           confirm_password: 'Confirmez le mot de passe',
           submit: 'Créer l’administrateur',
-          password_hint: 'Utilisez 8 caractères ou plus avec un mélange de lettres, de chiffres et de symboles.',
+          password_hint: 'Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.',
         },
         error: {
-          display_name: 'Le nom complet est requis.',
           email: 'Adresse email invalide.',
-          password: 'Utilisez au moins 8 caractères.',
+          password: 'Mot de passe trop faible.',
           confirm_password: 'Les mots de passe ne correspondent pas.',
           required: 'Créez d’abord l’administrateur initial.',
         },

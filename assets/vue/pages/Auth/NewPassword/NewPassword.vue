@@ -50,7 +50,7 @@
           </button>
         </div>
         <p v-if="submitted && v$.password.$error" :class="validationErrorClass">
-          <span v-if="v$.password.minLength?.$invalid">
+          <span v-if="v$.password.strongEnough?.$invalid">
             {{ t(PASSWORD_POLICY_KEY) }}
           </span>
           <span v-else>{{ t('auth.login.error.credentials_required') }}</span>
@@ -122,7 +122,7 @@ import AppButton from '../../../components/AppButton.vue';
 import FormStatusMessage from '../../../components/form/FormStatusMessage.vue';
 import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../../composables/usePasswordVisibility';
-import type { AuthEndpoints, AuthPages } from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages, PasswordPolicyConfig } from '../../../features/auth/types';
 import {
   PASSWORD_MISMATCH_KEY,
   PASSWORD_POLICY_KEY,
@@ -133,6 +133,7 @@ const props = defineProps<{
   endpoints: AuthEndpoints;
   pages: AuthPages;
   resetToken: string;
+  passwordPolicy?: PasswordPolicyConfig | null;
 }>();
 
 const {

@@ -74,7 +74,6 @@ final readonly class JwtEventSubscriber implements EventSubscriberInterface
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
-                'displayName' => $user->getDisplayName(),
             ],
             'exp' => $expiresAt > 0 ? time() + $expiresAt : time(),
         ];

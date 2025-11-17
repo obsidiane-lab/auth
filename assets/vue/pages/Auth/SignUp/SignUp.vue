@@ -24,31 +24,6 @@
         <div class="form__group">
           <div class="form__field">
             <input
-              id="register-display-name"
-              v-model="form.displayName"
-              :class="inputClass(submitted && v$.displayName.$invalid)"
-              type="text"
-              autocomplete="name"
-              placeholder=" "
-              :aria-invalid="submitted && v$.displayName.$invalid"
-              required
-            />
-            <label :class="labelClass(submitted && v$.displayName.$invalid)" for="register-display-name">
-              {{ t('auth.register.form.display_name.label') }}
-            </label>
-          </div>
-          <p
-            v-if="apiFieldErrors.displayName || (submitted && v$.displayName.$error)"
-            :class="validationErrorClass"
-          >
-            <span v-if="apiFieldErrors.displayName">{{ t(apiFieldErrors.displayName!) }}</span>
-            <span v-else>{{ t(REGISTER_ERROR_KEYS.DISPLAY_NAME_REQUIRED) }}</span>
-          </p>
-        </div>
-
-        <div class="form__group">
-          <div class="form__field">
-            <input
               id="register-email"
               v-model="form.email"
               :class="inputClass(submitted && v$.email.$invalid)"
@@ -98,7 +73,7 @@
           </div>
           <p v-if="apiFieldErrors.password || (submitted && v$.password.$error)" :class="validationErrorClass">
             <span v-if="apiFieldErrors.password">{{ t(apiFieldErrors.password!) }}</span>
-            <span v-else-if="v$.password.minLength.$invalid">
+            <span v-else-if="v$.password.strongEnough?.$invalid">
               {{ t(REGISTER_ERROR_KEYS.INVALID_PASSWORD) }}
             </span>
             <span v-else>{{ t('auth.login.error.credentials_required') }}</span>
@@ -168,7 +143,7 @@ import AlreadyLog from '../../../components/auth/AlreadyLog.vue';
 import FormStatusMessage from '../../../components/form/FormStatusMessage.vue';
 import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../../composables/usePasswordVisibility';
-import type { AuthEndpoints, AuthPages } from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages, PasswordPolicyConfig } from '../../../features/auth/types';
 import { REGISTER_ERROR_KEYS } from '../../../features/auth/constants';
 import { useSignUpForm } from '../../../features/auth/composables/useSignUpForm';
 
@@ -176,6 +151,7 @@ const props = defineProps<{
   endpoints: AuthEndpoints;
   pages: AuthPages;
   redirectTarget: string;
+  passwordPolicy?: PasswordPolicyConfig | null;
   resetToken?: string;
 }>();
 

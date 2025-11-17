@@ -12,6 +12,11 @@ export interface AuthClientOptions {
     fetch?: FetchLike; // default: globalThis.fetch
 }
 
+export interface RegisterPayload {
+    email: string;
+    password: string;
+}
+
 export class AuthClient {
     private readonly baseUrl: string;
     private readonly doFetch: FetchLike;
@@ -95,12 +100,16 @@ export class AuthClient {
     }
 
     // POST /api/auth/register — CSRF required
-    async register<T = unknown>(input: Record<string, unknown>): Promise<T> {
+    async register<T = unknown>(input: RegisterPayload): Promise<T> {
+        const {email, password} = input;
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            throw new Error('register inputs must include string email/password');
+        }
         const res = await this.doFetch(this.url('/api/auth/register'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
-            body: JSON.stringify(input),
+            body: JSON.stringify({email, password}),
         });
         if (!res.ok) throw new Error(`register_failed:${res.status}`);
         return (await res.json()) as T;

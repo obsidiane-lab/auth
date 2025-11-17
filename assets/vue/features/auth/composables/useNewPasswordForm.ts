@@ -1,6 +1,6 @@
 import { computed, reactive, ref, watch } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
-import { helpers, minLength, required, sameAs } from '@vuelidate/validators';
+import { helpers, required, sameAs } from '@vuelidate/validators';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
 import { useFormStatus } from './useFormStatus';
 import { useAuthNavigation } from './useAuthNavigation';
@@ -12,14 +12,16 @@ import {
   PASSWORD_RESET_ERROR_KEYS,
   PASSWORD_RESET_SUCCESS_KEY,
 } from '../constants';
-import type { AuthEndpoints, AuthPages, NewPasswordForm } from '../types';
+import type { AuthEndpoints, AuthPages, NewPasswordForm, PasswordPolicyConfig } from '../types';
 import { createAuthApi, AuthApiError } from '../api';
 import { handleApiError } from './useApiErrors';
+import { meetsPasswordPolicy } from '../../../utils/passwordStrength';
 
 export interface NewPasswordFormProps {
   endpoints: AuthEndpoints;
   pages: AuthPages;
   resetToken: string;
+  passwordPolicy?: PasswordPolicyConfig | null;
 }
 
 export const useNewPasswordForm = (props: NewPasswordFormProps) => {
@@ -38,7 +40,7 @@ export const useNewPasswordForm = (props: NewPasswordFormProps) => {
   const authApi = createAuthApi(props.endpoints);
 
   const passwordValue = computed(() => form.password);
-  const { passwordStrength } = usePasswordStrength(passwordValue);
+  const { passwordStrength } = usePasswordStrength(passwordValue, props.passwordPolicy);
 
   watch(
     () => props.resetToken,
@@ -49,7 +51,14 @@ export const useNewPasswordForm = (props: NewPasswordFormProps) => {
 
   const v$ = useVuelidate(
     {
-      password: { required, minLength: minLength(8) },
+      password: {
+        required,
+        strongEnough: helpers.withMessage(
+          () => PASSWORD_POLICY_KEY,
+          (value: string) =>
+            meetsPasswordPolicy(typeof value === 'string' ? value : '', props.passwordPolicy),
+        ),
+      },
       confirmPassword: {
         required,
         sameAsPassword: helpers.withMessage(

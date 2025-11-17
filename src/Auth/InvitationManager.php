@@ -2,7 +2,6 @@
 
 namespace App\Auth;
 
-use App\Auth\Dto\RegisterIdentityInput;
 use App\Auth\Dto\RegisterUserInput;
 use App\Auth\Exception\RegistrationException;
 use App\Entity\InviteUser;
@@ -83,7 +82,7 @@ final readonly class InvitationManager
     /**
      * @throws RegistrationException
      */
-    public function complete(string $token, string $displayName, string $plainPassword): User
+    public function complete(string $token, string $plainPassword): User
     {
         $invite = $this->inviteRepository->findOneBy(['token' => $token]);
 
@@ -106,12 +105,8 @@ final readonly class InvitationManager
         }
 
         $input = new RegisterUserInput();
-        $identity = new RegisterIdentityInput();
-
         $input->email = $user->getEmail();
         $input->plainPassword = $plainPassword;
-        $identity->displayName = $displayName;
-        $input->identity = $identity;
 
         $violations = $this->validator->validate($input, groups: ['user:register']);
 
@@ -126,7 +121,6 @@ final readonly class InvitationManager
             throw new RegistrationException($errors);
         }
 
-        $user->setDisplayName(trim((string) $displayName));
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $user->eraseCredentials();
         $user->setIsEmailVerified(true);
@@ -142,9 +136,6 @@ final readonly class InvitationManager
     {
         $user = new User();
         $user->setEmail($email);
-
-        // Placeholder display name to satisfy DB constraints, replaced on completion.
-        $user->setDisplayName($email);
 
         $randomPassword = bin2hex(random_bytes(16));
         $user->setPassword($this->passwordHasher->hashPassword($user, $randomPassword));
@@ -166,8 +157,6 @@ final readonly class InvitationManager
             return;
         }
 
-        $displayName = $invite->getUser()->getDisplayName() ?? $recipient;
-
         $url = $this->router->generate(
             'auth_invite_complete_page',
             ['token' => $invite->getToken()],
@@ -175,7 +164,7 @@ final readonly class InvitationManager
         );
 
         $this->mailer->dispatch($recipient, $this->welcomeTemplateId, [
-            'first_name' => $displayName ?: $recipient,
+            'first_name' => $recipient,
             'activate_link' => $url,
         ]);
     }
@@ -185,8 +174,6 @@ final readonly class InvitationManager
         return match ($path) {
             'email' => 'INVALID_EMAIL',
             'plainPassword' => 'INVALID_PASSWORD',
-            'identity' => 'MISSING_IDENTITY',
-            'identity.displayName' => 'DISPLAY_NAME_REQUIRED',
             default => $violation->getMessage(),
         };
     }

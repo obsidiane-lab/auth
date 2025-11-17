@@ -172,7 +172,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 
 * Disponible uniquement tant qu’aucun utilisateur n’existe.
 * CSRF : `initial_admin`.
-* Corps : `{ "email", "password", "displayName" }`
+* Corps : `{ "email", "password" }`
 * Crée l’administrateur (`ROLE_ADMIN`) et débloque les autres flux.
 
 ### Login – `POST /api/auth/login`
@@ -195,7 +195,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 ### Me – `GET /api/auth/me`
 
 * Requiert un JWT valide dans `__Secure-at`.
-* Réponse : `{ "user": { id, email, roles, displayName } }`.
+* Réponse : `{ "user": { id, email, roles } }`.
 
 ### Refresh – `POST /api/auth/refresh`
 
@@ -216,7 +216,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 ### Inscription – `POST /api/auth/register`
 
 * CSRF requis.
-* Corps : `{ "email", "password", "displayName" }`
+* Corps : `{ "email", "password" }`
 * Réponse : `201 { "user": { ... } }`
 * Envoie un email de vérification (`/verify-email`).
 
@@ -249,7 +249,6 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
   ```json
   {
     "token": "<token d'invitation>",
-    "displayName": "Prénom Nom",
     "password": "Secret123!",
     "confirmPassword": "Secret123!"
   }
@@ -258,7 +257,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 - Effets :
   - Valide le token d’invitation (non expiré, non déjà utilisé).
   - Applique les mêmes règles de validation que l’inscription (mot de passe, nom d’affichage).
-  - Met à jour le `User` associé (displayName + mot de passe) et marque l’email comme vérifié.
+  - Met à jour le `User` associé (mot de passe) et marque l’email comme vérifié.
   - Marque l’invitation comme acceptée.
 - Réponse : `201 { "user": { ... } }`.
 
@@ -381,6 +380,7 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
 * La robustesse des mots de passe est vérifiée via la contrainte Symfony `PasswordStrength`.
 * Le niveau minimal requis est piloté par la variable d’environnement :
   * `PASSWORD_STRENGTH_LEVEL` : entier de `1` (faible) à `4` (très fort), valeur par défaut `2` (niveau moyen).
+* Le frontend reçoit automatiquement cette politique (props `passwordPolicy`) et applique les mêmes contrôles de force et les mêmes messages que le backend. Il n’est donc plus nécessaire d’aligner manuellement des règles côté Vue/SDK : tout changement d’environnement est immédiatement pris en compte.
 
 **Rate limiting**
 

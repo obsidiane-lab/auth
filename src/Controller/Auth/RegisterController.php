@@ -2,7 +2,6 @@
 
 namespace App\Controller\Auth;
 
-use App\Auth\Dto\RegisterIdentityInput;
 use App\Auth\Dto\RegisterUserInput;
 use App\Auth\Exception\RegistrationException;
 use App\Auth\UserRegistration;
@@ -46,13 +45,8 @@ final class RegisterController extends AbstractController
         }
 
         $input = new RegisterUserInput();
-        $identity = new RegisterIdentityInput();
-
         $input->email = isset($payload['email']) ? trim((string) $payload['email']) : null;
         $input->plainPassword = isset($payload['password']) ? (string) $payload['password'] : null;
-        $identity->displayName = isset($payload['displayName']) ? trim((string) $payload['displayName']) : null;
-
-        $input->identity = $identity;
 
         try {
             $user = $this->registration->register($input);
@@ -69,7 +63,6 @@ final class RegisterController extends AbstractController
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
-                'displayName' => $user->getDisplayName(),
                 'roles' => $user->getRoles(),
             ],
         ], Response::HTTP_CREATED);

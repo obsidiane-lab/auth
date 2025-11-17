@@ -50,7 +50,6 @@ final class InitialAdminController extends AbstractController
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
-                'displayName' => $user->getDisplayName(),
             ],
         ], Response::HTTP_CREATED);
     }

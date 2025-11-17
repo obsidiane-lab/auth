@@ -15,9 +15,4 @@ final class RegisterUserInput
     #[Assert\NotBlank]
     #[Groups(['user:register'])]
     public ?string $plainPassword = null;
-
-    #[Assert\NotNull]
-    #[Assert\Valid]
-    #[Groups(['user:register'])]
-    public ?RegisterIdentityInput $identity = null;
 }

@@ -88,7 +88,6 @@ export const createAuthApi = (endpoints: AuthEndpoints): AuthApiClient => {
         {
           email: payload.email,
           password: payload.password,
-          displayName: payload.displayName,
         },
         jsonConfig(true),
       );

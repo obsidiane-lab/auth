@@ -4,6 +4,7 @@ namespace App\Auth\View;
 
 use App\Auth\RedirectPolicy;
 use App\Config\FeatureFlags;
+use App\Security\PasswordStrengthChecker;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -14,6 +15,7 @@ final readonly class AuthViewPropsBuilder
         private RedirectPolicy $redirectPolicy,
         private FeatureFlags $featureFlags,
         private UrlGeneratorInterface $router,
+        private PasswordStrengthChecker $passwordStrengthChecker,
         #[Autowire('%app.wording_name%')]
         private string $wordingName,
     ) {
@@ -38,6 +40,9 @@ final readonly class AuthViewPropsBuilder
             'themeColor' => $this->featureFlags->getThemeColor(),
             'themeMode' => $this->featureFlags->getThemeMode(),
             'wordingName' => $this->wordingName,
+            'passwordPolicy' => [
+                'minScore' => $this->passwordStrengthChecker->getMinScore(),
+            ],
         ];
 
         $flashKey = $request->query->get('flash');

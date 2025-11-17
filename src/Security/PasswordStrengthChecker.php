@@ -39,4 +39,9 @@ final class PasswordStrengthChecker
 
         return count($violations) === 0;
     }
+
+    public function getMinScore(): int
+    {
+        return $this->minScore;
+    }
 }

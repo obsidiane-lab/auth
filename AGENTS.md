@@ -41,15 +41,15 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 
 | Zone | Contenu |
 | --- | --- |
-| `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTOs `RegisterUserInput` / `RegisterIdentityInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, thème, redirect). |
+| `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTO `RegisterUserInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, thème, redirect, politique de mot de passe). |
 | `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique une vérification CSRF stateless sur les routes sensibles (`/api/auth/login`, reset password, logout, setup admin, invitation). |
-| `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `csrf-token` (token aléatoire stateless) et contrôle l’origine (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
-| `src/Setup` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial. |
+| `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `csrf-token` (token aléatoire stateless) et contrôle l’origine (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `PasswordStrengthChecker.php` centralise la politique `PasswordStrength` (niveaux pilotés par `PASSWORD_STRENGTH_LEVEL`) et expose `getMinScore()` pour nourrir l’UI; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
+| `src/Setup` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial (et propagent la politique de mot de passe vers la vue `/setup`). |
 | `src/Mail` | `MailerGateway.php` + `MailDispatchException.php` centralisent l’appel à Notifuse et la gestion des erreurs d’envoi. |
 
 ### 2.3 Entités et Repositories
 
-- `App\Entity\User` : modèle utilisateur (email, password, displayName, roles, `isEmailVerified`).
+- `App\Entity\User` : modèle utilisateur (email, password, roles, `isEmailVerified`).
 - `App\Entity\RefreshToken` : entité Gesdinet.
 - `App\Repository\UserRepository`, `RefreshTokenRepository`.
 - Migrations : `migrations/Version20251103215036.php`, `Version20251104203539.php`.

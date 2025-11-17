@@ -6,15 +6,12 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Patch;
-use ApiPlatform\Metadata\Put;
 use App\Entity\LifeCycle\LifeCycleInterface;
 use App\Entity\LifeCycle\LifeCycleTrait;
 use App\Provider\MeProvider;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasher;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
@@ -72,11 +69,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     #[ORM\Column(type: 'json', nullable: false)]
     #[Groups(['user:read'])]
     private array $roles = [];
-
-    #[Assert\NotBlank]
-    #[Groups(['user:read', 'user:update'])]
-    #[ORM\Column(length: 120, nullable: false)]
-    private ?string $displayName = null;
 
     #[Groups(['user:read'])]
     #[ORM\Column(options: ['default' => false])]
@@ -168,18 +160,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
         }
 
         return $this->email;
-    }
-
-    public function getDisplayName(): ?string
-    {
-        return $this->displayName;
-    }
-
-    public function setDisplayName(string $displayName): static
-    {
-        $this->displayName = $displayName;
-
-        return $this;
     }
 
     public function isEmailVerified(): bool

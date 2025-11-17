@@ -40,31 +40,6 @@
       <div class="form__group">
         <div class="form__field">
           <input
-            id="invite-display-name"
-            v-model="form.displayName"
-            :class="inputClass(submitted && v$.displayName.$invalid)"
-            type="text"
-            autocomplete="name"
-            placeholder=" "
-            :aria-invalid="submitted && v$.displayName.$invalid"
-            required
-          />
-          <label :class="labelClass(submitted && v$.displayName.$invalid)" for="invite-display-name">
-            {{ t('auth.invite.view.display_name_label') }}
-          </label>
-        </div>
-        <p
-          v-if="apiFieldErrors.displayName || (submitted && v$.displayName.$error)"
-          :class="validationErrorClass"
-        >
-          <span v-if="apiFieldErrors.displayName">{{ t(apiFieldErrors.displayName!) }}</span>
-          <span v-else>{{ t(REGISTER_ERROR_KEYS.DISPLAY_NAME_REQUIRED) }}</span>
-        </p>
-      </div>
-
-      <div class="form__group">
-        <div class="form__field">
-          <input
             id="invite-password"
             v-model="form.password"
             :type="passwordInputType"
@@ -90,7 +65,10 @@
         </div>
         <p v-if="apiFieldErrors.password || (submitted && v$.password.$error)" :class="validationErrorClass">
           <span v-if="apiFieldErrors.password">{{ t(apiFieldErrors.password!) }}</span>
-          <span v-else>{{ t(REGISTER_ERROR_KEYS.INVALID_PASSWORD) }}</span>
+          <span v-else-if="v$.password.strongEnough?.$invalid">
+            {{ t(REGISTER_ERROR_KEYS.INVALID_PASSWORD) }}
+          </span>
+          <span v-else>{{ t('auth.login.error.credentials_required') }}</span>
         </p>
         <div class="mt-3 grid grid-cols-4 gap-2">
           <span
@@ -148,7 +126,7 @@
 import { computed, reactive } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useVuelidate } from '@vuelidate/core';
-import { helpers, minLength, required, sameAs } from '@vuelidate/validators';
+import { helpers, required, sameAs } from '@vuelidate/validators';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/vue/24/outline';
 import AppButton from '../../../components/AppButton.vue';
 import FormStatusMessage from '../../../components/form/FormStatusMessage.vue';
@@ -156,13 +134,14 @@ import { useFormFieldClasses } from '../../../composables/useFormFieldClasses';
 import { usePasswordVisibility } from '../../../composables/usePasswordVisibility';
 import { usePasswordStrength } from '../../../composables/usePasswordStrength';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
-import type { AuthEndpoints, AuthPages } from '../../../features/auth/types';
+import type { AuthEndpoints, AuthPages, PasswordPolicyConfig } from '../../../features/auth/types';
 import { PASSWORD_MISMATCH_KEY, REGISTER_ERROR_KEYS } from '../../../features/auth/constants';
 import { createAuthApi, AuthApiError } from '../../../features/auth/api';
 import { useFormStatus } from '../../../features/auth/composables/useFormStatus';
 import { useAuthNavigation } from '../../../features/auth/composables/useAuthNavigation';
 import { handleApiError } from '../../../features/auth/composables/useApiErrors';
 import { http, jsonConfig } from '../../../utils/http';
+import { meetsPasswordPolicy } from '../../../utils/passwordStrength';
 
 const props = defineProps<{
   endpoints: AuthEndpoints;
@@ -170,16 +149,15 @@ const props = defineProps<{
   inviteToken: string;
   invitedEmail?: string | null;
   inviteAlreadyAccepted?: boolean;
+  passwordPolicy?: PasswordPolicyConfig | null;
 }>();
 
 interface InviteCompleteForm {
-  displayName: string;
   password: string;
   confirmPassword: string;
 }
 
 const form = reactive<InviteCompleteForm>({
-  displayName: '',
   password: '',
   confirmPassword: '',
 });
@@ -195,12 +173,18 @@ const invitedEmail = computed(() => props.invitedEmail ?? '');
 const alreadyCompleted = computed(() => props.inviteAlreadyAccepted === true);
 
 const passwordValue = computed(() => form.password);
-const { passwordStrength } = usePasswordStrength(passwordValue);
+const { passwordStrength } = usePasswordStrength(passwordValue, props.passwordPolicy);
 
 const v$ = useVuelidate(
   {
-    displayName: { required },
-    password: { required, minLength: minLength(8) },
+    password: {
+      required,
+      strongEnough: helpers.withMessage(
+        () => REGISTER_ERROR_KEYS.INVALID_PASSWORD,
+        (value: string) =>
+          meetsPasswordPolicy(typeof value === 'string' ? value : '', props.passwordPolicy),
+      ),
+    },
     confirmPassword: {
       required,
       sameAsPassword: sameAs(passwordValue),
@@ -229,22 +213,20 @@ const clearFieldErrors = () => {
 };
 
 const handleError = (error: AuthApiError) => {
-  handleApiError({
-    payload: error.payload,
-    translationMap: REGISTER_ERROR_KEYS,
-    fallbackKey: 'common.error.unexpected',
-    setError,
-    fieldMap: {
-      email: 'email',
-      'identity.displayName': 'displayName',
-      plainPassword: 'password',
-    },
-    defaultField: 'displayName',
-    setFieldError: (field, key) => {
-      apiFieldErrors[field as keyof InviteCompleteForm] = key;
-    },
-  });
-};
+    handleApiError({
+      payload: error.payload,
+      translationMap: REGISTER_ERROR_KEYS,
+      fallbackKey: 'common.error.unexpected',
+      setError,
+      fieldMap: {
+        plainPassword: 'password',
+      },
+      defaultField: 'password',
+      setFieldError: (field, key) => {
+        apiFieldErrors[field as keyof InviteCompleteForm] = key;
+      },
+    });
+  };
 
 const onSubmit = async () => {
   markSubmitted();
@@ -268,7 +250,6 @@ const onSubmit = async () => {
         '/api/auth/invite/complete',
         {
           token: props.inviteToken,
-          displayName: form.displayName,
           password: form.password,
           confirmPassword: form.confirmPassword,
         },

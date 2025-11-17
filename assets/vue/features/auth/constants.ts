@@ -17,9 +17,7 @@ export const LOGIN_REDIRECT_KEY = 'auth.login.message.redirecting';
 export const REGISTER_ERROR_KEYS: Record<string, string> = {
   EMAIL_ALREADY_USED: 'register.error.email_exists',
   INVALID_EMAIL: 'register.error.invalid_email',
-  DISPLAY_NAME_REQUIRED: 'register.error.display_name_required',
   INVALID_PASSWORD: 'register.error.invalid_password',
-  MISSING_IDENTITY: 'register.error.missing_identity',
   CSRF_TOKEN_INVALID: 'common.error.csrf_token_invalid',
   INVALID_PAYLOAD: 'common.error.invalid_payload',
   EMAIL_SEND_FAILED: 'password.request.error.email_send_failed',

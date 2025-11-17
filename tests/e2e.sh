@@ -20,11 +20,9 @@ ADMIN_PASSWORD="${ADMIN_PASSWORD:-Secret123!}"
 # Regular user for registration flow
 REGISTER_EMAIL="${REGISTER_EMAIL:-user+e2e@example.com}"
 REGISTER_PASSWORD="${REGISTER_PASSWORD:-Secret123!}"
-REGISTER_DISPLAY_NAME="${REGISTER_DISPLAY_NAME:-E2E User}"
 
 # User for invitation flow
 INVITE_EMAIL="${INVITE_EMAIL:-invitee+e2e@example.com}"
-INVITE_DISPLAY_NAME="${INVITE_DISPLAY_NAME:-Invited User}"
 INVITE_PASSWORD="${INVITE_PASSWORD:-Secret123!}"
 
 # Output files
@@ -97,7 +95,7 @@ step_initial_admin() {
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
-    -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\",\"displayName\":\"Admin E2E\"}" \
+    -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
     "${BASE_URL}/api/setup/admin"
 }
 
@@ -141,7 +139,7 @@ step_register_user() {
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
-    -d "{\"email\":\"${REGISTER_EMAIL}\",\"password\":\"${REGISTER_PASSWORD}\",\"displayName\":\"${REGISTER_DISPLAY_NAME}\"}" \
+    -d "{\"email\":\"${REGISTER_EMAIL}\",\"password\":\"${REGISTER_PASSWORD}\"}" \
     "${BASE_URL}/api/auth/register"
 
   warn "An email with a verify link should have been sent for ${REGISTER_EMAIL}."
@@ -181,8 +179,8 @@ step_invite_user() {
     "${BASE_URL}/api/auth/invite"
 
   warn "An invitation email should have been sent to ${INVITE_EMAIL}."
-  warn "Open Maildev / Notifuse, click the /invite/complete?token=... link, et complétez l’invitation (nom + mot de passe)."
-  warn "Utilisez par exemple displayName='${INVITE_DISPLAY_NAME}', password='${INVITE_PASSWORD}'."
+  warn "Open Maildev / Notifuse, click the /invite/complete?token=... link, et complétez l’invitation (mot de passe)."
+  warn "Utilisez par exemple password='${INVITE_PASSWORD}'."
   warn "Ensuite, testez le login de l’invité avec le SDK / UI. Appuyez sur ENTER quand vous avez terminé."
   read -r _
 }
@@ -199,20 +197,16 @@ configure_interactive() {
   info "Utilisateur pour le parcours d'inscription"
   prompt_var "Register email" REGISTER_EMAIL
   prompt_password "Register password" REGISTER_PASSWORD
-  prompt_var "Register display name" REGISTER_DISPLAY_NAME
 
   info "Utilisateur pour le parcours d'invitation"
   prompt_var "Invite email" INVITE_EMAIL
-  prompt_var "Invite display name" INVITE_DISPLAY_NAME
   prompt_password "Invite password" INVITE_PASSWORD
 
   info "Résumé de la configuration :"
   printf '  BASE_URL           = %s\n' "${BASE_URL}"
   printf '  ADMIN_EMAIL        = %s\n' "${ADMIN_EMAIL}"
   printf '  REGISTER_EMAIL     = %s\n' "${REGISTER_EMAIL}"
-  printf '  REGISTER_DISPLAY   = %s\n' "${REGISTER_DISPLAY_NAME}"
   printf '  INVITE_EMAIL       = %s\n' "${INVITE_EMAIL}"
-  printf '  INVITE_DISPLAY     = %s\n' "${INVITE_DISPLAY_NAME}"
 
   if [[ -t 0 ]]; then
     read -rp "Continuer avec ces paramètres ? [ENTER pour oui / Ctrl+C pour annuler] " _ || true

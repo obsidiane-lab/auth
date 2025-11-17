@@ -31,7 +31,6 @@ final class AcceptInvitationController extends AbstractController
         }
 
         $token = isset($payload['token']) ? (string) $payload['token'] : '';
-        $displayName = isset($payload['displayName']) ? (string) $payload['displayName'] : '';
         $password = isset($payload['password']) ? (string) $payload['password'] : '';
         $confirmPassword = isset($payload['confirmPassword']) ? (string) $payload['confirmPassword'] : '';
 
@@ -40,7 +39,7 @@ final class AcceptInvitationController extends AbstractController
         }
 
         try {
-            $user = $this->invitationManager->complete($token, $displayName, $password);
+            $user = $this->invitationManager->complete($token, $password);
         } catch (RegistrationException $exception) {
             $errors = $exception->getErrors();
             $errorCode = $exception->getMessage();
@@ -55,7 +54,6 @@ final class AcceptInvitationController extends AbstractController
             'user' => [
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
-                'displayName' => $user->getDisplayName(),
                 'roles' => $user->getRoles(),
             ],
         ], Response::HTTP_CREATED);

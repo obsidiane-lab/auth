@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Setup;
 
 use App\Config\FeatureFlags;
+use App\Security\PasswordStrengthChecker;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -14,6 +15,7 @@ final class SetupViewPropsBuilder
     public function __construct(
         private readonly FeatureFlags $featureFlags,
         private readonly UrlGeneratorInterface $router,
+        private readonly PasswordStrengthChecker $passwordStrengthChecker,
         #[Autowire('%app.wording_name%')]
         private readonly string $wordingName,
     ) {
@@ -33,6 +35,9 @@ final class SetupViewPropsBuilder
             'themeMode' => $this->featureFlags->getThemeMode(),
             'pages' => [
                 'login' => $this->router->generate('auth_login_page'),
+            ],
+            'passwordPolicy' => [
+                'minScore' => $this->passwordStrengthChecker->getMinScore(),
             ],
         ];
 

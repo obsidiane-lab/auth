@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Setup;
 
-use App\Auth\Dto\RegisterIdentityInput;
 use App\Auth\Dto\RegisterUserInput;
 use App\Auth\Exception\RegistrationException;
 use App\Auth\UserRegistration;
@@ -55,11 +54,8 @@ final class InitialAdminManager
     public function createInputFromPayload(array $payload): RegisterUserInput
     {
         $input = new RegisterUserInput();
-        $identity = new RegisterIdentityInput();
         $input->email = isset($payload['email']) ? trim((string) $payload['email']) : null;
         $input->plainPassword = isset($payload['password']) ? (string) $payload['password'] : null;
-        $identity->displayName = isset($payload['displayName']) ? trim((string) $payload['displayName']) : null;
-        $input->identity = $identity;
 
         return $input;
     }

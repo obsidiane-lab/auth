@@ -111,20 +111,20 @@ await auth.logout();
 
 ---
 
-### `register(email, password, displayName)`
+### `register({ email, password })`
 
 Crée un nouvel utilisateur.
 
 ```ts
-await auth.register(
-  'user@example.com',
-  'Secret123!',
-  'John Doe',
-);
+await auth.register({
+  email: 'user@example.com',
+  password: 'Secret123!',
+});
 ```
 
 * Appelle `POST /api/auth/register`.
 * Déclenche l’envoi d’un email de vérification (`/verify-email`) côté service d’authentification.
+* La signature attend explicitement un objet `{ email, password }` (voir type `RegisterPayload`), aligné sur l’API backend.
 
 ---
 

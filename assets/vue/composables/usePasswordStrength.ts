@@ -1,30 +1,20 @@
 import { computed, type Ref } from 'vue';
+import type { PasswordPolicyConfig } from '../types/password';
+import {
+  estimatePasswordStrength,
+  meetsPasswordPolicy,
+  sanitizePasswordPolicy,
+} from '../utils/passwordStrength';
 
-export const usePasswordStrength = (password: Ref<string>) => {
-  const passwordStrength = computed(() => {
-    const value = password.value ?? '';
-    let strength = 0;
+export const usePasswordStrength = (password: Ref<string>, policy?: PasswordPolicyConfig | null) => {
+  const sanitizedPolicy = sanitizePasswordPolicy(policy);
 
-    if (value.length >= 8) {
-      strength += 1;
-    }
-
-    if (/[a-z]/.test(value) && /[A-Z]/.test(value)) {
-      strength += 1;
-    }
-
-    if (/[0-9]/.test(value)) {
-      strength += 1;
-    }
-
-    if (/[^a-zA-Z0-9]/.test(value)) {
-      strength += 1;
-    }
-
-    return strength;
-  });
+  const passwordStrength = computed(() => estimatePasswordStrength(password.value ?? ''));
+  const meetsPolicy = computed(() => meetsPasswordPolicy(password.value ?? '', sanitizedPolicy));
 
   return {
     passwordStrength,
+    meetsPolicy,
+    requiredScore: sanitizedPolicy.minScore,
   };
 };

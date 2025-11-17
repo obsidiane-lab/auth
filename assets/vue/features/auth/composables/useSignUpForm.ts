@@ -1,27 +1,29 @@
 import { computed, reactive } from 'vue';
 import { useVuelidate } from '@vuelidate/core';
-import { email as emailRule, helpers, minLength, required, sameAs } from '@vuelidate/validators';
+import { email as emailRule, helpers, required, sameAs } from '@vuelidate/validators';
 import { useSubmissionState } from '../../../composables/useSubmissionState';
 import { useFormStatus } from './useFormStatus';
 import { useAuthNavigation } from './useAuthNavigation';
 import { usePasswordStrength } from '../../../composables/usePasswordStrength';
 import {
   COMMON_UNEXPECTED_ERROR_KEY,
+  PASSWORD_POLICY_KEY,
   REGISTER_ERROR_KEYS,
   REGISTER_SUCCESS_KEY,
 } from '../constants';
-import type { AuthEndpoints, AuthPages, SignUpForm } from '../types';
+import type { AuthEndpoints, AuthPages, PasswordPolicyConfig, SignUpForm } from '../types';
 import { createAuthApi, AuthApiError } from '../api';
 import { handleApiError } from './useApiErrors';
+import { meetsPasswordPolicy } from '../../../utils/passwordStrength';
 
 export interface SignUpFormProps {
   endpoints: AuthEndpoints;
   pages: AuthPages;
+  passwordPolicy?: PasswordPolicyConfig | null;
 }
 
 export const useSignUpForm = (props: SignUpFormProps) => {
   const form = reactive<SignUpForm>({
-    displayName: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -35,13 +37,19 @@ export const useSignUpForm = (props: SignUpFormProps) => {
   const authApi = createAuthApi(props.endpoints);
 
   const passwordValue = computed(() => form.password);
-  const { passwordStrength } = usePasswordStrength(passwordValue);
+  const { passwordStrength } = usePasswordStrength(passwordValue, props.passwordPolicy);
 
   const v$ = useVuelidate(
     {
-      displayName: { required },
       email: { required, email: emailRule },
-      password: { required, minLength: minLength(8) },
+      password: {
+        required,
+        strongEnough: helpers.withMessage(
+          () => PASSWORD_POLICY_KEY,
+          (value: string) =>
+            meetsPasswordPolicy(typeof value === 'string' ? value : '', props.passwordPolicy),
+        ),
+      },
       confirmPassword: {
         required,
         sameAsPassword: sameAs(passwordValue),
@@ -64,7 +72,6 @@ export const useSignUpForm = (props: SignUpFormProps) => {
       setError,
       fieldMap: {
         email: 'email',
-        'identity.displayName': 'displayName',
         plainPassword: 'password',
       },
       defaultField: 'email',
