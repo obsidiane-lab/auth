@@ -27,7 +27,7 @@ yarn add @obsidiane/auth-sdk
 import { AuthClient } from '@obsidiane/auth-sdk';
 
 const auth = new AuthClient({
-  baseUrl: 'https://auth.example.com', // ou '' si même origine
+  baseUrl: 'https://auth.example.com', // requis : URL racine du service d’auth
 });
 
 // 1) Login (le SDK génère automatiquement un token CSRF stateless et l'envoie dans l'en-tête `csrf-token`)
@@ -109,11 +109,42 @@ Ces types permettent de représenter les métadonnées JSON‑LD autour de vos e
 
 ```ts
 const auth = new AuthClient({
-  baseUrl: 'https://auth.example.com', // optionnel si même origine
+  baseUrl: 'https://auth.example.com', // requis (sans trailing slash)
+  fetch: customFetch,                  // optionnel (sinon fetch global)
+  defaultHeaders: { 'X-App': 'my-ui' },
+  timeoutMs: 10000,                    // optionnel, abort via AbortController
+  csrfTokenGenerator: () => 'token',   // optionnel (par défaut, utilise crypto ou fallback SSR-safe)
+  onCsrfRejected: async ({ response, path }) => {
+    // Hook optionnel appelé avant le retry auto sur un 403 CSRF
+    console.warn('CSRF rejeté sur', path, response.status);
+  },
 });
 ```
 
-`baseUrl` doit pointer vers la racine de ton service d’authentification (sans trailing slash).
+`baseUrl` doit pointer vers la racine de ton service d’authentification. Les appels ajoutent toujours `credentials: 'include'`.
+
+### Gestion CSRF (retry)
+
+Les mutations envoient un token CSRF stateless généré côté client. En cas de réponse `403` CSRF, le SDK regénère automatiquement un nouveau token et réessaie une fois. Via l’option `onCsrfRejected`, tu peux brancher un hook (logging/observabilité) ou retourner une `Response` custom pour bypasser le retry.
+
+### Génération de token CSRF
+
+Le helper exporté `generateCsrfToken()` utilise d’abord `crypto.randomUUID` / `crypto.getRandomValues` quand ils sont disponibles (navigateurs, Node 18+). En environnement SSR/ESM sans crypto, un fallback pseudo-aléatoire est utilisé pour rester compatible – surchargeable via l’option `csrfTokenGenerator`.
+
+### Gestion des erreurs
+
+Les erreurs réseau/API lèvent un `AuthClientError` (exporté par le SDK) avec les propriétés suivantes :
+
+```ts
+import { AuthClient, AuthClientError } from '@obsidiane/auth-sdk';
+
+try {
+  await auth.inviteUser('invitee@example.com');
+} catch (e) {
+  const err = e as AuthClientError;
+  console.error(err.status, err.code, err.details);
+}
+```
 
 ### `login(email, password)`
 

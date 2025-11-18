@@ -5,6 +5,29 @@ export interface AuthUser {
     isEmailVerified?: boolean;
 }
 
+export interface ApiErrorPayload {
+    error?: string;
+    message?: string;
+    details?: Record<string, unknown>;
+    status?: number;
+}
+
+export class AuthClientError extends Error {
+    status?: number;
+    code?: string;
+    details?: Record<string, unknown>;
+    payload?: ApiErrorPayload;
+
+    constructor(message: string, payload: ApiErrorPayload = {}) {
+        super(message);
+        this.name = 'AuthClientError';
+        this.payload = payload;
+        this.status = payload.status;
+        this.code = payload.error;
+        this.details = payload.details;
+    }
+}
+
 export interface LoginResponse {
     user: AuthUser;
     exp: number;
@@ -42,4 +65,3 @@ export interface Collection<T> extends JsonLdMeta {
     items: Array<Item<T>>;
     totalItems?: number;
 }
-

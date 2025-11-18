@@ -4,6 +4,19 @@ export interface AuthUser {
     roles: string[];
     isEmailVerified?: boolean;
 }
+export interface ApiErrorPayload {
+    error?: string;
+    message?: string;
+    details?: Record<string, unknown>;
+    status?: number;
+}
+export declare class AuthClientError extends Error {
+    status?: number;
+    code?: string;
+    details?: Record<string, unknown>;
+    payload?: ApiErrorPayload;
+    constructor(message: string, payload?: ApiErrorPayload);
+}
 export interface LoginResponse {
     user: AuthUser;
     exp: number;

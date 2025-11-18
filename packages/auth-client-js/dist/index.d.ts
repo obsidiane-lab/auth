@@ -1,7 +1,19 @@
 export type FetchLike = typeof fetch;
 export interface AuthClientOptions {
-    baseUrl?: string;
+    baseUrl: string;
     fetch?: FetchLike;
+    defaultHeaders?: Record<string, string>;
+    timeoutMs?: number;
+    origin?: string;
+    csrfTokenGenerator?: () => string;
+    onCsrfRejected?: (context: {
+        path: string;
+        init: RequestInit & {
+            headers?: Record<string, string>;
+        };
+        response: Response;
+        attempt: number;
+    }) => Promise<Response | void> | Response | void;
 }
 export interface RegisterPayload {
     email: string;
@@ -13,8 +25,16 @@ import type { AuthUser, LoginResponse, MeResponse, RegisterResponse, InviteStatu
 export declare class AuthClient {
     private readonly baseUrl;
     private readonly doFetch;
-    constructor(opts?: AuthClientOptions);
+    private readonly defaultHeaders;
+    private readonly timeoutMs?;
+    private readonly originHeader?;
+    private readonly attachOriginHeader;
+    private readonly csrfTokenGenerator;
+    private readonly onCsrfRejected?;
+    constructor(opts: AuthClientOptions);
     private url;
+    private computeOrigin;
+    private toHeaderRecord;
     private headers;
     private buildCsrfHeaders;
     me<T = MeResponse>(): Promise<T>;
@@ -29,4 +49,5 @@ export declare class AuthClient {
     currentUserResource(): Promise<AuthUser>;
     listInvites(): Promise<InviteResource[]>;
     getInvite(id: number): Promise<InviteResource>;
+    private request;
 }

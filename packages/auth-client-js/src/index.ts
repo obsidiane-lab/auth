@@ -7,8 +7,18 @@
 export type FetchLike = typeof fetch;
 
 export interface AuthClientOptions {
-    baseUrl?: string;
+    baseUrl: string;
     fetch?: FetchLike;
+    defaultHeaders?: Record<string, string>;
+    timeoutMs?: number;
+    origin?: string;
+    csrfTokenGenerator?: () => string;
+    onCsrfRejected?: (context: {
+        path: string;
+        init: RequestInit & { headers?: Record<string, string> };
+        response: Response;
+        attempt: number;
+    }) => Promise<Response | void> | Response | void;
 }
 
 export interface RegisterPayload {
@@ -17,18 +27,24 @@ export interface RegisterPayload {
 }
 
 export function generateCsrfToken(): string {
-    if (typeof globalThis.crypto !== 'undefined' && 'getRandomValues' in globalThis.crypto) {
-        const bytes = new Uint8Array(16);
-        globalThis.crypto.getRandomValues(bytes);
-        return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    if (typeof globalThis.crypto !== 'undefined') {
+        if (typeof globalThis.crypto.randomUUID === 'function') {
+            return globalThis.crypto.randomUUID().replace(/-/g, '');
+        }
+        if (typeof globalThis.crypto.getRandomValues === 'function') {
+            const bytes = new Uint8Array(16);
+            globalThis.crypto.getRandomValues(bytes);
+            return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+        }
     }
 
-    let token = '';
-    while (token.length < 24) {
-        token += Math.random().toString(36).slice(2);
+    // Node ESM/SSR: pseudo-random fallback (non crypto) to stay compatible in tous les environnements
+    if (typeof Math.random === 'function') {
+        const rand = () => Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, '0');
+        return `${rand()}${rand()}${rand()}${rand()}`.slice(0, 32);
     }
 
-    return token;
+    throw new Error('Secure crypto unavailable; provide a crypto implementation to generate CSRF tokens.');
 }
 
 export * from './models';
@@ -40,22 +56,65 @@ import type {
     InviteStatusResponse,
     InviteResource,
 } from './models';
+import {AuthClientError} from './models';
 
 export class AuthClient {
     private readonly baseUrl: string;
     private readonly doFetch: FetchLike;
+    private readonly defaultHeaders: Record<string, string>;
+    private readonly timeoutMs?: number;
+    private readonly originHeader?: string;
+    private readonly attachOriginHeader: boolean;
+    private readonly csrfTokenGenerator: () => string;
+    private readonly onCsrfRejected?: AuthClientOptions['onCsrfRejected'];
 
-    constructor(opts: AuthClientOptions = {}) {
-        this.baseUrl = (opts.baseUrl ?? '').replace(/\/$/, '');
+    constructor(opts: AuthClientOptions) {
+        if (!opts.baseUrl) {
+            throw new Error('baseUrl is required');
+        }
+
+        this.baseUrl = opts.baseUrl.replace(/\/$/, '');
         const baseFetch = opts.fetch ?? (globalThis.fetch as FetchLike | undefined);
         if (!baseFetch) {
             throw new Error('No fetch implementation available');
         }
         this.doFetch = baseFetch.bind(globalThis) as FetchLike;
+        this.defaultHeaders = {...(opts.defaultHeaders ?? {})};
+        this.timeoutMs = opts.timeoutMs;
+        this.originHeader = opts.origin ?? this.computeOrigin(this.baseUrl);
+        const isBrowser = typeof window !== 'undefined' && typeof document !== 'undefined';
+        this.attachOriginHeader = !isBrowser && !!this.originHeader;
+        this.csrfTokenGenerator = opts.csrfTokenGenerator ?? generateCsrfToken;
+        this.onCsrfRejected = opts.onCsrfRejected;
     }
 
     private url(path: string): string {
         return `${this.baseUrl}${path}`;
+    }
+
+    private computeOrigin(url: string): string | undefined {
+        try {
+            const u = new URL(url);
+            return `${u.protocol}//${u.host}`;
+        } catch (_) {
+            return undefined;
+        }
+    }
+
+    private toHeaderRecord(headers?: HeadersInit): Record<string, string> {
+        if (!headers) return {};
+        if (typeof Headers !== 'undefined' && headers instanceof Headers) {
+            const out: Record<string, string> = {};
+            headers.forEach((value, key) => { out[key] = value; });
+            return out;
+        }
+        if (Array.isArray(headers)) {
+            return headers.reduce((acc, [k, v]) => {
+                acc[String(k)] = String(v);
+                return acc;
+            }, {} as Record<string, string>);
+        }
+        return {...(headers as Record<string, string>)};
     }
 
     // Utility to build headers with optional CSRF token
@@ -63,57 +122,48 @@ export class AuthClient {
         const h: Record<string, string> = {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
+            ...this.defaultHeaders,
         };
         if (csrf) h['csrf-token'] = csrf;
+        if (this.attachOriginHeader && this.originHeader && !('Origin' in h) && !('origin' in h)) {
+            h['Origin'] = this.originHeader;
+        }
         return h;
     }
 
     private buildCsrfHeaders(): Record<string, string> {
-        const token = generateCsrfToken();
+        const token = this.csrfTokenGenerator();
         return this.headers(token);
     }
 
     // GET /api/auth/me
     async me<T = MeResponse>(): Promise<T> {
-        const res = await this.doFetch(this.url('/api/auth/me'), {
-            method: 'GET',
-            credentials: 'include',
-        });
-        if (!res.ok) throw new Error(`me_failed:${res.status}`);
-        return (await res.json()) as T;
+        return await this.request<T>('/api/auth/me', {method: 'GET'});
     }
 
     // POST /api/auth/login — CSRF required
     async login<T = LoginResponse>(email: string, password: string): Promise<T> {
-        const res = await this.doFetch(this.url('/api/auth/login'), {
+        return await this.request<T>('/api/auth/login', {
             method: 'POST',
-            credentials: 'include',
             headers: this.buildCsrfHeaders(),
             body: JSON.stringify({email, password}),
         });
-        if (!res.ok) throw new Error(`login_failed:${res.status}`);
-        return (await res.json()) as T;
     }
 
     // POST /api/auth/refresh — cookie-based, CSRF optional
     async refresh<T = unknown>(csrf?: string): Promise<T> {
-        const res = await this.doFetch(this.url('/api/auth/refresh'), {
+        return await this.request<T>('/api/auth/refresh', {
             method: 'POST',
-            credentials: 'include',
             headers: this.headers(csrf),
         });
-        if (!res.ok) throw new Error(`refresh_failed:${res.status}`);
-        return (await res.json()) as T;
     }
 
     // POST /api/auth/logout — CSRF required
     async logout(): Promise<void> {
-        const res = await this.doFetch(this.url('/api/auth/logout'), {
+        await this.request<void>('/api/auth/logout', {
             method: 'POST',
-            credentials: 'include',
             headers: this.buildCsrfHeaders(),
-        });
-        if (!res.ok && res.status !== 204) throw new Error(`logout_failed:${res.status}`);
+        }, {allowNoContent: true});
     }
 
     // POST /api/auth/register — CSRF required
@@ -122,65 +172,44 @@ export class AuthClient {
         if (typeof email !== 'string' || typeof password !== 'string') {
             throw new Error('register inputs must include string email/password');
         }
-        const res = await this.doFetch(this.url('/api/auth/register'), {
+        return await this.request<T>('/api/auth/register', {
             method: 'POST',
-            credentials: 'include',
             headers: this.buildCsrfHeaders(),
             body: JSON.stringify({email, password}),
         });
-        if (!res.ok) throw new Error(`register_failed:${res.status}`);
-        return (await res.json()) as T;
     }
 
     // POST /api/auth/password/forgot — CSRF required
     async passwordRequest<T = unknown>(email: string): Promise<T> {
-        const res = await this.doFetch(this.url('/api/auth/password/forgot'), {
+        return await this.request<T>('/api/auth/password/forgot', {
             method: 'POST',
-            credentials: 'include',
             headers: this.buildCsrfHeaders(),
             body: JSON.stringify({email}),
         });
-        if (!res.ok) throw new Error(`password_request_failed:${res.status}`);
-        return (await res.json()) as T;
     }
 
     // POST /api/auth/password/reset — CSRF required
     async passwordReset(token: string, password: string): Promise<void> {
-        const res = await this.doFetch(this.url('/api/auth/password/reset'), {
+        await this.request<void>('/api/auth/password/reset', {
             method: 'POST',
-            credentials: 'include',
             headers: this.buildCsrfHeaders(),
             body: JSON.stringify({token, password}),
-        });
-        if (!res.ok && res.status !== 204) throw new Error(`password_reset_failed:${res.status}`);
+        }, {allowNoContent: true});
     }
 
     // POST /api/auth/invite — CSRF required, admin only
     async inviteUser(email: string): Promise<InviteStatusResponse> {
-        const res = await this.doFetch(this.url('/api/auth/invite'), {
+        return await this.request<InviteStatusResponse>('/api/auth/invite', {
             method: 'POST',
-            credentials: 'include',
             headers: this.buildCsrfHeaders(),
             body: JSON.stringify({email}),
         });
-        const payload = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-            const error = new Error(`invite_failed:${payload?.error ?? res.status}`);
-            (error as any).status = res.status;
-            (error as any).code = payload?.error;
-            (error as any).details = payload?.details;
-            throw error;
-        }
-
-        return payload as InviteStatusResponse;
     }
 
     // POST /api/auth/invite/complete — CSRF required
     async completeInvite<T = RegisterResponse>(token: string, password: string, confirmPassword?: string): Promise<T> {
-        const res = await this.doFetch(this.url('/api/auth/invite/complete'), {
+        return await this.request<T>('/api/auth/invite/complete', {
             method: 'POST',
-            credentials: 'include',
             headers: this.buildCsrfHeaders(),
             body: JSON.stringify({
                 token,
@@ -188,42 +217,120 @@ export class AuthClient {
                 confirmPassword: confirmPassword ?? password,
             }),
         });
-        if (!res.ok) throw new Error(`invite_complete_failed:${res.status}`);
-        return (await res.json()) as T;
     }
 
     // --- ApiPlatform helpers (User & Invite resources) ---
 
     // GET /api/users/me (ApiResource<User>)
     async currentUserResource(): Promise<AuthUser> {
-        const res = await this.doFetch(this.url('/api/users/me'), {
+        return await this.request<AuthUser>('/api/users/me', {
             method: 'GET',
-            credentials: 'include',
             headers: this.headers(),
         });
-        if (!res.ok) throw new Error(`users_me_failed:${res.status}`);
-        return (await res.json()) as AuthUser;
     }
 
     // GET /api/invite_users
     async listInvites(): Promise<InviteResource[]> {
-        const res = await this.doFetch(this.url('/api/invite_users'), {
+        return await this.request<InviteResource[]>('/api/invite_users', {
             method: 'GET',
-            credentials: 'include',
             headers: this.headers(),
         });
-        if (!res.ok) throw new Error(`invite_list_failed:${res.status}`);
-        return (await res.json()) as InviteResource[];
     }
 
     // GET /api/invite_users/{id}
     async getInvite(id: number): Promise<InviteResource> {
-        const res = await this.doFetch(this.url(`/api/invite_users/${id}`), {
+        return await this.request<InviteResource>(`/api/invite_users/${id}`, {
             method: 'GET',
-            credentials: 'include',
             headers: this.headers(),
         });
-        if (!res.ok) throw new Error(`invite_get_failed:${res.status}`);
-        return (await res.json()) as InviteResource;
+    }
+
+    private async request<T>(
+        path: string,
+        init: RequestInit & { headers?: Record<string, string> },
+        opts: { allowNoContent?: boolean } = {},
+    ): Promise<T> {
+        const timeout = this.timeoutMs ?? 0;
+        const controller = typeof AbortController !== 'undefined' && timeout > 0 && !init.signal
+            ? new AbortController()
+            : undefined;
+
+        const signal = init.signal ?? controller?.signal;
+
+        let timeoutId: ReturnType<typeof setTimeout> | undefined;
+        if (controller && timeout > 0) {
+            timeoutId = setTimeout(() => controller.abort(), timeout);
+        }
+
+        const fetchWith = async (overrideInit?: RequestInit & { headers?: Record<string, string> }) => {
+            const baseHeaders = this.toHeaderRecord(init.headers);
+            const overrideHeaders = this.toHeaderRecord(overrideInit?.headers);
+            return await this.doFetch(this.url(path), {
+                ...init,
+                ...(overrideInit ?? {}),
+                credentials: 'include',
+                headers: {...this.headers(), ...baseHeaders, ...overrideHeaders},
+                signal,
+            });
+        };
+
+        let res = await fetchWith();
+
+        // Auto-réessai 1x en cas de 403 CSRF, exposé via hook onCsrfRejected
+        if (res.status === 403 && init.method && init.method.toUpperCase() !== 'GET') {
+            const retryInit = {
+                ...init,
+                headers: {...this.toHeaderRecord(init.headers), 'csrf-token': this.csrfTokenGenerator()},
+            };
+            if (this.onCsrfRejected) {
+                const maybe = await this.onCsrfRejected({path, init: retryInit, response: res, attempt: 1});
+                if (maybe instanceof Response) {
+                    res = maybe;
+                } else {
+                    res = await fetchWith(retryInit);
+                }
+            } else {
+                res = await fetchWith(retryInit);
+            }
+        }
+
+        if (timeoutId) {
+            clearTimeout(timeoutId);
+        }
+
+        const contentType = res.headers.get('content-type') ?? '';
+        const isJson = contentType.toLowerCase().includes('application/json');
+        let payload: any = {};
+        let rawText: string | undefined;
+
+        if (isJson) {
+            payload = await res.json().catch(() => ({}));
+        } else {
+            rawText = await res.text().catch(() => '');
+            if (rawText) {
+                try {
+                    payload = JSON.parse(rawText);
+                } catch {
+                    payload = {};
+                }
+            }
+        }
+
+        if (!res.ok && !(opts.allowNoContent && res.status === 204)) {
+            const message =
+                (payload && typeof payload === 'object' && (payload.error || payload.message))
+                    ? (payload.error ?? payload.message)
+                    : (rawText && rawText.trim() !== '' ? rawText : `request_failed:${res.status}`);
+            throw new AuthClientError(
+                message as string,
+                {...(payload ?? {}), status: res.status, raw: rawText}
+            );
+        }
+
+        if (!isJson && rawText && (payload === null || Object.keys(payload).length === 0)) {
+            return {raw: rawText} as T;
+        }
+
+        return payload as T;
     }
 }
