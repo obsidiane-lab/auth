@@ -19,12 +19,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ApiResource(
     operations: [
-        new Get(
-            uriTemplate: '/users/me',
-            normalizationContext: ['groups' => ['user:read']],
-            security: "is_granted('IS_AUTHENTICATED_FULLY')",
-            provider: MeProvider::class,
-        ),
         new GetCollection(
             security: "is_granted('ROLE_ADMIN')",
         ),
@@ -33,6 +27,12 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
+        ),
+        new Get(
+            uriTemplate: '/users/me',
+            normalizationContext: ['groups' => ['user:read']],
+            security: "is_granted('IS_AUTHENTICATED_FULLY')",
+            provider: MeProvider::class,
         ),
     ],
     normalizationContext: ['groups' => ['user:read']],
