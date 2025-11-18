@@ -26,6 +26,7 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 | `src/Controller/AuthRegisterPageController.php` | Sert la page `/register` (Vue `SignUp`). |
 | `src/Controller/AuthPageController.php` | Compatibilité: `/` redirige vers la route dédiée selon `view=`. |
 | `src/Controller/ResetPasswordController.php` | Flow ResetPasswordBundle: `/reset-password`, `/reset-password/check-email`, `/reset-password/reset/{token}`. |
+| `src/Controller/AuthInviteCompletePageController.php` | Sert la page `/invite/complete` (Vue `InviteComplete`) pour finaliser une invitation. |
 | `src/Controller/Setup/InitialAdminPageController.php` | Page `/setup` pour créer l’administrateur initial quand aucun utilisateur n’existe. |
 | `src/Controller/Setup/InitialAdminController.php` | API `POST /api/setup/admin` (CSRF `initial_admin`) qui crée le premier compte admin. |
 | *(Lexik json_login)* | `POST /api/auth/login` – authentifie via `json_login` (CSRF `authenticate`, header `csrf-token`), un subscriber pose le cookie access. |
@@ -34,6 +35,9 @@ Ce document donne une vue synthétique du module d’authentification afin que t
 | _(Gesdinet)_ | `POST /api/auth/refresh` – route gérée par JWTRefreshTokenBundle (`refresh_jwt` + cookie HttpOnly). |
 | *(CSRF stateless)* | Les flux sensibles (login/register/logout/reset/invite) sont protégés via un validator custom (`CsrfRequestValidator`) qui vérifie l’en-tête `csrf-token` (jeton aléatoire) et l’origine HTTP (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`. |
 | `src/Controller/Auth/VerifyEmailController.php` | `GET /verify-email` – consomme le lien signé VerifyEmailBundle puis redirige vers `/login` avec un flash. |
+| `src/Controller/Auth/RegisterController.php` | `POST /api/auth/register` – inscription JSON (API `register`, CSRF stateless). |
+| `src/Controller/Auth/InviteUserController.php` | `POST /api/auth/invite` – invite un utilisateur (admin uniquement, CSRF stateless). |
+| `src/Controller/Auth/AcceptInvitationController.php` | `POST /api/auth/invite/complete` – complète une invitation (token + mot de passe). |
 
 Les contrôleurs délèguent aux couches métier (services dédiés) pour appliquer le SRP.
 
@@ -41,23 +45,26 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 
 | Zone | Contenu |
 | --- | --- |
-| `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTO `RegisterUserInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, thème, redirect, politique de mot de passe). |
+| `src/Auth` | `TokenCookieFactory.php` construit/expire les cookies d’auth (`__Secure-at`, `__Host-rt`); `RedirectPolicy.php` gère l’allowlist de redirection; `UserRegistration.php` + `RegistrationException.php` encapsulent le cas d’usage d’inscription; DTO `RegisterUserInput`; `AuthViewPropsBuilder.php` prépare les props UI (endpoints, thème, redirect, politique de mot de passe); `InvitationManager.php` gère le cycle de vie des invitations (création + finalisation). |
 | `src/EventSubscriber` | `JwtEventSubscriber.php` personnalise le payload Lexik (`iss`, `aud`, etc.) et pose le cookie access sur `AuthenticationSuccessEvent`; `CsrfProtectedRoutesSubscriber.php` applique une vérification CSRF stateless sur les routes sensibles (`/api/auth/login`, reset password, logout, setup admin, invitation). |
 | `src/Security` | `CsrfRequestValidator.php` valide l’en-tête `csrf-token` (token aléatoire stateless) et contrôle l’origine (`Origin`/`Referer`) en s’appuyant sur `ALLOWED_ORIGINS`; `EmailVerifier.php` génère/valide les liens VerifyEmailBundle; `PasswordStrengthChecker.php` centralise la politique `PasswordStrength` (niveaux pilotés par `PASSWORD_STRENGTH_LEVEL`) et expose `getMinScore()` pour nourrir l’UI; `UserChecker.php` bloque la connexion tant que l’email n’est pas confirmé. |
 | `src/Setup` | `InitialAdminManager.php` + `SetupViewPropsBuilder.php` gèrent la détection et la création de l’administrateur initial (et propagent la politique de mot de passe vers la vue `/setup`). |
 | `src/Mail` | `MailerGateway.php` + `MailDispatchException.php` centralisent l’appel à Notifuse et la gestion des erreurs d’envoi. |
+| `src/ApiResource` / `src/OpenApi` | `ApiResource/Auth.php` expose les endpoints `/api/auth/*` (register, invite, logout, me) via API Platform ; `AuthRoutesDecorator.php` enrichit la documentation OpenAPI (route `POST /api/auth/refresh`). |
 
 ### 2.3 Entités et Repositories
 
 - `App\Entity\User` : modèle utilisateur (email, password, roles, `isEmailVerified`).
 - `App\Entity\RefreshToken` : entité Gesdinet.
-- `App\Repository\UserRepository`, `RefreshTokenRepository`.
-- Migrations : `migrations/Version20251103215036.php`, `Version20251104203539.php`.
+- `App\Entity\ResetPasswordRequest` : entité SymfonyCasts ResetPasswordBundle.
+- `App\Entity\InviteUser` : entité métier pour les invitations administrateur.
+- `App\Repository\UserRepository`, `RefreshTokenRepository`, `ResetPasswordRequestRepository`, `InviteUserRepository`.
+- Migrations : `migrations/Version20251115224522.php`, `Version20251116110859.php`, `Version20251125163000.php`.
 
 ### 2.4 Infrastructure
 
 - `config/` : fichiers Symfony (security, rate limiter, mailer, Lexik JWT, Gesdinet, etc.). Les routes sont centralisées dans `config/routes.yaml` (routes attributaires, `api_platform` avec préfixe `/api`, loader de logout, erreurs dev).
-- `templates/` : `auth/login.html.twig`, `auth/register.html.twig`, `reset_password/request.html.twig`, `reset_password/check_email.html.twig`, `reset_password/reset.html.twig` (toutes héritent de `auth/page_base.html.twig`), `base.html.twig`, composants partagés. Le contrôleur Stimulus `assets/controllers/theme_controller.ts` applique le thème (mode/couleur) à l’initialisation.
+- `templates/` : `auth/login.html.twig`, `auth/register.html.twig`, `auth/invite_complete.html.twig`, `reset_password/request.html.twig`, `reset_password/check_email.html.twig`, `reset_password/reset.html.twig` (toutes héritent de `auth/page_base.html.twig`), `setup/initial_admin.html.twig`, `icons/logo.svg.twig`, `base.html.twig`, composants partagés. Le contrôleur Stimulus `assets/controllers/theme_controller.ts` applique le thème (mode/couleur) à l’initialisation.
 - `compose.yaml` + `infra/` : stack Docker (FrankenPHP, MariaDB, Maildev).
 - `translations/messages.fr.yaml` : catalogue i18n (UI + emails) en français.
 - `assets/styles/app.css` / `assets/app.ts` + Stimulus `controllers/theme_controller.ts` : thème Tailwind & logique front unifiée.
@@ -100,6 +107,11 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 
 - Le flow de réinitialisation dispose désormais d’API dédiées sous `/api/auth/password/*`.
 
+### 3.5 Invitation (admin)
+- `POST /api/auth/invite` : endpoint réservé aux administrateurs (`ROLE_ADMIN`), protégé par CSRF stateless, délègue à `InvitationManager::invite` (création ou renouvellement d’une entité `InviteUser` + envoi d’un email via Notifuse).
+- `GET /invite/complete?token=...` : page Twig montée par `AuthInviteCompletePageController` qui stocke le token en session, pré-remplit l’email invité et indique si l’invitation est déjà acceptée.
+- `POST /api/auth/invite/complete` : endpoint public (appelé depuis le lien d’email), protégé par CSRF stateless, délègue à `InvitationManager::complete` pour définir le mot de passe, marquer l’invitation comme acceptée et valider l’email.
+
 ---
 
 ## 4. Sécurité et conformité
@@ -111,13 +123,13 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 - **Rate Limiting** : `login_throttling` (firewall `api`) via un service `app.login_rate_limiter` (DefaultLoginRateLimiter) basé sur deux limiters framework `login_local`/`login_global`.
 - **Redirect allowlist** : `RedirectPolicy` filtre les `redirect_uri`.
 - **Secure cookies** : HttpOnly + Secure (config dépend env). Access cookie `__Secure-at` (SameSite `lax`, domaine partagé) et refresh cookie `__Host-rt` (SameSite `strict`, host-only AUTH).
-- **Access Control** : les routes publiques couvrent `login`, `register`, `password/request`, `password/reset`, `api/auth/login`, `api/auth/refresh`, `logout`, `/setup`, `/api/setup/admin` et `/verify-email`; toutes les autres routes `/api` nécessitent une authentification applicative. `UserChecker` bloque la connexion tant que `User::isEmailVerified=false`.
+- **Access Control** : les routes publiques couvrent `login`, `register`, `reset-password` (UI), `invite/complete`, `/setup`, `/verify-email`, ainsi que les endpoints API `POST /api/auth/login`, `POST /api/auth/refresh`, `POST /api/auth/register`, `POST /api/auth/logout`, `POST /api/auth/password/forgot`, `POST /api/auth/password/reset`, `POST /api/auth/invite/complete`, `POST /api/setup/admin` et `GET /api/docs`. Toutes les autres routes `/api` nécessitent une authentification applicative. `UserChecker` bloque la connexion tant que `User::isEmailVerified=false`.
 
 ---
 
 ## 5. Tests & Outils
 
-- Pas de tests automatisés fournis pour l’instant.
+- Pas de tests PHPUnit/CI fournis pour l’instant ; s’appuyer sur le script end-to-end interactif `tests/e2e.sh` pour valider les principaux parcours.
 - Vérifications rapides : `php -l` sur fichiers modifiés, curl pour endpoints (voir README). Générez un token CSRF stateless (ex. `php -r 'echo bin2hex(random_bytes(16));'`) et envoyez-le dans le header `csrf-token` pour les mutations protégées.
 - Docker Compose : `docker compose up` lance FrankenPHP + MariaDB + Maildev.
 

@@ -35,7 +35,7 @@ protection **CSRF stateless** (Symfony).
     - Refresh token opaque en base + cookie `__Host-rt` rotatif (single-use).
 - **Sécurité** :
     - CSRF stateless via en-tête `csrf-token` + Origin/Referer (voir section dédiée).
-    - Rate limiting sur login et reset.
+    - Rate limiting sur le login (reset prêt pour extension).
     - Vérification d’email via lien signé `/verify-email`.
 - **Première exécution** :
     - Tant qu’aucun utilisateur n’existe, les pages publiques redirigent vers `/setup` pour créer l’admin initial (
@@ -97,6 +97,8 @@ protection **CSRF stateless** (Symfony).
 ## Démarrage rapide
 
 Par défaut, `docker compose` expose le service sur `http://localhost:8000`.
+
+La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8000/api/docs`.
 
 ### Installation
 
@@ -234,7 +236,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
   - Crée (ou réutilise) un `User` non activé pour cet email (`isEmailVerified = false`, mot de passe aléatoire).
   - Crée ou remplace l’invitation `InviteUser` associée avec un nouveau token et une date d’expiration (7 jours).
   - Envoie un email d’invitation en réutilisant le template de bienvenue, avec un lien d’activation pointant vers `/invite/complete?token=...`.
-- Réponse :
+- Réponse (`202 Accepted`) :
 
   ```json
   { "status": "INVITE_SENT" }
@@ -256,7 +258,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 
 - Effets :
   - Valide le token d’invitation (non expiré, non déjà utilisé).
-  - Applique les mêmes règles de validation que l’inscription (mot de passe, nom d’affichage).
+  - Applique les mêmes règles de validation que l’inscription (mot de passe).
   - Met à jour le `User` associé (mot de passe) et marque l’email comme vérifié.
   - Marque l’invitation comme acceptée.
 - Réponse : `201 { "user": { ... } }`.
@@ -379,7 +381,7 @@ FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
 
 * La robustesse des mots de passe est vérifiée via la contrainte Symfony `PasswordStrength`.
 * Le niveau minimal requis est piloté par la variable d’environnement :
-  * `PASSWORD_STRENGTH_LEVEL` : entier de `1` (faible) à `4` (très fort), valeur par défaut `2` (niveau moyen).
+  * `PASSWORD_STRENGTH_LEVEL` : entier de `1` (faible) à `4` (très fort). La configuration fournie dans `.env` fixe `1` en développement ; une valeur `2` (niveau moyen) est recommandée pour la production.
 * Le frontend reçoit automatiquement cette politique (props `passwordPolicy`) et applique les mêmes contrôles de force et les mêmes messages que le backend. Il n’est donc plus nécessaire d’aligner manuellement des règles côté Vue/SDK : tout changement d’environnement est immédiatement pris en compte.
 
 **Rate limiting**
