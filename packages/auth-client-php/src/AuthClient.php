@@ -224,11 +224,17 @@ final class AuthClient
             'headers' => ['csrf-token' => $csrf],
             'json' => ['email' => $email],
         ]);
-        if ($res->getStatusCode() >= 400) {
-            throw new \RuntimeException('invite_failed: '.$res->getStatusCode());
+        $code = $res->getStatusCode();
+        $body = $res->toArray(false);
+        if ($code >= 400) {
+            $error = isset($body['error']) ? (string) $body['error'] : 'invite_failed';
+            $details = isset($body['details']) ? json_encode($body['details']) : '';
+            $suffix = $details ? ' (details: '.$details.')' : '';
+
+            throw new \RuntimeException(sprintf('invite_failed:%s [%d]%s', $error, $code, $suffix));
         }
 
-        return $res->toArray(false);
+        return $body;
     }
 
     /**

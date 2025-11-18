@@ -11,6 +11,7 @@ final class ApiResponseFactory
         'CSRF_TOKEN_INVALID' => 'Jeton CSRF invalide. Merci de réessayer.',
         'INVALID_PAYLOAD' => 'Requête invalide.',
         'INVALID_CREDENTIALS' => 'Identifiants invalides.',
+        'EMAIL_ALREADY_USED' => 'Un compte actif existe déjà pour cet email.',
         'RATE_LIMIT' => 'Trop de tentatives. Réessayez plus tard.',
         'INVALID_REGISTRATION' => 'Données d’inscription invalides.',
         'REFRESH_TOKEN_MISSING' => 'Refresh token manquant ou expiré.',

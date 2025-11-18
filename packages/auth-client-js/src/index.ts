@@ -163,8 +163,17 @@ export class AuthClient {
             headers: this.buildCsrfHeaders(),
             body: JSON.stringify({email}),
         });
-        if (!res.ok) throw new Error(`invite_failed:${res.status}`);
-        return (await res.json()) as InviteStatusResponse;
+        const payload = await res.json().catch(() => ({}));
+
+        if (!res.ok) {
+            const error = new Error(`invite_failed:${payload?.error ?? res.status}`);
+            (error as any).status = res.status;
+            (error as any).code = payload?.error;
+            (error as any).details = payload?.details;
+            throw error;
+        }
+
+        return payload as InviteStatusResponse;
     }
 
     // POST /api/auth/invite/complete — CSRF required

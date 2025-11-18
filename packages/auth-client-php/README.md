@@ -96,6 +96,7 @@ $invite = $this->auth->getInvite(1); // GET /api/invite_users/1
 ```php
 // POST /api/auth/invite (admin uniquement)
 $status = $this->auth->inviteUser('invitee@example.com'); // ['status' => 'INVITE_SENT', ...]
+// Si le compte est déjà actif, une RuntimeException est levée avec le code d’erreur remonté (EMAIL_ALREADY_USED).
 
 // POST /api/auth/invite/complete
 $result = $this->auth->completeInvite('invitation-token', 'Secret123!');

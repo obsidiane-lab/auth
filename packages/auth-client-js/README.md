@@ -194,6 +194,19 @@ await auth.inviteUser('invitee@example.com'); // -> { status: 'INVITE_SENT' }
 ```
 
 * Appelle `POST /api/auth/invite` avec un token CSRF stateless.
+* Si le compte existe déjà et est actif, l’API renvoie `409` avec `{ error: 'EMAIL_ALREADY_USED', details: { email: 'EMAIL_ALREADY_USED' } }`.
+  Exemple de gestion côté UI :
+  ```ts
+  try {
+    await auth.inviteUser('invitee@example.com');
+  } catch (e: any) {
+    if (e.code === 'EMAIL_ALREADY_USED') {
+      // afficher “ce compte est déjà actif”
+    } else {
+      throw e;
+    }
+  }
+  ```
 * Si une invitation active existe déjà pour cet utilisateur, l’API ne régénère pas le token et renvoie simplement un nouvel email (fonction “resend”).
 
 #### `completeInvite(token, password, confirmPassword?)`

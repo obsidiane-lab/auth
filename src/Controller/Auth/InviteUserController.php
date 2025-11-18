@@ -57,7 +57,12 @@ final class InviteUserController extends AbstractController
             $errors = $exception->getErrors();
             $errorCode = current($errors) ?: 'INVALID_INVITATION';
 
-            return $this->responses->error($errorCode, Response::HTTP_UNPROCESSABLE_ENTITY, [
+            $statusCode = Response::HTTP_UNPROCESSABLE_ENTITY;
+            if (in_array('EMAIL_ALREADY_USED', $errors, true)) {
+                $statusCode = Response::HTTP_CONFLICT;
+            }
+
+            return $this->responses->error($errorCode, $statusCode, [
                 'details' => $errors,
             ]);
         } catch (MailDispatchException) {

@@ -23,7 +23,8 @@ use Symfony\Component\Validator\Constraints as Assert;
             security: "is_granted('ROLE_ADMIN')",
         ),
         new Get(
-            security: "is_granted('USER_READ', object)",
+            normalizationContext: ['groups' => ['user:read']],
+            security: "is_granted('ROLE_ADMIN')",
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
@@ -70,8 +71,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     #[Groups(['user:read'])]
     private array $roles = [];
 
-    #[Groups(['user:read'])]
     #[ORM\Column(options: ['default' => false])]
+    #[Groups(['user:read'])]
     private bool $isEmailVerified = false;
 
     use LifeCycleTrait;
