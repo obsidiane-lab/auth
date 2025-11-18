@@ -108,7 +108,7 @@ Les contrôleurs délèguent aux couches métier (services dédiés) pour appliq
 - Le flow de réinitialisation dispose désormais d’API dédiées sous `/api/auth/password/*`.
 
 ### 3.5 Invitation (admin)
-- `POST /api/auth/invite` : endpoint réservé aux administrateurs (`ROLE_ADMIN`), protégé par CSRF stateless, délègue à `InvitationManager::invite` (création ou renouvellement d’une entité `InviteUser` + envoi d’un email via Notifuse).
+- `POST /api/auth/invite` : endpoint réservé aux administrateurs (`ROLE_ADMIN`), protégé par CSRF stateless, délègue à `InvitationManager::invite`. Si aucune invitation active n’existe pour cet utilisateur, une nouvelle entité `InviteUser` est créée (ou réinitialisée) avec un token et une expiration à 7 jours ; si une invitation active existe déjà, l’API ne modifie pas le token et renvoie simplement l’email d’invitation (fonction “resend”).
 - `GET /invite/complete?token=...` : page Twig montée par `AuthInviteCompletePageController` qui stocke le token en session, pré-remplit l’email invité et indique si l’invitation est déjà acceptée.
 - `POST /api/auth/invite/complete` : endpoint public (appelé depuis le lien d’email), protégé par CSRF stateless, délègue à `InvitationManager::complete` pour définir le mot de passe, marquer l’invitation comme acceptée et valider l’email.
 

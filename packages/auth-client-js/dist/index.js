@@ -2,8 +2,20 @@
  Lightweight JS SDK for Obsidiane Auth
  - Uses fetch with credentials: 'include' so cookies flow as required
  - Gère automatiquement les tokens CSRF stateless (header `csrf-token`)
- - Types sont générés depuis OpenAPI dans ./types.gen.ts par le script prepublishOnly
 */
+export function generateCsrfToken() {
+    if (typeof globalThis.crypto !== 'undefined' && 'getRandomValues' in globalThis.crypto) {
+        const bytes = new Uint8Array(16);
+        globalThis.crypto.getRandomValues(bytes);
+        return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    }
+    let token = '';
+    while (token.length < 24) {
+        token += Math.random().toString(36).slice(2);
+    }
+    return token;
+}
+export * from './models';
 export class AuthClient {
     constructor(opts = {}) {
         this.baseUrl = (opts.baseUrl ?? '').replace(/\/$/, '');
@@ -18,21 +30,16 @@ export class AuthClient {
     }
     // Utility to build headers with optional CSRF token
     headers(csrf) {
-        const h = { 'Content-Type': 'application/json' };
+        const h = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        };
         if (csrf)
             h['csrf-token'] = csrf;
         return h;
     }
-    generateCsrfToken() {
-        if (typeof globalThis.crypto !== 'undefined' && 'getRandomValues' in globalThis.crypto) {
-            const bytes = new Uint8Array(16);
-            globalThis.crypto.getRandomValues(bytes);
-            return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-        }
-        return Math.random().toString(36).slice(2) + Date.now().toString(36);
-    }
     buildCsrfHeaders() {
-        const token = this.generateCsrfToken();
+        const token = generateCsrfToken();
         return this.headers(token);
     }
     // GET /api/auth/me
@@ -80,11 +87,15 @@ export class AuthClient {
     }
     // POST /api/auth/register — CSRF required
     async register(input) {
+        const { email, password } = input;
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            throw new Error('register inputs must include string email/password');
+        }
         const res = await this.doFetch(this.url('/api/auth/register'), {
             method: 'POST',
             credentials: 'include',
             headers: this.buildCsrfHeaders(),
-            body: JSON.stringify(input),
+            body: JSON.stringify({ email, password }),
         });
         if (!res.ok)
             throw new Error(`register_failed:${res.status}`);
@@ -112,5 +123,67 @@ export class AuthClient {
         });
         if (!res.ok && res.status !== 204)
             throw new Error(`password_reset_failed:${res.status}`);
+    }
+    // POST /api/auth/invite — CSRF required, admin only
+    async inviteUser(email) {
+        const res = await this.doFetch(this.url('/api/auth/invite'), {
+            method: 'POST',
+            credentials: 'include',
+            headers: this.buildCsrfHeaders(),
+            body: JSON.stringify({ email }),
+        });
+        if (!res.ok)
+            throw new Error(`invite_failed:${res.status}`);
+        return (await res.json());
+    }
+    // POST /api/auth/invite/complete — CSRF required
+    async completeInvite(token, password, confirmPassword) {
+        const res = await this.doFetch(this.url('/api/auth/invite/complete'), {
+            method: 'POST',
+            credentials: 'include',
+            headers: this.buildCsrfHeaders(),
+            body: JSON.stringify({
+                token,
+                password,
+                confirmPassword: confirmPassword ?? password,
+            }),
+        });
+        if (!res.ok)
+            throw new Error(`invite_complete_failed:${res.status}`);
+        return (await res.json());
+    }
+    // --- ApiPlatform helpers (User & Invite resources) ---
+    // GET /api/users/me (ApiResource<User>)
+    async currentUserResource() {
+        const res = await this.doFetch(this.url('/api/users/me'), {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.headers(),
+        });
+        if (!res.ok)
+            throw new Error(`users_me_failed:${res.status}`);
+        return (await res.json());
+    }
+    // GET /api/invite_users
+    async listInvites() {
+        const res = await this.doFetch(this.url('/api/invite_users'), {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.headers(),
+        });
+        if (!res.ok)
+            throw new Error(`invite_list_failed:${res.status}`);
+        return (await res.json());
+    }
+    // GET /api/invite_users/{id}
+    async getInvite(id) {
+        const res = await this.doFetch(this.url(`/api/invite_users/${id}`), {
+            method: 'GET',
+            credentials: 'include',
+            headers: this.headers(),
+        });
+        if (!res.ok)
+            throw new Error(`invite_get_failed:${res.status}`);
+        return (await res.json());
     }
 }

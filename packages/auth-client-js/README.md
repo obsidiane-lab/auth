@@ -48,6 +48,61 @@ Le client :
 
 ---
 
+## Modèles d’entités (types)
+
+Le SDK expose quelques interfaces utiles qui reflètent les entités / payloads principaux tels qu’ils apparaissent dans l’API et la documentation OpenAPI :
+
+```ts
+export interface AuthUser {
+  id: number;
+  email: string;
+  roles: string[];
+  isEmailVerified?: boolean;
+}
+
+export interface LoginResponse {
+  user: AuthUser;
+  exp: number;
+}
+
+export interface RegisterResponse {
+  user: AuthUser;
+}
+
+export interface InviteStatusResponse {
+  status: 'INVITE_SENT' | string;
+}
+
+export interface InviteResource {
+  id: number;
+  email: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt: string | null;
+}
+```
+
+Pour les usages JSON‑LD (sans Hydra, API Platform v4), le SDK expose également deux helpers génériques :
+
+```ts
+export interface JsonLdMeta {
+  '@context'?: string | Record<string, unknown>;
+  '@id'?: string;
+  '@type'?: string | string[];
+}
+
+export type Item<T> = T & JsonLdMeta;
+
+export interface Collection<T> extends JsonLdMeta {
+  items: Array<Item<T>>;
+  totalItems?: number;
+}
+```
+
+Ces types permettent de représenter les métadonnées JSON‑LD autour de vos entités (par exemple `Item<AuthUser>` ou `Collection<InviteResource>`), sans exposer les clés Hydra.
+
+---
+
 ## API du client
 
 ### Construction
@@ -128,6 +183,32 @@ await auth.register({
 
 ---
 
+### Invitation administrateur
+
+#### `inviteUser(email)`
+
+Invite (ou ré-invite) un utilisateur, endpoint réservé aux administrateurs (`ROLE_ADMIN`).
+
+```ts
+await auth.inviteUser('invitee@example.com'); // -> { status: 'INVITE_SENT' }
+```
+
+* Appelle `POST /api/auth/invite` avec un token CSRF stateless.
+* Si une invitation active existe déjà pour cet utilisateur, l’API ne régénère pas le token et renvoie simplement un nouvel email (fonction “resend”).
+
+#### `completeInvite(token, password, confirmPassword?)`
+
+Complète une invitation à partir du lien reçu par email.
+
+```ts
+await auth.completeInvite('invitation-token', 'Secret123!');
+```
+
+* Appelle `POST /api/auth/invite/complete` avec `{ token, password, confirmPassword }`.
+* Retourne le même type de payload qu’une inscription (`RegisterResponse`).
+
+---
+
 ### Réinitialisation de mot de passe
 
 Le flow repose sur l’UI `/reset-password` du service principal, mais le client fournit des helpers HTTP pour les appels API :
@@ -156,6 +237,37 @@ await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!');
 
 ---
 
+## Helpers API Platform
+
+En complément des endpoints “auth”, le SDK fournit des helpers pour consommer les ressources exposées par API Platform (`User`, `InviteUser`, …), en utilisant le format JSON (`Accept: application/json`).
+
+### `currentUserResource()`
+
+Retourne la ressource `User` courante via `GET /api/users/me` :
+
+```ts
+const user = await auth.currentUserResource(); // AuthUser
+console.log(user.email, user.roles);
+```
+
+### `listInvites()`
+
+Liste les invitations connues (`InviteUser`) via `GET /api/invite_users` :
+
+```ts
+const invites = await auth.listInvites(); // InviteResource[]
+```
+
+### `getInvite(id)`
+
+Récupère une invitation précise via `GET /api/invite_users/{id}` :
+
+```ts
+const invite = await auth.getInvite(1); // InviteResource
+```
+
+---
+
 ## Notes d’utilisation
 
 * **Cookies & CORS**
@@ -167,3 +279,6 @@ await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!');
 
     * Le client repose sur `fetch`.
     * En Node, tu peux utiliser un polyfill (`node-fetch`, `undici`, etc.) si ton runtime ne fournit pas `fetch` nativement.
+// 4) Token CSRF si tu fais un appel custom
+import { generateCsrfToken } from '@obsidiane/auth-sdk';
+const csrf = generateCsrfToken();

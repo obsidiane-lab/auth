@@ -55,7 +55,16 @@ final readonly class InvitationManager
         }
 
         $user = $existingUser ?? $this->createInvitedUser($normalizedEmail);
-        $invite = $this->inviteRepository->findOneBy(['user' => $user]) ?? new InviteUser();
+
+        $existingInvite = $this->inviteRepository->findOneBy(['user' => $user]);
+
+        if ($existingInvite instanceof InviteUser && !$existingInvite->isAccepted() && !$existingInvite->isExpired()) {
+            $this->sendInvitationEmail($existingInvite);
+
+            return $existingInvite;
+        }
+
+        $invite = $existingInvite ?? new InviteUser();
 
         $invite->setEmail($normalizedEmail);
         $invite->setUser($user);
