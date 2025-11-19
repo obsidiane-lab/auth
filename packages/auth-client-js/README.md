@@ -129,8 +129,9 @@ Les types suivants sont exportés pour typer vos appels :
 
 ```ts
 import type {
+  // Auth
   User,
-  Invite,
+  UserRead,
   LoginResponse,
   MeResponse,
   RegisterInput,
@@ -141,6 +142,11 @@ import type {
   CompleteInviteResponse,
   InitialAdminInput,
   InitialAdminResponse,
+  // JSON-LD
+  Item,
+  Collection,
+  // Resources API Platform
+  InviteUserRead,
 } from '@obsidiane/auth-sdk';
 ```
 
@@ -217,14 +223,27 @@ Endpoints Api Platform :
 - `GET /api/users/{id}`
 - `DELETE /api/users/{id}`
 
+Le backend expose les ressources utilisateur au format **JSON-LD** (API Platform) :
+
+- une collection JSON-LD typée `Collection<UserRead>` ;
+- des items JSON-LD portant leurs métadonnées via `Item` (`@id`, `@type`, `@context`).
+
 ```ts
+import type { Collection, UserRead } from '@obsidiane/auth-sdk';
+
 // Liste d’utilisateurs (admin uniquement)
-const users: User[] = await client.users.list();
+const users: Collection<UserRead> = await client.users.list();
 
-// Détail d’un utilisateur
-const user: User = await client.users.get(1);
+// Accès aux métadonnées JSON-LD de la collection
+console.log(users['@id'], users.totalItems, users.view);
 
-// Suppression
+// Détail des items JSON-LD
+const first: UserRead | undefined = users.member[0];
+
+// Détail d’un utilisateur seul
+const user: UserRead = await client.users.get(1);
+
+// Suppression via l’ID numérique
 await client.users.delete(42);
 ```
 
@@ -235,11 +254,19 @@ Endpoints Api Platform :
 - `GET /api/invite_users`
 - `GET /api/invite_users/{id}`
 
-```ts
-import type { Invite } from '@obsidiane/auth-sdk';
+Les invitations admin exposées par API Platform sont également renvoyées en JSON-LD.
 
-const invites: Invite[] = await client.invites.list();
-const invite: Invite = await client.invites.get(invites[0].id);
+```ts
+import type { Collection, InviteUserRead } from '@obsidiane/auth-sdk';
+
+// Collection JSON-LD d’invitations
+const invites: Collection<InviteUserRead> = await client.invites.list();
+
+// Accès aux items
+const firstInvite: InviteUserRead | undefined = invites.member[0];
+
+// Lecture d’une invitation spécifique
+const invite: InviteUserRead = await client.invites.get('some-id');
 ```
 
 ---
@@ -424,4 +451,3 @@ const client = new AuthClient({
   - s’assurer que les cookies `Secure` sont bien activés.
 
 Pour le détail fonctionnel des endpoints (payloads, codes d’erreurs métier, flows complets), reportez‑vous au `README.md` du projet principal Obsidiane Auth. Ce SDK en est un simple wrapper typé, respectant les mêmes conventions (CSRF stateless, JWT + refresh, allowlist de redirection). 
-
