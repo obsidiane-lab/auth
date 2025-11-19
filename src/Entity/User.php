@@ -66,6 +66,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     private array $roles = [];
 
     #[ORM\Column(options: ['default' => false])]
+    #[Groups(['user:read'])]
     private bool $emailVerified = false;
 
     use LifeCycleTrait;
