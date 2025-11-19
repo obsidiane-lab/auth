@@ -91,7 +91,7 @@ class ApiService {
     // Utility to build headers with optional CSRF token
     headers(csrf) {
         const h = {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/ld+json',
             'Accept': 'application/ld+json',
             ...this.defaultHeaders,
         };
@@ -181,14 +181,12 @@ class ApiService {
         if (timeoutId) {
             clearTimeout(timeoutId);
         }
-        const contentType = res.headers.get('content-type') ?? '';
-        const isJson = contentType.toLowerCase().includes('application/json');
         let payload = {};
         let rawText;
-        if (isJson) {
-            payload = await res.json().catch(() => ({}));
+        try {
+            payload = await res.json();
         }
-        else {
+        catch {
             rawText = await res.text().catch(() => '');
             if (rawText) {
                 try {
@@ -205,7 +203,7 @@ class ApiService {
                 : (rawText && rawText.trim() !== '' ? rawText : `request_failed:${res.status}`);
             throw new AuthClientError(message, { ...(payload ?? {}), status: res.status, raw: rawText });
         }
-        if (!isJson && rawText && (payload === null || Object.keys(payload).length === 0)) {
+        if (rawText && (payload === null || Object.keys(payload).length === 0)) {
             return { raw: rawText };
         }
         return payload;

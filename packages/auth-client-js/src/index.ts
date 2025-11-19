@@ -133,7 +133,7 @@ class ApiService {
     // Utility to build headers with optional CSRF token
     private headers(csrf?: string): Record<string, string> {
         const h: Record<string, string> = {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/ld+json',
             'Accept': 'application/ld+json',
             ...this.defaultHeaders,
         };
@@ -242,14 +242,12 @@ class ApiService {
             clearTimeout(timeoutId);
         }
 
-        const contentType = res.headers.get('content-type') ?? '';
-        const isJson = contentType.toLowerCase().includes('application/json');
         let payload: any = {};
         let rawText: string | undefined;
 
-        if (isJson) {
-            payload = await res.json().catch(() => ({}));
-        } else {
+        try {
+            payload = await res.json();
+        } catch {
             rawText = await res.text().catch(() => '');
             if (rawText) {
                 try {
@@ -271,7 +269,7 @@ class ApiService {
             );
         }
 
-        if (!isJson && rawText && (payload === null || Object.keys(payload).length === 0)) {
+        if (rawText && (payload === null || Object.keys(payload).length === 0)) {
             return {raw: rawText} as T;
         }
 
