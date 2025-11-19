@@ -1,341 +1,427 @@
-# Obsidiane Auth – Client JS
+# @obsidiane/auth-sdk – SDK JS navigateur pour Obsidiane Auth
 
-SDK JavaScript minimal pour consommer l’API **Obsidiane Auth** dans n’importe quel framework front (React, Angular, Vue, Svelte, etc.) exécuté dans un navigateur.
+SDK JavaScript/TypeScript pour consommer l’API Obsidiane Auth depuis un navigateur :
 
-Il gère automatiquement :
+- gère automatiquement les **cookies** (`__Secure-at`, `__Host-rt`) via `fetch` + `credentials: 'include'` ;
+- génère et envoie un **token CSRF stateless** dans l’en‑tête `csrf-token` pour les endpoints sensibles ;
+- expose des **sous‑clients dédiés** (`auth`, `users`, `invites`, `setup`) avec une méthode par endpoint ;
+- fournit des **types TypeScript** et une gestion d’erreurs structurée (`ApiError`).
 
-- les appels `fetch` avec `credentials: 'include'` pour envoyer / recevoir les cookies `__Secure-at` / `__Host-rt` ;
-- les opérations courantes : `login`, `me`, `refresh`, `logout`, `register`, `passwordRequest`, `passwordReset`.
+Ce SDK est conçu pour être utilisé **côté navigateur uniquement** (pas de Node côté serveur).
 
 ---
 
-## Installation
-
-Le SDK est publié sur npm :
+## 1. Installation
 
 ```bash
 npm install @obsidiane/auth-sdk
 # ou
 yarn add @obsidiane/auth-sdk
-````
+```
+
+Le package est publié en **ESM** et inclut les définitions TypeScript (`.d.ts`).
+
+### Build (depuis le dépôt monorepo)
+
+Depuis la racine du projet `auth` :
+
+```bash
+cd packages/auth-client-js
+npm install        # si nécessaire
+npm run build      # génère dist/*
+```
+
+ou via un script dans le `package.json` racine :
+
+```json
+{
+  "scripts": {
+    "auth-sdk:build": "npm --prefix packages/auth-client-js run build"
+  }
+}
+```
 
 ---
 
-## Démarrage rapide
+## 2. Concepts clés
+
+### 2.1 Cookies & sessions JWT
+
+- L’API Auth émet deux cookies :
+  - `__Secure-at` : access token (JWT), SameSite `Lax`, partagé ;
+  - `__Host-rt` : refresh token (Gesdinet), SameSite `Strict`, host-only.
+- Le SDK **ne manipule pas directement** ces tokens :
+  - ils restent dans les cookies HTTP Only ;
+  - les appels se font toujours avec `credentials: 'include'`.
+
+### 2.2 CSRF stateless
+
+- Aucun token CSRF n’est généré par le backend.
+- Le SDK doit :
+  - générer un jeton aléatoire **par requête sensible** ;
+  - l’envoyer dans l’en‑tête `csrf-token`.
+- Ce comportement est intégré dans le client HTTP :
+  - `csrf: true` dans les options de requête → génération automatique d’un token ;
+  - `csrf: 'valeur'` → utilisation d’un token fourni ;
+  - `csrf: false/undefined` → aucun header CSRF.
+
+### 2.3 Base URL & CORS
+
+- `baseUrl` doit pointer vers la racine d’Obsidiane Auth, par ex. :
+  - `https://auth.example.com`
+  - `http://localhost:8000`
+- Côté navigateur, pensez à :
+  - autoriser l’origine dans `ALLOWED_ORIGINS` côté backend ;
+  - toujours activer `credentials: 'include'` (géré par le SDK).
+
+---
+
+## 3. AuthClient – configuration de base
+
+Le point d’entrée du SDK est la classe `AuthClient`.
 
 ```ts
 import { AuthClient } from '@obsidiane/auth-sdk';
 
 const auth = new AuthClient({
-  baseUrl: 'https://auth.example.com', // requis : URL racine du service d’auth
-});
-
-// 1) Login (le SDK génère automatiquement un token CSRF stateless et l'envoie dans l'en-tête `csrf-token`)
-await auth.login('user@example.com', 'Secret123!');
-
-// 3) Récupérer l'utilisateur courant
-const { user } = await auth.me();
-console.log(user.email);
-
-// 4) Le reste des appels (refresh, logout, reset password, etc.) restent pilotés par le SDK.
-```
-
-Le client :
-
-* ajoute automatiquement `credentials: 'include'` ;
-* n’expose jamais directement les cookies ni les tokens JWT côté JS ;
-* se contente de piloter les appels HTTP vers le service Obsidiane Auth.
-
----
-
-## Modèles d’entités (types)
-
-Le SDK expose quelques interfaces utiles qui reflètent les entités / payloads principaux tels qu’ils apparaissent dans l’API et la documentation OpenAPI :
-
-```ts
-export interface AuthUser {
-  id: number;
-  email: string;
-  roles: string[];
-  isEmailVerified?: boolean;
-}
-
-export interface LoginResponse {
-  user: AuthUser;
-  exp: number;
-}
-
-export interface RegisterResponse {
-  user: AuthUser;
-}
-
-export interface InviteStatusResponse {
-  status: 'INVITE_SENT' | string;
-}
-
-export interface InviteResource {
-  id: number;
-  email: string;
-  createdAt: string;
-  expiresAt: string;
-  acceptedAt: string | null;
-}
-
-Pour les usages JSON‑LD (sans Hydra, API Platform v4), le SDK expose également deux helpers génériques :
-
-```ts
-export interface JsonLdMeta {
-  '@context'?: string | Record<string, unknown>;
-  '@id'?: string;
-  '@type'?: string | string[];
-}
-
-export type Item<T> = T & JsonLdMeta;
-
-export interface Collection<T> extends JsonLdMeta {
-  items: Array<Item<T>>;
-  totalItems?: number;
-}
-```
-
-Ces types permettent de représenter les métadonnées JSON‑LD autour de vos entités (par exemple `Item<AuthUser>` ou `Collection<InviteResource>`), sans exposer de clés spécifiques au format interne.
-```
-
-## API du client
-
-### Construction
-
-```ts
-const auth = new AuthClient({
-  baseUrl: 'https://auth.example.com', // requis (sans trailing slash)
-  fetch: customFetch,                  // optionnel (sinon fetch global)
-  defaultHeaders: { 'X-App': 'my-ui' },
-  timeoutMs: 10000,                    // optionnel, abort via AbortController
-  csrfTokenGenerator: () => 'token',   // optionnel (par défaut, utilise crypto ou fallback SSR-safe)
-  onCsrfRejected: async ({ response, path }) => {
-    // Hook optionnel appelé avant le retry auto sur un 403 CSRF
-    console.warn('CSRF rejeté sur', path, response.status);
-  },
+  baseUrl: 'https://auth.example.com',
 });
 ```
 
-`baseUrl` doit pointer vers la racine de ton service d’authentification. Les appels ajoutent toujours `credentials: 'include'`.
-
-### Gestion CSRF (retry)
-
-Les mutations envoient un token CSRF stateless généré côté client. En cas de réponse `403` CSRF, le SDK regénère automatiquement un nouveau token et réessaie une fois. Via l’option `onCsrfRejected`, tu peux brancher un hook (logging/observabilité) ou retourner une `Response` custom pour bypasser le retry.
-
-### Génération de token CSRF
-
-Le helper exporté `generateCsrfToken()` utilise d’abord `crypto.randomUUID` / `crypto.getRandomValues` quand ils sont disponibles (navigateurs, Node 18+). En environnement SSR/ESM sans crypto, un fallback pseudo-aléatoire est utilisé pour rester compatible – surchargeable via l’option `csrfTokenGenerator`.
-
-### Gestion des erreurs
-
-Les erreurs réseau/API lèvent un `AuthClientError` (exporté par le SDK) avec les propriétés suivantes :
+### 3.1 Options disponibles
 
 ```ts
-import { AuthClient, AuthClientError } from '@obsidiane/auth-sdk';
-
-try {
-  await auth.inviteUser('invitee@example.com');
-} catch (e) {
-  const err = e as AuthClientError;
-  console.error(err.status, err.code, err.details);
-}
+type AuthClientOptions = {
+  baseUrl: string;                     // requis
+  defaultHeaders?: HeadersInit;        // en-têtes appliqués à toutes les requêtes
+  credentials?: RequestCredentials;    // 'include' (défaut), 'same-origin', 'omit'
+  csrfHeaderName?: string;             // 'csrf-token' par défaut
+  csrfTokenGenerator?: () => string;   // pour surcharger la génération CSRF
+  fetchImpl?: typeof fetch;            // pour tests ou environnements custom
+};
 ```
 
-### `login(email, password)`
-
-Effectue un login et laisse le serveur poser les cookies (`__Secure-at`, `__Host-rt`).
-
-```ts
-await auth.login('user@example.com', 'Secret123!');
-```
-
-* Appelle `POST /api/auth/login` avec un token stateless généré côté client dans l’en-tête `csrf-token`.
-* En cas de succès, les cookies sont stockés par le navigateur.
+- `baseUrl` : URL du service d’authentification.
+- `defaultHeaders` : ex. `{'X-App': 'my-frontend'}`.
+- `credentials` : par défaut `'include'` pour envoyer/recevoir les cookies JWT.
+- `csrfHeaderName` : à ne changer que si le backend n’utilise pas `csrf-token`.
+- `csrfTokenGenerator` : permet d’imposer votre propre stratégie de génération.
+- `fetchImpl` : utile pour :
+  - mocker `fetch` dans des tests ;
+  - injecter une version instrumentée de `fetch`.
 
 ---
 
-### `me()`
+## 4. Sous-clients & endpoints
 
-Récupère l’utilisateur courant.
+`AuthClient` expose plusieurs sous‑clients pour regrouper les endpoints par domaine.
 
 ```ts
-const me = await auth.me();
-console.log(me.user.email, me.user.roles);
+const client = new AuthClient({ baseUrl: 'https://auth.example.com' });
+
+client.auth;    // endpoints /api/auth/*
+client.users;   // endpoints /api/users*
+client.invites; // endpoints /api/invite_users*
+client.setup;   // endpoint /api/setup/admin
 ```
 
-* Appelle `GET /api/auth/me`.
-* Utilise le cookie `__Secure-at` automatiquement (via `credentials: 'include'`).
-
-### `refresh()`
-
-Rafraîchit le token d’accès.
+Les types suivants sont exportés pour typer vos appels :
 
 ```ts
-await auth.refresh();
+import type {
+  User,
+  Invite,
+  LoginResponse,
+  MeResponse,
+  RegisterInput,
+  RegisterResponse,
+  RefreshResponse,
+  PasswordForgotResponse,
+  InviteStatusResponse,
+  CompleteInviteResponse,
+  InitialAdminInput,
+  InitialAdminResponse,
+} from '@obsidiane/auth-sdk';
 ```
 
-* Appelle `POST /api/auth/refresh`.
-* Utilise automatiquement le cookie `__Host-rt`.
-* Ne nécessite pas de CSRF.
+### 4.1 Auth – `client.auth`
 
----
+Endpoints principaux :
 
-### `logout()`
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `POST /api/auth/refresh`
+- `POST /api/auth/register`
+- `POST /api/auth/logout`
+- `POST /api/auth/password/forgot`
+- `POST /api/auth/password/reset`
+- `POST /api/auth/invite`
+- `POST /api/auth/invite/complete`
 
-Effectue un logout complet (invalidations côté serveur + expiration cookies).
-
-```ts
-await auth.logout();
-```
-
-* Appelle `POST /api/auth/logout` avec un token stateless généré côté client dans l’en-tête `csrf-token`.
-
----
-
-### `register({ email, password })`
-
-Crée un nouvel utilisateur.
+Méthodes exposées :
 
 ```ts
-await auth.register({
+// Profil courant
+const me: MeResponse = await client.auth.me();
+
+// Login (CSRF requis)
+const { user, exp }: LoginResponse = await client.auth.login(email, password);
+
+// Refresh silencieux (CSRF non requis, mais possible)
+const refresh: RefreshResponse = await client.auth.refresh();
+
+// Logout (CSRF requis)
+await client.auth.logout();
+
+// Inscription (CSRF requis)
+const registration: RegisterResponse = await client.auth.register({
   email: 'user@example.com',
   password: 'Secret123!',
 });
+
+// Demande de reset (CSRF requis)
+const forgot: PasswordForgotResponse = await client.auth.requestPasswordReset('user@example.com');
+
+// Reset password (CSRF requis)
+await client.auth.resetPassword('<reset-token>', 'NewSecret123!');
+
+// Invitation (admin, CSRF requis)
+const inviteStatus: InviteStatusResponse = await client.auth.inviteUser('invitee@example.com');
+
+// Compléter une invitation (public, CSRF requis)
+const completed: CompleteInviteResponse = await client.auth.completeInvite('token', 'Secret123!');
 ```
 
-* Appelle `POST /api/auth/register`.
-* Déclenche l’envoi d’un email de vérification (`/verify-email`) côté service d’authentification.
-* La signature attend explicitement un objet `{ email, password }` (voir type `RegisterPayload`), aligné sur l’API backend.
+### 4.2 Setup initial – `client.setup`
+
+Endpoint :
+
+- `POST /api/setup/admin`
+
+```ts
+const input: InitialAdminInput = {
+  email: 'admin@example.com',
+  password: 'Secret123!',
+};
+
+const created: InitialAdminResponse = await client.setup.createInitialAdmin(input);
+```
+
+Ce flux n’est disponible que tant qu’aucun utilisateur n’existe dans la base.
+
+### 4.3 Users – `client.users`
+
+Endpoints Api Platform :
+
+- `GET /api/users`
+- `GET /api/users/{id}`
+- `DELETE /api/users/{id}`
+
+```ts
+// Liste d’utilisateurs (admin uniquement)
+const users: User[] = await client.users.list();
+
+// Détail d’un utilisateur
+const user: User = await client.users.get(1);
+
+// Suppression
+await client.users.delete(42);
+```
+
+### 4.4 Invites – `client.invites`
+
+Endpoints Api Platform :
+
+- `GET /api/invite_users`
+- `GET /api/invite_users/{id}`
+
+```ts
+import type { Invite } from '@obsidiane/auth-sdk';
+
+const invites: Invite[] = await client.invites.list();
+const invite: Invite = await client.invites.get(invites[0].id);
+```
 
 ---
 
-### Invitation administrateur
+## 5. Gestion des erreurs
 
-#### `inviteUser(email)`
-
-Invite (ou ré-invite) un utilisateur, endpoint réservé aux administrateurs (`ROLE_ADMIN`).
+Toutes les erreurs HTTP (codes 4xx/5xx) sont mappées sur une exception `ApiError` :
 
 ```ts
-await auth.inviteUser('invitee@example.com'); // -> { status: 'INVITE_SENT' }
-```
+import { ApiError } from '@obsidiane/auth-sdk';
 
-* Appelle `POST /api/auth/invite` avec un token CSRF stateless.
-* Si le compte existe déjà et est actif, l’API renvoie `409` avec `{ error: 'EMAIL_ALREADY_USED', details: { email: 'EMAIL_ALREADY_USED' } }`.
-  Exemple de gestion côté UI :
-  ```ts
-  try {
-    await auth.inviteUser('invitee@example.com');
-  } catch (e: any) {
-    if (e.code === 'EMAIL_ALREADY_USED') {
-      // afficher “ce compte est déjà actif”
-    } else {
-      throw e;
-    }
+try {
+  await client.auth.register({ email, password });
+} catch (error) {
+  if (error instanceof ApiError) {
+    console.error('Status HTTP :', error.status);
+    console.error('Code métier :', error.errorCode);
+    console.error('Détails :', error.details);
+    console.error('Payload brut :', error.payload);
+  } else {
+    console.error('Erreur inattendue :', error);
   }
-  ```
-* Si une invitation active existe déjà pour cet utilisateur, l’API ne régénère pas le token et renvoie simplement un nouvel email (fonction “resend”).
-
-#### `completeInvite(token, password, confirmPassword?)`
-
-Complète une invitation à partir du lien reçu par email.
-
-```ts
-await auth.completeInvite('invitation-token', 'Secret123!');
+}
 ```
 
-* Appelle `POST /api/auth/invite/complete` avec `{ token, password, confirmPassword }`.
-* Retourne le même type de payload qu’une inscription (`RegisterResponse`).
+`ApiError` reflète la structure d’erreur du backend :
+
+- `status` : code HTTP ;
+- `errorCode` : champ `error` du payload (`EMAIL_ALREADY_USED`, `INVALID_REGISTRATION`, etc.) ;
+- `details` : champ `details` lorsque présent ;
+- `payload` : payload complet retourné par l’API.
+
+Un alias `AuthSdkError` est également exporté pour des usages plus génériques.
 
 ---
 
-### Réinitialisation de mot de passe
+## 6. Intégration front – exemples
 
-Le flow repose sur l’UI `/reset-password` du service principal, mais le client fournit des helpers HTTP pour les appels API :
-
-#### `passwordRequest(email)`
-
-Envoie l’email de réinitialisation.
+### 6.1 Vanilla JS / TS
 
 ```ts
-await auth.passwordRequest('user@example.com');
+import { AuthClient } from '@obsidiane/auth-sdk';
+
+const client = new AuthClient({
+  baseUrl: 'https://auth.example.com',
+});
+
+async function handleLogin(email: string, password: string) {
+  const { user } = await client.auth.login(email, password);
+  console.log('Connecté en tant que', user.email);
+}
 ```
 
-* Appelle `POST /api/auth/password/forgot` avec `{ email }`.
-* Réponse côté API : `202 { status: 'OK' }` (pas de fuite sur l’existence du compte).
-
-#### `passwordReset(token, password)`
-
-Soumet le nouveau mot de passe.
+### 6.2 React (hook simple)
 
 ```ts
-await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!');
+import { useState, useEffect } from 'react';
+import { AuthClient, ApiError, type MeResponse } from '@obsidiane/auth-sdk';
+
+const client = new AuthClient({ baseUrl: 'https://auth.example.com' });
+
+export function useCurrentUser() {
+  const [data, setData] = useState<MeResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<ApiError | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    client.auth
+      .me()
+      .then((res) => {
+        if (!cancelled) {
+          setData(res);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled && err instanceof ApiError && err.status === 401) {
+          setData(null);
+        } else if (!cancelled) {
+          setError(err);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  return { data, loading, error };
+}
 ```
 
-* Appelle `POST /api/auth/password/reset` avec `{ token, password }`.
-* Invalide les sessions actives de l’utilisateur (côté service).
+### 6.3 Refresh silencieux
+
+```ts
+async function scheduleRefresh(client: AuthClient, exp: number) {
+  const now = Date.now() / 1000;
+  const delaySeconds = Math.max(exp - now - 30, 10); // rafraîchit 30s avant l’expiration
+
+  setTimeout(async () => {
+    const { exp: newExp } = await client.auth.refresh();
+    await scheduleRefresh(client, newExp);
+  }, delaySeconds * 1000);
+}
+
+const { exp } = await client.auth.login('user@example.com', 'Secret123!');
+scheduleRefresh(client, exp);
+```
 
 ---
 
-## Helpers API Platform
+## 7. Utilisation avancée
 
-En complément des endpoints “auth”, le SDK fournit des helpers pour consommer les ressources exposées par API Platform (`User`, `InviteUser`, …), en utilisant le format JSON-LD (`Accept: application/ld+json`). Les métadonnées JSON‑LD sont gérées côté SDK, sans exposer de détails supplémentaires aux consommateurs.
+### 7.1 Générer un token CSRF compatible
 
-### `listUsers()`
-
-Liste les utilisateurs via `GET /api/users` :
+Dans la plupart des cas, vous n’avez pas besoin d’appeler cela directement (les méthodes du SDK s’en chargent). Pour des appels HTTP personnalisés, vous pouvez générer un token compatible :
 
 ```ts
-const users = await auth.listUsers(); // AuthUser[]
+import { AuthClient } from '@obsidiane/auth-sdk';
+
+const client = new AuthClient({ baseUrl: 'https://auth.example.com' });
+const csrf = client.generateCsrfToken();
+
+await fetch('https://auth.example.com/api/custom/endpoint', {
+  method: 'POST',
+  credentials: 'include',
+  headers: {
+    'Content-Type': 'application/json',
+    'csrf-token': csrf,
+  },
+  body: JSON.stringify({ foo: 'bar' }),
+});
 ```
 
-### `getUser(id)`
+### 7.2 Surcharger `fetch`
 
-Récupère un utilisateur précis via `GET /api/users/{id}` :
+Pour instrumenter toutes les requêtes du SDK (logs, tracing, mocking) :
 
 ```ts
-const user = await auth.getUser(1); // AuthUser
+const instrumentedFetch: typeof fetch = async (input, init) => {
+  const start = performance.now();
+  const response = await fetch(input, init);
+  const duration = performance.now() - start;
+
+  console.debug('Auth SDK request', { input, status: response.status, duration });
+
+  return response;
+};
+
+const client = new AuthClient({
+  baseUrl: 'https://auth.example.com',
+  fetchImpl: instrumentedFetch,
+});
 ```
 
-### `deleteUser(id)`
-
-Supprime un utilisateur via `DELETE /api/users/{id}` :
+### 7.3 Surcharger la génération CSRF
 
 ```ts
-await auth.deleteUser(1);
-```
-
-### `listInvites()`
-
-Liste les invitations connues (`InviteUser`) via `GET /api/invite_users` :
-
-```ts
-const invites = await auth.listInvites(); // InviteResource[]
-```
-
-### `getInvite(id)`
-
-Récupère une invitation précise via `GET /api/invite_users/{id}` :
-
-```ts
-const invite = await auth.getInvite(1); // InviteResource
+const client = new AuthClient({
+  baseUrl: 'https://auth.example.com',
+  csrfTokenGenerator: () => myCustomRandomHex(32),
+});
 ```
 
 ---
 
-## Notes d’utilisation
+## 8. Bonnes pratiques de sécurité côté front
 
-* **Cookies & CORS**
+- **Ne stockez jamais** les JWT dans `localStorage` ou `sessionStorage` :
+  - laissez le backend gérer les cookies `HttpOnly` ;
+  - utilisez toujours `credentials: 'include'` (géré par le SDK).
+- Générer un **token CSRF par requête** sensible (le SDK le fait pour toutes ses méthodes).
+- Garder `baseUrl` cohérent avec la politique CORS (`ALLOWED_ORIGINS`) du backend.
+- En production :
+  - servir le frontend en HTTPS ;
+  - s’assurer que les cookies `Secure` sont bien activés.
 
-    * Pense à configurer le service Obsidiane Auth avec `CORS` et `ALLOW_CREDENTIALS` activés si ton front est sur un autre domaine.
-    * Côté front, aucune manipulation de JWT : les cookies restent gérés par le navigateur.
+Pour le détail fonctionnel des endpoints (payloads, codes d’erreurs métier, flows complets), reportez‑vous au `README.md` du projet principal Obsidiane Auth. Ce SDK en est un simple wrapper typé, respectant les mêmes conventions (CSRF stateless, JWT + refresh, allowlist de redirection). 
 
-* **Environnements SSR / Node**
-
-    * Le client repose sur `fetch`.
-    * En Node, tu peux utiliser un polyfill (`node-fetch`, `undici`, etc.) si ton runtime ne fournit pas `fetch` nativement.
-// 4) Token CSRF si tu fais un appel custom
-import { generateCsrfToken } from '@obsidiane/auth-sdk';
-const csrf = generateCsrfToken();
