@@ -66,8 +66,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     private array $roles = [];
 
     #[ORM\Column(options: ['default' => false])]
-    #[Groups(['user:read'])]
-    private bool $isEmailVerified = false;
+    private bool $emailVerified = false;
 
     use LifeCycleTrait;
 
@@ -159,12 +158,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
 
     public function isEmailVerified(): bool
     {
-        return $this->isEmailVerified;
+        return $this->emailVerified;
     }
 
-    public function setIsEmailVerified(bool $isEmailVerified): static
+    public function setEmailVerified(bool $emailVerified): static
     {
-        $this->isEmailVerified = $isEmailVerified;
+        $this->emailVerified = $emailVerified;
 
         return $this;
     }

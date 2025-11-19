@@ -54,11 +54,5 @@ services:
     ports:
       - "3306:3306"
 
-  maildev:
-    image: maildev/maildev
-    ports:
-      - "1080:1080"
-      - "1025:1025"
-
 volumes:
   database_data:

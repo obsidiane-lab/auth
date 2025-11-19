@@ -51,7 +51,7 @@ final readonly class EmailVerifier
 
         $this->verifyEmailHelper->validateEmailConfirmationFromRequest($request, (string) $userId, $email);
 
-        $user->setIsEmailVerified(true);
+        $user->setEmailVerified(true);
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();

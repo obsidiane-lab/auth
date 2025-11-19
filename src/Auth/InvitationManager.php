@@ -132,7 +132,7 @@ final readonly class InvitationManager
 
         $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
         $user->eraseCredentials();
-        $user->setIsEmailVerified(true);
+        $user->setEmailVerified(true);
 
         $invite->setAcceptedAt(new \DateTimeImmutable());
 
@@ -150,7 +150,7 @@ final readonly class InvitationManager
         $user->setPassword($this->passwordHasher->hashPassword($user, $randomPassword));
         $user->eraseCredentials();
         $user->setRoles([]);
-        $user->setIsEmailVerified(false);
+        $user->setEmailVerified(false);
 
         return $user;
     }

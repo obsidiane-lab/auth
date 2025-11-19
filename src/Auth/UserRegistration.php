@@ -69,7 +69,7 @@ final readonly class UserRegistration
             throw new RegistrationException(['email' => 'EMAIL_ALREADY_USED'], $exception);
         }
 
-        $user->setIsEmailVerified(false);
+        $user->setEmailVerified(false);
 
         try {
             $this->sendWelcomeEmail($user);

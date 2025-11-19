@@ -42,7 +42,7 @@ final class InitialAdminManager
 
         $user = $this->registration->register($input);
         $user->setRoles(['ROLE_ADMIN']);
-        $user->setIsEmailVerified(true);
+        $user->setEmailVerified(true);
         $this->entityManager->flush();
 
         return $user;
