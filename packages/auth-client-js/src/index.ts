@@ -4,6 +4,24 @@
  - Gère automatiquement les tokens CSRF stateless (header `csrf-token`)
 */
 
+const CSRF_HEADER_NAME = 'csrf-token' as const;
+
+const API_PATHS = {
+    AUTH_ME: '/api/auth/me',
+    AUTH_LOGIN: '/api/auth/login',
+    AUTH_REFRESH: '/api/auth/refresh',
+    AUTH_LOGOUT: '/api/auth/logout',
+    AUTH_REGISTER: '/api/auth/register',
+    AUTH_PASSWORD_FORGOT: '/api/auth/password/forgot',
+    AUTH_PASSWORD_RESET: '/api/auth/password/reset',
+    AUTH_INVITE: '/api/auth/invite',
+    AUTH_INVITE_COMPLETE: '/api/auth/invite/complete',
+    USERS: '/api/users',
+    USER: (id: number) => `/api/users/${id}`,
+    INVITE_USERS: '/api/invite_users',
+    INVITE_USER: (id: number) => `/api/invite_users/${id}`,
+} as const;
+
 export type FetchLike = typeof fetch;
 
 export interface AuthClientOptions {
@@ -48,17 +66,10 @@ export function generateCsrfToken(): string {
 }
 
 export * from './models';
-import type {
-    AuthUser,
-    LoginResponse,
-    MeResponse,
-    RegisterResponse,
-    InviteStatusResponse,
-    InviteResource,
-} from './models';
+import type {AuthUser, LoginResponse, MeResponse, RegisterResponse, InviteStatusResponse, InviteResource} from './models';
 import {AuthClientError} from './models';
 
-export class AuthClient {
+class ApiService {
     private readonly baseUrl: string;
     private readonly doFetch: FetchLike;
     private readonly defaultHeaders: Record<string, string>;
@@ -105,7 +116,9 @@ export class AuthClient {
         if (!headers) return {};
         if (typeof Headers !== 'undefined' && headers instanceof Headers) {
             const out: Record<string, string> = {};
-            headers.forEach((value, key) => { out[key] = value; });
+            headers.forEach((value, key) => {
+                out[key] = value;
+            });
             return out;
         }
         if (Array.isArray(headers)) {
@@ -124,120 +137,56 @@ export class AuthClient {
             'Accept': 'application/json',
             ...this.defaultHeaders,
         };
-        if (csrf) h['csrf-token'] = csrf;
+        if (csrf) {
+            h[CSRF_HEADER_NAME] = csrf;
+        }
         if (this.attachOriginHeader && this.originHeader && !('Origin' in h) && !('origin' in h)) {
             h['Origin'] = this.originHeader;
         }
         return h;
     }
 
-    private buildCsrfHeaders(): Record<string, string> {
+    buildCsrfHeaders(): Record<string, string> {
         const token = this.csrfTokenGenerator();
         return this.headers(token);
     }
 
-    // GET /api/auth/me
-    async me<T = MeResponse>(): Promise<T> {
-        return await this.request<T>('/api/auth/me', {method: 'GET'});
-    }
-
-    // POST /api/auth/login — CSRF required
-    async login<T = LoginResponse>(email: string, password: string): Promise<T> {
-        return await this.request<T>('/api/auth/login', {
-            method: 'POST',
-            headers: this.buildCsrfHeaders(),
-            body: JSON.stringify({email, password}),
+    async getJsonLd<T>(path: string): Promise<T> {
+        return await this.request<T>(path, {
+            method: 'GET',
+            headers: {Accept: 'application/ld+json'},
         });
     }
 
-    // POST /api/auth/refresh — cookie-based, CSRF optional
-    async refresh<T = unknown>(csrf?: string): Promise<T> {
-        return await this.request<T>('/api/auth/refresh', {
-            method: 'POST',
-            headers: this.headers(csrf),
-        });
-    }
+    async getJsonLdCollection<T>(path: string): Promise<T[]> {
+        const raw = await this.getJsonLd<any>(path);
 
-    // POST /api/auth/logout — CSRF required
-    async logout(): Promise<void> {
-        await this.request<void>('/api/auth/logout', {
-            method: 'POST',
-            headers: this.buildCsrfHeaders(),
-        }, {allowNoContent: true});
-    }
-
-    // POST /api/auth/register — CSRF required
-    async register<T = RegisterResponse>(input: RegisterPayload): Promise<T> {
-        const {email, password} = input;
-        if (typeof email !== 'string' || typeof password !== 'string') {
-            throw new Error('register inputs must include string email/password');
+        if (Array.isArray(raw)) {
+            return raw as T[];
         }
-        return await this.request<T>('/api/auth/register', {
+
+        if (raw && typeof raw === 'object' && Array.isArray((raw as any).items)) {
+            return (raw as any).items as T[];
+        }
+
+        return [];
+    }
+
+    async postWithCsrf<T>(path: string, body?: unknown, allowNoContent = false): Promise<T> {
+        const init: RequestInit & { headers?: Record<string, string> } = {
             method: 'POST',
             headers: this.buildCsrfHeaders(),
-            body: JSON.stringify({email, password}),
-        });
+        };
+
+        if (body !== undefined) {
+            init.body = JSON.stringify(body);
+        }
+
+        const opts = allowNoContent ? {allowNoContent: true} : {};
+        return await this.request<T>(path, init, opts);
     }
 
-    // POST /api/auth/password/forgot — CSRF required
-    async passwordRequest<T = unknown>(email: string): Promise<T> {
-        return await this.request<T>('/api/auth/password/forgot', {
-            method: 'POST',
-            headers: this.buildCsrfHeaders(),
-            body: JSON.stringify({email}),
-        });
-    }
-
-    // POST /api/auth/password/reset — CSRF required
-    async passwordReset(token: string, password: string): Promise<void> {
-        await this.request<void>('/api/auth/password/reset', {
-            method: 'POST',
-            headers: this.buildCsrfHeaders(),
-            body: JSON.stringify({token, password}),
-        }, {allowNoContent: true});
-    }
-
-    // POST /api/auth/invite — CSRF required, admin only
-    async inviteUser(email: string): Promise<InviteStatusResponse> {
-        return await this.request<InviteStatusResponse>('/api/auth/invite', {
-            method: 'POST',
-            headers: this.buildCsrfHeaders(),
-            body: JSON.stringify({email}),
-        });
-    }
-
-    // POST /api/auth/invite/complete — CSRF required
-    async completeInvite<T = RegisterResponse>(token: string, password: string, confirmPassword?: string): Promise<T> {
-        return await this.request<T>('/api/auth/invite/complete', {
-            method: 'POST',
-            headers: this.buildCsrfHeaders(),
-            body: JSON.stringify({
-                token,
-                password,
-                confirmPassword: confirmPassword ?? password,
-            }),
-        });
-    }
-
-    // --- ApiPlatform helpers (Invite resources) ---
-
-    // GET /api/invite_users
-    async listInvites(): Promise<InviteResource[]> {
-        return await this.request<InviteResource[]>('/api/invite_users', {
-            method: 'GET',
-            headers: this.headers(),
-        });
-    }
-
-    // GET /api/invite_users/{id}
-    async getInvite(id: number): Promise<InviteResource> {
-        return await this.request<InviteResource>(`/api/invite_users/${id}`, {
-            method: 'GET',
-            headers: this.headers(),
-        });
-    }
-
-    private async request<T>(
+    async request<T>(
         path: string,
         init: RequestInit & { headers?: Record<string, string> },
         opts: { allowNoContent?: boolean } = {},
@@ -272,7 +221,10 @@ export class AuthClient {
         if (res.status === 403 && init.method && init.method.toUpperCase() !== 'GET') {
             const retryInit = {
                 ...init,
-                headers: {...this.toHeaderRecord(init.headers), 'csrf-token': this.csrfTokenGenerator()},
+                headers: {
+                    ...this.toHeaderRecord(init.headers),
+                    [CSRF_HEADER_NAME]: this.csrfTokenGenerator(),
+                },
             };
             if (this.onCsrfRejected) {
                 const maybe = await this.onCsrfRejected({path, init: retryInit, response: res, attempt: 1});
@@ -324,5 +276,107 @@ export class AuthClient {
         }
 
         return payload as T;
+    }
+}
+
+export class AuthClient {
+    private readonly api: ApiService;
+
+    constructor(opts: AuthClientOptions) {
+        this.api = new ApiService(opts);
+    }
+
+    // --- ApiPlatform helpers (User resources) ---
+
+    // GET /api/users
+    async listUsers(): Promise<AuthUser[]> {
+        return await this.api.getJsonLdCollection<AuthUser>(API_PATHS.USERS);
+    }
+
+    // GET /api/users/{id}
+    async getUser(id: number): Promise<AuthUser> {
+        return await this.api.getJsonLd<AuthUser>(API_PATHS.USER(id));
+    }
+
+    // --- Auth endpoints ---
+
+    // GET /api/auth/me
+    async me(): Promise<MeResponse> {
+        return await this.api.request<MeResponse>(API_PATHS.AUTH_ME, {method: 'GET', headers: {}});
+    }
+
+    // POST /api/auth/login — CSRF required
+    async login(email: string, password: string): Promise<LoginResponse> {
+        return await this.api.postWithCsrf<LoginResponse>(API_PATHS.AUTH_LOGIN, {email, password});
+    }
+
+    // POST /api/auth/refresh — cookie-based, CSRF optional
+    async refresh(csrf?: string): Promise<unknown> {
+        const headers: Record<string, string> = {};
+        if (csrf) {
+            headers[CSRF_HEADER_NAME] = csrf;
+        }
+        return await this.api.request<unknown>(API_PATHS.AUTH_REFRESH, {
+            method: 'POST',
+            headers,
+        });
+    }
+
+    // POST /api/auth/logout — CSRF required
+    async logout(): Promise<void> {
+        await this.api.postWithCsrf<void>(API_PATHS.AUTH_LOGOUT, undefined, true);
+    }
+
+    // POST /api/auth/register — CSRF required
+    async register(input: RegisterPayload): Promise<RegisterResponse> {
+        const {email, password} = input;
+        if (typeof email !== 'string' || typeof password !== 'string') {
+            throw new Error('register inputs must include string email/password');
+        }
+        return await this.api.postWithCsrf<RegisterResponse>(API_PATHS.AUTH_REGISTER, {email, password});
+    }
+
+    // POST /api/auth/password/forgot — CSRF required
+    async passwordRequest(email: string): Promise<unknown> {
+        return await this.api.postWithCsrf<unknown>(API_PATHS.AUTH_PASSWORD_FORGOT, {email});
+    }
+
+    // POST /api/auth/password/reset — CSRF required
+    async passwordReset(token: string, password: string): Promise<void> {
+        await this.api.postWithCsrf<void>(API_PATHS.AUTH_PASSWORD_RESET, {token, password}, true);
+    }
+
+    // POST /api/auth/invite — CSRF required, admin only
+    async inviteUser(email: string): Promise<InviteStatusResponse> {
+        return await this.api.postWithCsrf<InviteStatusResponse>(API_PATHS.AUTH_INVITE, {email});
+    }
+
+    // POST /api/auth/invite/complete — CSRF required
+    async completeInvite(token: string, password: string, confirmPassword?: string): Promise<RegisterResponse> {
+        return await this.api.postWithCsrf<RegisterResponse>(API_PATHS.AUTH_INVITE_COMPLETE, {
+            token,
+            password,
+            confirmPassword: confirmPassword ?? password,
+        });
+    }
+
+    // --- ApiPlatform helpers (Invite resources) ---
+
+    // GET /api/invite_users
+    async listInvites(): Promise<InviteResource[]> {
+        return await this.api.getJsonLdCollection<InviteResource>(API_PATHS.INVITE_USERS);
+    }
+
+    // GET /api/invite_users/{id}
+    async getInvite(id: number): Promise<InviteResource> {
+        return await this.api.getJsonLd<InviteResource>(API_PATHS.INVITE_USER(id));
+    }
+
+    // DELETE /api/users/{id}
+    async deleteUser(id: number): Promise<void> {
+        await this.api.request<void>(API_PATHS.USER(id), {
+            method: 'DELETE',
+            headers: {},
+        }, {allowNoContent: true});
     }
 }

@@ -8,7 +8,6 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use App\Entity\LifeCycle\LifeCycleInterface;
 use App\Entity\LifeCycle\LifeCycleTrait;
-use App\Provider\MeProvider;
 use App\Repository\UserRepository;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
@@ -28,12 +27,6 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
-        ),
-        new Get(
-            uriTemplate: '/users/me',
-            normalizationContext: ['groups' => ['user:read']],
-            security: "is_granted('IS_AUTHENTICATED_FULLY')",
-            provider: MeProvider::class,
         ),
     ],
     normalizationContext: ['groups' => ['user:read']],

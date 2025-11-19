@@ -34,7 +34,7 @@ const auth = new AuthClient({
 await auth.login('user@example.com', 'Secret123!');
 
 // 3) Récupérer l'utilisateur courant
-const { user } = await auth.me<{ user: { id: number; email: string } }>();
+const { user } = await auth.me();
 console.log(user.email);
 
 // 4) Le reste des appels (refresh, logout, reset password, etc.) restent pilotés par le SDK.
@@ -99,7 +99,7 @@ export interface Collection<T> extends JsonLdMeta {
 }
 ```
 
-Ces types permettent de représenter les métadonnées JSON‑LD autour de vos entités (par exemple `Item<AuthUser>` ou `Collection<InviteResource>`), sans exposer les clés Hydra.
+Ces types permettent de représenter les métadonnées JSON‑LD autour de vos entités (par exemple `Item<AuthUser>` ou `Collection<InviteResource>`), sans exposer de clés spécifiques au format interne.
 
 ---
 
@@ -159,12 +159,12 @@ await auth.login('user@example.com', 'Secret123!');
 
 ---
 
-### `me<T>()`
+### `me()`
 
 Récupère l’utilisateur courant.
 
 ```ts
-const me = await auth.me<{ user: { id: number; email: string; roles: string[] } }>();
+const me = await auth.me();
 console.log(me.user.email, me.user.roles);
 ```
 
@@ -283,7 +283,31 @@ await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!');
 
 ## Helpers API Platform
 
-En complément des endpoints “auth”, le SDK fournit des helpers pour consommer les ressources exposées par API Platform (`User`, `InviteUser`, …), en utilisant le format JSON (`Accept: application/json`).
+En complément des endpoints “auth”, le SDK fournit des helpers pour consommer les ressources exposées par API Platform (`User`, `InviteUser`, …), en utilisant le format JSON-LD (`Accept: application/ld+json`). Les métadonnées JSON‑LD sont gérées côté SDK, sans exposer de détails supplémentaires aux consommateurs.
+
+### `listUsers()`
+
+Liste les utilisateurs via `GET /api/users` :
+
+```ts
+const users = await auth.listUsers(); // AuthUser[]
+```
+
+### `getUser(id)`
+
+Récupère un utilisateur précis via `GET /api/users/{id}` :
+
+```ts
+const user = await auth.getUser(1); // AuthUser
+```
+
+### `deleteUser(id)`
+
+Supprime un utilisateur via `DELETE /api/users/{id}` :
+
+```ts
+await auth.deleteUser(1);
+```
 
 ### `listInvites()`
 
