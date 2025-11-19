@@ -147,23 +147,18 @@ class ApiService {
     }
 
     buildCsrfHeaders(): Record<string, string> {
-        const token = this.csrfTokenGenerator();
-        return this.headers(token);
+        return {[CSRF_HEADER_NAME]: this.csrfTokenGenerator()};
     }
 
     async getJson<T>(path: string): Promise<T> {
         return await this.request<T>(path, {
             method: 'GET',
-            headers: {Accept: 'application/ld+json'},
+            headers: {},
         });
     }
 
     async getCollection<T>(path: string): Promise<T[]> {
         const raw = await this.getJson<unknown>(path);
-
-        if (Array.isArray(raw)) {
-            return raw as T[];
-        }
 
         if (raw && typeof raw === 'object' && Array.isArray((raw as any).items)) {
             return (raw as any).items as T[];
