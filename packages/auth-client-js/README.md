@@ -285,15 +285,6 @@ await auth.passwordReset('resetTokenReçuParEmail', 'NewSecret123!');
 
 En complément des endpoints “auth”, le SDK fournit des helpers pour consommer les ressources exposées par API Platform (`User`, `InviteUser`, …), en utilisant le format JSON (`Accept: application/json`).
 
-### `currentUserResource()`
-
-Retourne la ressource `User` courante via `GET /api/users/me` :
-
-```ts
-const user = await auth.currentUserResource(); // AuthUser
-console.log(user.email, user.roles);
-```
-
 ### `listInvites()`
 
 Liste les invitations connues (`InviteUser`) via `GET /api/invite_users` :

@@ -219,15 +219,7 @@ export class AuthClient {
         });
     }
 
-    // --- ApiPlatform helpers (User & Invite resources) ---
-
-    // GET /api/users/me (ApiResource<User>)
-    async currentUserResource(): Promise<AuthUser> {
-        return await this.request<AuthUser>('/api/users/me', {
-            method: 'GET',
-            headers: this.headers(),
-        });
-    }
+    // --- ApiPlatform helpers (Invite resources) ---
 
     // GET /api/invite_users
     async listInvites(): Promise<InviteResource[]> {

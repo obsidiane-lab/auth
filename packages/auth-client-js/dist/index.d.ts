@@ -21,7 +21,7 @@ export interface RegisterPayload {
 }
 export declare function generateCsrfToken(): string;
 export * from './models';
-import type { AuthUser, LoginResponse, MeResponse, RegisterResponse, InviteStatusResponse, InviteResource } from './models';
+import type { LoginResponse, MeResponse, RegisterResponse, InviteStatusResponse, InviteResource } from './models';
 export declare class AuthClient {
     private readonly baseUrl;
     private readonly doFetch;
@@ -46,7 +46,6 @@ export declare class AuthClient {
     passwordReset(token: string, password: string): Promise<void>;
     inviteUser(email: string): Promise<InviteStatusResponse>;
     completeInvite<T = RegisterResponse>(token: string, password: string, confirmPassword?: string): Promise<T>;
-    currentUserResource(): Promise<AuthUser>;
     listInvites(): Promise<InviteResource[]>;
     getInvite(id: number): Promise<InviteResource>;
     private request;
