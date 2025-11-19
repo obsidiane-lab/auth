@@ -92,7 +92,7 @@ class ApiService {
     headers(csrf) {
         const h = {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Accept': 'application/ld+json',
             ...this.defaultHeaders,
         };
         if (csrf) {
@@ -107,14 +107,14 @@ class ApiService {
         const token = this.csrfTokenGenerator();
         return this.headers(token);
     }
-    async getJsonLd(path) {
+    async getJson(path) {
         return await this.request(path, {
             method: 'GET',
             headers: { Accept: 'application/ld+json' },
         });
     }
-    async getJsonLdCollection(path) {
-        const raw = await this.getJsonLd(path);
+    async getCollection(path) {
+        const raw = await this.getJson(path);
         if (Array.isArray(raw)) {
             return raw;
         }
@@ -218,11 +218,11 @@ export class AuthClient {
     // --- ApiPlatform helpers (User resources) ---
     // GET /api/users
     async listUsers() {
-        return await this.api.getJsonLdCollection(API_PATHS.USERS);
+        return await this.api.getCollection(API_PATHS.USERS);
     }
     // GET /api/users/{id}
     async getUser(id) {
-        return await this.api.getJsonLd(API_PATHS.USER(id));
+        return await this.api.getJson(API_PATHS.USER(id));
     }
     // --- Auth endpoints ---
     // GET /api/auth/me
@@ -279,11 +279,11 @@ export class AuthClient {
     // --- ApiPlatform helpers (Invite resources) ---
     // GET /api/invite_users
     async listInvites() {
-        return await this.api.getJsonLdCollection(API_PATHS.INVITE_USERS);
+        return await this.api.getCollection(API_PATHS.INVITE_USERS);
     }
     // GET /api/invite_users/{id}
     async getInvite(id) {
-        return await this.api.getJsonLd(API_PATHS.INVITE_USER(id));
+        return await this.api.getJson(API_PATHS.INVITE_USER(id));
     }
     // DELETE /api/users/{id}
     async deleteUser(id) {

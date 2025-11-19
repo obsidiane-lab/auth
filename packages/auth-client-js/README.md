@@ -80,7 +80,6 @@ export interface InviteResource {
   expiresAt: string;
   acceptedAt: string | null;
 }
-```
 
 Pour les usages JSON‑LD (sans Hydra, API Platform v4), le SDK expose également deux helpers génériques :
 
@@ -100,8 +99,7 @@ export interface Collection<T> extends JsonLdMeta {
 ```
 
 Ces types permettent de représenter les métadonnées JSON‑LD autour de vos entités (par exemple `Item<AuthUser>` ou `Collection<InviteResource>`), sans exposer de clés spécifiques au format interne.
-
----
+```
 
 ## API du client
 

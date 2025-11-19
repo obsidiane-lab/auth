@@ -134,7 +134,7 @@ class ApiService {
     private headers(csrf?: string): Record<string, string> {
         const h: Record<string, string> = {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
+            'Accept': 'application/ld+json',
             ...this.defaultHeaders,
         };
         if (csrf) {
@@ -151,15 +151,15 @@ class ApiService {
         return this.headers(token);
     }
 
-    async getJsonLd<T>(path: string): Promise<T> {
+    async getJson<T>(path: string): Promise<T> {
         return await this.request<T>(path, {
             method: 'GET',
             headers: {Accept: 'application/ld+json'},
         });
     }
 
-    async getJsonLdCollection<T>(path: string): Promise<T[]> {
-        const raw = await this.getJsonLd<any>(path);
+    async getCollection<T>(path: string): Promise<T[]> {
+        const raw = await this.getJson<unknown>(path);
 
         if (Array.isArray(raw)) {
             return raw as T[];
@@ -290,12 +290,12 @@ export class AuthClient {
 
     // GET /api/users
     async listUsers(): Promise<AuthUser[]> {
-        return await this.api.getJsonLdCollection<AuthUser>(API_PATHS.USERS);
+        return await this.api.getCollection<AuthUser>(API_PATHS.USERS);
     }
 
     // GET /api/users/{id}
     async getUser(id: number): Promise<AuthUser> {
-        return await this.api.getJsonLd<AuthUser>(API_PATHS.USER(id));
+        return await this.api.getJson<AuthUser>(API_PATHS.USER(id));
     }
 
     // --- Auth endpoints ---
@@ -364,12 +364,12 @@ export class AuthClient {
 
     // GET /api/invite_users
     async listInvites(): Promise<InviteResource[]> {
-        return await this.api.getJsonLdCollection<InviteResource>(API_PATHS.INVITE_USERS);
+        return await this.api.getCollection<InviteResource>(API_PATHS.INVITE_USERS);
     }
 
     // GET /api/invite_users/{id}
     async getInvite(id: number): Promise<InviteResource> {
-        return await this.api.getJsonLd<InviteResource>(API_PATHS.INVITE_USER(id));
+        return await this.api.getJson<InviteResource>(API_PATHS.INVITE_USER(id));
     }
 
     // DELETE /api/users/{id}
