@@ -84,6 +84,10 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     #[Groups(['user:read'])]
     private bool $emailVerified = false;
 
+    #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['user:read'])]
+    private ?\DateTimeImmutable $lastLoginAt = null;
+
     use LifeCycleTrait;
 
 
@@ -180,6 +184,18 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     public function setEmailVerified(bool $emailVerified): static
     {
         $this->emailVerified = $emailVerified;
+
+        return $this;
+    }
+
+    public function getLastLoginAt(): ?\DateTimeImmutable
+    {
+        return $this->lastLoginAt;
+    }
+
+    public function setLastLoginAt(?\DateTimeImmutable $lastLoginAt): static
+    {
+        $this->lastLoginAt = $lastLoginAt;
 
         return $this;
     }

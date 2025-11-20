@@ -64,6 +64,8 @@ final class RegisterController extends AbstractController
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
+                'emailVerified' => $user->isEmailVerified(),
+                'lastLoginAt' => $user->getLastLoginAt()?->format(DATE_ATOM),
             ],
         ], Response::HTTP_CREATED);
     }

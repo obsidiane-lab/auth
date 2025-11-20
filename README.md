@@ -91,7 +91,7 @@ protection **CSRF stateless** (Symfony).
 
 - **Vérification d’email**
     - Chaque inscription envoie un email avec lien signé `/verify-email`.
-    - Tant que `isEmailVerified=false`, le login renvoie `EMAIL_NOT_VERIFIED`.
+- Tant que `emailVerified=false`, le login renvoie `EMAIL_NOT_VERIFIED`.
 
 ---
 
@@ -199,7 +199,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 ### Me – `GET /api/auth/me`
 
 * Requiert un JWT valide dans `__Secure-at`.
-* Réponse : `{ "user": { id, email, roles } }`.
+* Réponse : `{ "user": { id, email, roles, emailVerified, lastLoginAt } }`.
 
 ### Refresh – `POST /api/auth/refresh`
 
@@ -235,7 +235,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
   ```
 
 - Effets :
-  - Crée (ou réutilise) un `User` non activé pour cet email (`isEmailVerified = false`, mot de passe aléatoire).
+  - Crée (ou réutilise) un `User` non activé pour cet email (`emailVerified = false`, mot de passe aléatoire).
   - Si aucune invitation active n’existe, crée ou réinitialise l’invitation `InviteUser` associée avec un nouveau token et une date d’expiration (7 jours).
   - Si une invitation existe déjà et qu’elle n’est ni expirée ni acceptée, ne modifie pas le token et renvoie simplement l’email d’invitation (permet un “resend”).
   - Envoie un email d’invitation en réutilisant le template de bienvenue, avec un lien d’activation pointant vers `/invite/complete?token=...`.

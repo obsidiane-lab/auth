@@ -1,7 +1,8 @@
 export interface UserRead {
     email: string;
     roles: string[];
-    isEmailVerified?: boolean;
+    emailVerified?: boolean;
+    lastLoginAt?: string | null;
 }
 
 export interface User extends UserRead {
@@ -144,14 +145,23 @@ export const mapUser = <T extends Record<string, unknown>>(data: T): User => {
         ? value.roles.map((r) => String(r))
         : [];
 
-    const isEmailVerified =
-        value.isEmailVerified === undefined ? undefined : Boolean(value.isEmailVerified);
+    const emailVerifiedRaw = value.emailVerified ?? value.isEmailVerified;
+    const emailVerified =
+        emailVerifiedRaw === undefined ? undefined : Boolean(emailVerifiedRaw);
+
+    let lastLoginAt: string | null | undefined = undefined;
+    if (value.lastLoginAt === null) {
+        lastLoginAt = null;
+    } else if (typeof value.lastLoginAt === 'string') {
+        lastLoginAt = value.lastLoginAt;
+    }
 
     return {
         id,
         email: String(value.email ?? ''),
         roles,
-        isEmailVerified,
+        emailVerified,
+        lastLoginAt,
     };
 };
 

@@ -5,7 +5,7 @@
  * à partir de `@id`.
  */
 export const mapUser = (data) => {
-    var _a, _b;
+    var _a, _b, _c;
     const value = data && typeof data === 'object' ? data : {};
     const rawId = (_a = value.id) !== null && _a !== void 0 ? _a : value['@id'];
     let id = 0;
@@ -29,12 +29,21 @@ export const mapUser = (data) => {
     const roles = Array.isArray(value.roles)
         ? value.roles.map((r) => String(r))
         : [];
-    const isEmailVerified = value.isEmailVerified === undefined ? undefined : Boolean(value.isEmailVerified);
+    const emailVerifiedRaw = (_b = value.emailVerified) !== null && _b !== void 0 ? _b : value.isEmailVerified;
+    const emailVerified = emailVerifiedRaw === undefined ? undefined : Boolean(emailVerifiedRaw);
+    let lastLoginAt = undefined;
+    if (value.lastLoginAt === null) {
+        lastLoginAt = null;
+    }
+    else if (typeof value.lastLoginAt === 'string') {
+        lastLoginAt = value.lastLoginAt;
+    }
     return {
         id,
-        email: String((_b = value.email) !== null && _b !== void 0 ? _b : ''),
+        email: String((_c = value.email) !== null && _c !== void 0 ? _c : ''),
         roles,
-        isEmailVerified,
+        emailVerified,
+        lastLoginAt,
     };
 };
 export const mapInvite = (data) => {

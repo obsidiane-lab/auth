@@ -1,7 +1,8 @@
 export interface UserRead {
     email: string;
     roles: string[];
-    isEmailVerified?: boolean;
+    emailVerified?: boolean;
+    lastLoginAt?: string | null;
 }
 export interface User extends UserRead {
     id: number;

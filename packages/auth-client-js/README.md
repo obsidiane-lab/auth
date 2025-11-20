@@ -172,6 +172,7 @@ const me: MeResponse = await client.auth.me();
 
 // Login (CSRF requis)
 const { user, exp }: LoginResponse = await client.auth.login(email, password);
+// user.lastLoginAt contient la date ISO de dernière connexion (mise à jour à chaque login)
 
 // Refresh silencieux (CSRF non requis, mais possible)
 const refresh: RefreshResponse = await client.auth.refresh();

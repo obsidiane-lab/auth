@@ -4,6 +4,7 @@ namespace App\EventSubscriber;
 
 use App\Auth\TokenCookieFactory;
 use App\Entity\User;
+use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTCreatedEvent;
 use Lexik\Bundle\JWTAuthenticationBundle\Events;
@@ -18,6 +19,7 @@ final readonly class JwtEventSubscriber implements EventSubscriberInterface
         private string $issuer,
         #[Autowire('%env(string:JWT_AUDIENCE)%')]
         private string $audience,
+        private EntityManagerInterface $entityManager,
     ) {
     }
 
@@ -66,6 +68,10 @@ final readonly class JwtEventSubscriber implements EventSubscriberInterface
             return;
         }
 
+        $now = new \DateTimeImmutable();
+        $user->setLastLoginAt($now);
+        $this->entityManager->flush();
+
         $event->getResponse()->headers->setCookie($this->cookieFactory->createAccessTokenCookie($token));
 
         $expiresAt = $this->cookieFactory->getAccessTtl();
@@ -74,6 +80,8 @@ final readonly class JwtEventSubscriber implements EventSubscriberInterface
                 'id' => $user->getId(),
                 'email' => $user->getEmail(),
                 'roles' => $user->getRoles(),
+                'emailVerified' => $user->isEmailVerified(),
+                'lastLoginAt' => $user->getLastLoginAt()?->format(DATE_ATOM),
             ],
             'exp' => $expiresAt > 0 ? time() + $expiresAt : time(),
         ];
