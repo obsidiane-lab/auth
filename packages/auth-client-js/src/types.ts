@@ -8,6 +8,14 @@ export interface User extends UserRead {
     id: number;
 }
 
+export interface UpdateUserRolesInput {
+    roles: string[];
+}
+
+export interface UpdateUserRolesResponse {
+    user: User;
+}
+
 /**
  * Représentation lecture de la ressource InviteUser exposée par API Platform.
  * Les métadonnées JSON-LD (@id, @type, @context) sont portées par les types Item/Collection.

@@ -6,6 +6,8 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\Controller\User\UpdateUserRolesController;
 use App\Entity\LifeCycle\LifeCycleInterface;
 use App\Entity\LifeCycle\LifeCycleTrait;
 use App\Repository\UserRepository;
@@ -15,6 +17,7 @@ use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
 use Symfony\Component\Serializer\Attribute\Groups;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(
     operations: [
@@ -28,6 +31,18 @@ use Symfony\Component\Validator\Constraints as Assert;
         ),
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
+        ),
+        new Post(
+            uriTemplate: '/users/{id}/roles',
+            controller: UpdateUserRolesController::class,
+            security: "is_granted('ROLE_ADMIN')",
+            requirements: ['id' => '\d+'],
+            read: false,
+            deserialize: false,
+            validate: false,
+            status: Response::HTTP_OK,
+            name: 'api_users_update_roles',
+            description: 'Met a jour les roles d\'un utilisateur (admin + CSRF).',
         ),
     ],
     normalizationContext: ['groups' => ['user:read']],

@@ -9,6 +9,8 @@ import { SetupApiClient } from './domains/setup';
 export type {
   UserRead,
   User,
+  UpdateUserRolesInput,
+  UpdateUserRolesResponse,
   LoginResponse,
   MeResponse,
   RegisterInput,

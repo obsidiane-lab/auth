@@ -21,6 +21,7 @@ final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
         'api_setup_initial_admin' => [],
         'api_auth_invite' => [],
         'api_auth_invite_complete' => [],
+        'api_users_update_roles' => [],
         'app_forgot_password_request' => [
             'soft' => true,
             'response' => ['status' => 'OK'],

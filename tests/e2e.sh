@@ -8,6 +8,7 @@ set -euo pipefail
 # - registration + email verification (manual step)
 # - password reset (manual link)
 # - admin invitation + invite completion (manual link)
+# - admin role update on a user
 
 BASE_URL="${BASE_URL:-http://localhost:8000}"
 # Origin used for CSRF validation (defaults to BASE_URL).
@@ -163,6 +164,63 @@ step_password_reset_flow() {
   read -r _
 }
 
+step_update_user_roles() {
+  info "Updating roles for ${REGISTER_EMAIL} to ROLE_ADMIN (admin-only endpoint)"
+
+  info "Logging in as admin for role update..."
+  step_login_admin
+
+  info "Fetching /api/users to resolve user id for ${REGISTER_EMAIL}"
+  users_payload=$(curl -s -b "${ADMIN_COOKIES}" "${BASE_URL}/api/users")
+
+  TARGET_EMAIL="${REGISTER_EMAIL}" user_id=$(
+    python - <<'PY'
+import json, os, re, sys
+
+email = os.environ.get('TARGET_EMAIL', '').lower()
+
+try:
+    data = json.loads(sys.stdin.read())
+except Exception:
+    sys.exit(0)
+
+user_id = None
+for item in data.get('member', []):
+    if str(item.get('email', '')).lower() == email:
+        raw_id = item.get('id') or item.get('@id')
+        if isinstance(raw_id, int):
+            user_id = str(raw_id)
+        elif isinstance(raw_id, str):
+            match = re.search(r'/(\d+)(?:/)?$', raw_id)
+            if match:
+                user_id = match.group(1)
+        break
+
+if user_id:
+    print(user_id)
+PY
+<<< "${users_payload}"
+  )
+
+  if [[ -z "${user_id:-}" ]]; then
+    warn "User ${REGISTER_EMAIL} not found in /api/users; skipping role update."
+    return 0
+  fi
+
+  csrf=$(generate_csrf)
+  info "POST /api/users/${user_id}/roles with ROLE_ADMIN"
+  curl -s -i \
+    -b "${ADMIN_COOKIES}" \
+    -H 'Content-Type: application/json' \
+    -H "Origin: ${ORIGIN}" \
+    -H "csrf-token: ${csrf}" \
+    -d '{"roles":["ROLE_ADMIN"]}' \
+    "${BASE_URL}/api/users/${user_id}/roles"
+
+  info "GET /api/users/${user_id} to verify roles"
+  curl -s -i -b "${ADMIN_COOKIES}" "${BASE_URL}/api/users/${user_id}"
+}
+
 step_invite_user() {
   info "Inviting user: ${INVITE_EMAIL}"
 
@@ -227,6 +285,7 @@ main() {
   step_refresh_admin
   step_logout_admin
   step_register_user
+  step_update_user_roles
   step_password_reset_flow
   step_invite_user
   info "E2E script finished."

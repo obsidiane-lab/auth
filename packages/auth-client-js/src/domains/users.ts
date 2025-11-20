@@ -1,5 +1,10 @@
 import type { InternalHttpClient } from '../core/httpClient';
-import type { Collection, UserRead } from '../types';
+import type {
+  Collection,
+  UpdateUserRolesInput,
+  UpdateUserRolesResponse,
+  UserRead,
+} from '../types';
 
 const PATH_USERS = '/api/users';
 
@@ -19,6 +24,18 @@ export class UsersApiClient {
       'GET',
       `${PATH_USERS}/${id}`,
       { signal },
+    );
+  }
+
+  updateRoles(id: number, input: UpdateUserRolesInput, signal?: AbortSignal): Promise<UpdateUserRolesResponse> {
+    return this.http.request<UpdateUserRolesResponse>(
+      'POST',
+      `${PATH_USERS}/${id}/roles`,
+      {
+        json: input,
+        csrf: true,
+        signal,
+      },
     );
   }
 

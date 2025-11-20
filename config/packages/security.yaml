@@ -52,6 +52,7 @@ security:
 
         # Admin-only API endpoints
         - { path: ^/api/auth/invite$, roles: ROLE_ADMIN, methods: [ POST ] }
+        - { path: ^/api/users/\d+/roles$, roles: ROLE_ADMIN, methods: [ POST ] }
 
         # Everything else requires authentication
         - { path: ^/, roles: IS_AUTHENTICATED_FULLY }

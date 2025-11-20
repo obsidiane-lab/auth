@@ -4,7 +4,7 @@ import { AuthApiClient } from './domains/auth';
 import { UsersApiClient } from './domains/users';
 import { InvitesApiClient } from './domains/invites';
 import { SetupApiClient } from './domains/setup';
-export type { UserRead, User, LoginResponse, MeResponse, RegisterInput, RegisterResponse, RefreshResponse, PasswordForgotResponse, InviteStatusResponse, CompleteInviteResponse, InitialAdminInput, InitialAdminResponse, Invite, InviteUserRead, Item, Collection, } from './types';
+export type { UserRead, User, UpdateUserRolesInput, UpdateUserRolesResponse, LoginResponse, MeResponse, RegisterInput, RegisterResponse, RefreshResponse, PasswordForgotResponse, InviteStatusResponse, CompleteInviteResponse, InitialAdminInput, InitialAdminResponse, Invite, InviteUserRead, Item, Collection, } from './types';
 export { ApiError } from './core/errors';
 export interface AuthClientOptions extends AuthClientConfig {
 }

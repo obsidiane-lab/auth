@@ -26,6 +26,8 @@ final class ApiResponseFactory
         'INITIAL_ADMIN_ALREADY_CREATED' => 'Un administrateur existe déjà.',
         'INVALID_INVITATION' => 'Invitation invalide ou expirée.',
         'INVALID_INVITATION_PAYLOAD' => 'Données d’invitation invalides.',
+        'INVALID_ROLES' => 'La liste des roles est invalide.',
+        'USER_NOT_FOUND' => 'Utilisateur introuvable.',
     ];
 
     /**

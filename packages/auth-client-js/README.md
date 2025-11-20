@@ -222,6 +222,7 @@ Endpoints Api Platform :
 - `GET /api/users`
 - `GET /api/users/{id}`
 - `DELETE /api/users/{id}`
+- `POST /api/users/{id}/roles` (admin, CSRF stateless)
 
 Le backend expose les ressources utilisateur au format **JSON-LD** (API Platform) :
 
@@ -242,6 +243,10 @@ const first: UserRead | undefined = users.member[0];
 
 // Détail d’un utilisateur seul
 const user: UserRead = await client.users.get(1);
+
+// Mise à jour des rôles (admin + CSRF stateless automatique)
+const updated = await client.users.updateRoles(1, { roles: ['ROLE_ADMIN'] });
+console.log(updated.user.roles);
 
 // Suppression via l’ID numérique
 await client.users.delete(42);

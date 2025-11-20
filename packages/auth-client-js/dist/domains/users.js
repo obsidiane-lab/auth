@@ -9,6 +9,13 @@ export class UsersApiClient {
     async get(id, signal) {
         return this.http.request('GET', `${PATH_USERS}/${id}`, { signal });
     }
+    updateRoles(id, input, signal) {
+        return this.http.request('POST', `${PATH_USERS}/${id}/roles`, {
+            json: input,
+            csrf: true,
+            signal,
+        });
+    }
     delete(id, signal) {
         return this.http.request('DELETE', `${PATH_USERS}/${id}`, { signal });
     }

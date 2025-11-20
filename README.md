@@ -64,6 +64,7 @@ protection **CSRF stateless** (Symfony).
     - `POST /api/auth/password/reset`
     - `POST /api/auth/invite` – Inviter un utilisateur (admin uniquement).
     - `POST /api/auth/invite/complete` – Compléter une invitation (définir profil + mot de passe).
+    - `POST /api/users/{id}/roles` – Met à jour les rôles d’un utilisateur (admin, CSRF stateless).
 
 - **Cookies & tokens**
     - `__Secure-at` : access token JWT (HttpOnly).
@@ -169,6 +170,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 |     GET | `/verify-email`              | Validation d’email via lien signé         |
 |    POST | `/api/auth/invite`           | Inviter un utilisateur (admin)            |
 |    POST | `/api/auth/invite/complete`  | Compléter une invitation                  |
+|    POST | `/api/users/{id}/roles`      | Mise à jour des rôles d’un utilisateur (admin) |
 
 ### Setup initial – `POST /api/setup/admin`
 
