@@ -202,6 +202,8 @@ Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/log
 
 Les variables ci-dessous couvrent 95 % des cas. Copie/colle ce bloc puis adapte-le à ton infra.
 
+Variables **critiques** vérifiées au démarrage (entrypoint) : `DATABASE_URL`, `APP_BASE_DOMAIN`, `NOTIFUSE_API_BASE_URL`, `NOTIFUSE_WORKSPACE_ID`, `NOTIFUSE_API_KEY`, `NOTIFUSE_TEMPLATE_WELCOME`, `NOTIFUSE_TEMPLATE_RESET_PASSWORD`. `APP_SECRET` et `JWT_SECRET` doivent aussi être fournis (sinon l’entrypoint en génère à chaque start, ce qui invalide les tokens).
+
 **Bloc prêt à copier-coller (prod typique)**
 
 ```env

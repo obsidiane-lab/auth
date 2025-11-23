@@ -17,6 +17,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -45,6 +46,7 @@ final class ResetPasswordController extends AbstractController
         private readonly PasswordStrengthChecker      $passwordStrengthChecker,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_RESET_PASSWORD)%')]
         private readonly string                       $resetPasswordTemplateId = 'resetpass',
+        private readonly LoggerInterface              $logger,
     ) {
     }
 
@@ -98,13 +100,29 @@ final class ResetPasswordController extends AbstractController
                             'reset_link' => $resetUrl,
                         ]
                     );
+                    $this->logger->info('Password reset email dispatched', [
+                        'user_id' => $user->getId(),
+                        'email' => $recipient,
+                    ]);
                 } catch (ResetPasswordExceptionInterface) {
-
+                    $this->logger->warning('Password reset token generation failed', [
+                        'email' => $email,
+                    ]);
                 } catch (MailDispatchException) {
+                    $this->logger->error('Password reset email send failed', [
+                        'email' => $email,
+                    ]);
                     return $this->createErrorResponse('EMAIL_SEND_FAILED', Response::HTTP_SERVICE_UNAVAILABLE);
                 } catch (\Throwable) {
+                    $this->logger->error('Password reset request failed', [
+                        'email' => $email,
+                    ]);
                     return $this->createErrorResponse('RESET_REQUEST_FAILED', Response::HTTP_INTERNAL_SERVER_ERROR);
                 }
+            } else {
+                $this->logger->info('Password reset requested for unknown email (ignored)', [
+                    'email' => $email,
+                ]);
             }
         }
 
@@ -214,6 +232,11 @@ final class ResetPasswordController extends AbstractController
 
         // Clean token from session if present
         $request->getSession()->remove(self::RESET_TOKEN_SESSION_KEY);
+
+        $this->logger->info('Password successfully reset', [
+            'user_id' => $user->getId(),
+            'email' => $user->getEmail(),
+        ]);
 
         return new Response('', Response::HTTP_NO_CONTENT);
     }

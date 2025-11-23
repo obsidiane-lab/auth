@@ -3,6 +3,17 @@ set -e
 
 if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 
+	REQUIRED_ENV_VARS="DATABASE_URL APP_BASE_DOMAIN NOTIFUSE_API_BASE_URL NOTIFUSE_WORKSPACE_ID NOTIFUSE_API_KEY NOTIFUSE_TEMPLATE_WELCOME NOTIFUSE_TEMPLATE_RESET_PASSWORD"
+
+	for VAR_NAME in $REQUIRED_ENV_VARS; do
+		# shellcheck disable=SC2016
+		VALUE=$(sh -c "printf '%s' \"\${$VAR_NAME:-}\"")
+		if [ -z "$VALUE" ]; then
+			echo "ERROR: Environment variable $VAR_NAME is required but not set. Set it before starting the container."
+			exit 1
+		fi
+	done
+
 	if [ -z "${APP_SECRET:-}" ]; then
 		APP_SECRET=$(php -r 'echo bin2hex(random_bytes(32));')
 		export APP_SECRET

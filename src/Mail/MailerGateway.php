@@ -4,11 +4,13 @@ namespace App\Mail;
 
 use Obsidiane\Notifuse\ApiClient;
 use Obsidiane\Notifuse\Exception\NotifuseClientException;
+use Psr\Log\LoggerInterface;
 
 final readonly class MailerGateway
 {
     public function __construct(
         private ApiClient $apiClient,
+        private LoggerInterface $logger,
     )
     {
     }
@@ -32,9 +34,21 @@ final readonly class MailerGateway
         try {
             $this->apiClient->sendTransactional($payload);
         } catch (NotifuseClientException $exception) {
+            $this->logFailure($recipient, $templateId, $exception);
             throw new MailDispatchException($exception->getMessage(), 0, $exception);
         } catch (\Throwable $exception) {
+            $this->logFailure($recipient, $templateId, $exception);
             throw new MailDispatchException($exception->getMessage(), 0, $exception);
         }
+    }
+
+    private function logFailure(string $recipient, string $templateId, \Throwable $exception): void
+    {
+        $this->logger->error('Failed to dispatch email', [
+            'template' => $templateId,
+            'recipient' => $recipient,
+            'exception' => $exception::class,
+            'message' => $exception->getMessage(),
+        ]);
     }
 }
