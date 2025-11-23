@@ -12,6 +12,7 @@ use App\Repository\UserRepository;
 use App\Setup\InitialAdminManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -42,6 +43,8 @@ final class ResetPasswordController extends AbstractController
         private readonly AuthViewPropsBuilder         $viewPropsBuilder,
         private readonly InitialAdminManager          $initialAdminManager,
         private readonly PasswordStrengthChecker      $passwordStrengthChecker,
+        #[Autowire('%env(string:NOTIFUSE_TEMPLATE_RESET_PASSWORD)%')]
+        private readonly string                       $resetPasswordTemplateId = 'resetpass',
     ) {
     }
 
@@ -90,7 +93,7 @@ final class ResetPasswordController extends AbstractController
                     $recipient = $user->getEmail() ?? $email;
                     $this->mailer->dispatch(
                         $recipient,
-                        'resetpass',
+                        $this->resetPasswordTemplateId,
                         [
                             'reset_link' => $resetUrl,
                         ]

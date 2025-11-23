@@ -27,71 +27,51 @@ protection **CSRF stateless** (Symfony).
 
 ## Vue d’ensemble
 
-- **Dual-mode** :
-    - UI : pages `/login`, `/register`, `/reset-password`.
-    - API : endpoints sous `/api/auth/...` (login, me, register, logout, refresh, password, invite) pour front SPA/mobile.
-- **Sessions** :
-    - JWT court-terme en cookie `__Secure-at`.
-    - Refresh token opaque en base + cookie `__Host-rt` rotatif (single-use).
-- **Sécurité** :
-    - CSRF stateless via en-tête `csrf-token` + Origin/Referer (voir section dédiée).
-    - Rate limiting sur le login (reset prêt pour extension).
-    - Vérification d’email via lien signé `/verify-email`.
-- **Première exécution** :
-    - Tant qu’aucun utilisateur n’existe, les pages publiques redirigent vers `/setup` pour créer l’admin initial (
-      `ROLE_ADMIN`).
-- Interface et emails **en français**.
+- Service d’auth centré **cookies HttpOnly** : access token JWT (`__Secure-at`) + refresh opaque (`__Host-rt`).
+- Deux usages possibles :
+  - UI intégrée (Twig + Vue) : `/login`, `/register`, `/reset-password`, `/setup`, `/invite/complete`.
+  - API JSON : `/api/auth/...` pour front SPA, mobile, backends.
+- Sécurité intégrée : CSRF stateless (`csrf-token`), vérification d’email, rate limiting, redirections allowlistées.
+- Au premier démarrage, si aucun user n’existe, tout redirige vers `/setup` pour créer l’admin.
+- Interface et emails uniquement **en français**.
 
 ---
 
 ## Fonctionnalités
 
 - **UI Twig + Vue**
-    - `GET /login` – Connexion.
-    - `GET /register` – Inscription.
-    - `GET /reset-password` – Demande de réinitialisation.
-    - `GET /reset-password/reset/{token}` – Saisie du nouveau mot de passe.
-    - `GET /setup` – Création de l’admin initial si la base est vide.
-    - `GET /invite/complete` – Compléter une invitation (création de mot de passe).
+  - `/login`, `/register`, `/reset-password`, `/reset-password/reset/{token}`.
+  - `/setup` pour créer l’admin initial.
+  - `/invite/complete` pour finaliser une invitation.
 
-- **API JSON**
-    - `POST /api/auth/login`
-    - `GET /api/auth/me`
-    - `POST /api/auth/register`
-    - `POST /api/auth/logout`
-    - `POST /api/auth/refresh`
-    - `POST /api/auth/password/forgot`
-    - `POST /api/auth/password/reset`
-    - `POST /api/auth/invite` – Inviter un utilisateur (admin uniquement).
-    - `POST /api/auth/invite/complete` – Compléter une invitation (définir profil + mot de passe).
-    - `POST /api/users/{id}/roles` – Met à jour les rôles d’un utilisateur (admin, CSRF stateless).
+- **API JSON principale**
+  - Auth : `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/refresh`, `POST /api/auth/logout`.
+  - Inscription & mot de passe : `POST /api/auth/register`, `/api/auth/password/forgot`, `/api/auth/password/reset`.
+  - Invitation : `POST /api/auth/invite`, `POST /api/auth/invite/complete`.
+  - Setup : `POST /api/setup/admin`.
 
 - **Cookies & tokens**
-    - `__Secure-at` : access token JWT (HttpOnly).
-    - `__Host-rt` : refresh token opaque, single-use (HttpOnly).
-    - CSRF stateless : jetons aléatoires générés côté client et envoyés dans l’en-tête `csrf-token` pour chaque requête sensible.
+  - `__Secure-at` : access token JWT (HttpOnly).
+  - `__Host-rt` : refresh token opaque, single-use (HttpOnly).
+  - CSRF stateless : token aléatoire côté client dans l’en-tête `csrf-token` pour chaque requête sensible.
 
 ---
 
 ## Architecture
 
 - **Access token (JWT)**
-    - Claims standard (`iss`, `aud`, `sub`, `iat`, `nbf`, `exp`, `jti`).
-    - Stocké dans le cookie `__Secure-at` (HttpOnly, SameSite configurable).
-    - Utilisé pour authentifier les appels API (pas besoin d’`Authorization: Bearer` côté navigateur).
+  - Claims standard (`iss`, `aud`, `sub`, `iat`, `nbf`, `exp`, `jti`).
+  - Stocké en cookie HttpOnly `__Secure-at`.
 
 - **Refresh token (opaque)**
-    - Persisté en base, associé à l’utilisateur.
-    - Stocké en cookie `__Host-rt` (HttpOnly, host-only, `SameSite=strict`).
-    - Rotatif : à chaque `POST /api/auth/refresh`, l’ancien est invalidé.
+  - Stocké en base + cookie HttpOnly `__Host-rt` (host-only, single-use).
 
 - **CSRF stateless**
-    - Protection basée sur `Origin`/`Referer` + jetons générés côté client.
-    - UI & SPA : génèrent un token aléatoire par requête et l’envoient dans l’en-tête `csrf-token`.
+  - Token aléatoire dans `csrf-token` + contrôle `Origin`/`Referer`.
 
 - **Vérification d’email**
-    - Chaque inscription envoie un email avec lien signé `/verify-email`.
-- Tant que `emailVerified=false`, le login renvoie `EMAIL_NOT_VERIFIED`.
+  - L’inscription envoie un lien signé `/verify-email`.
+  - Tant que l’email n’est pas confirmé, le login est refusé (`EMAIL_NOT_VERIFIED`).
 
 ---
 
@@ -157,154 +137,35 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 
 ### Vue d’ensemble
 
-| Méthode | Route                        | Description                               |
-|--------:|------------------------------|-------------------------------------------|
-|    POST | `/api/setup/admin`           | Créer l’admin initial                     |
-|    POST | `/api/auth/login`            | Login (création cookies access + refresh) |
-|     GET | `/api/auth/me`               | Utilisateur courant                       |
-|    POST | `/api/auth/refresh`          | Refresh JWT via cookie `__Host-rt`        |
-|    POST | `/api/auth/register`         | Inscription                               |
-|    POST | `/api/auth/logout`           | Logout + invalidation tokens              |
-|    POST | `/api/auth/password/forgot`  | Demande de reset (email)                  |
-|    POST | `/api/auth/password/reset`   | Réinitialisation via token                |
-|     GET | `/verify-email`              | Validation d’email via lien signé         |
-|    POST | `/api/auth/invite`           | Inviter un utilisateur (admin)            |
-|    POST | `/api/auth/invite/complete`  | Compléter une invitation                  |
-|    POST | `/api/users/{id}/roles`      | Mise à jour des rôles d’un utilisateur (admin) |
+| Méthode | Route                       | Description                               |
+|--------:|-----------------------------|-------------------------------------------|
+|    POST | `/api/setup/admin`          | Créer l’admin initial                     |
+|    POST | `/api/auth/login`           | Login (cookies access + refresh)          |
+|     GET | `/api/auth/me`              | Utilisateur courant                       |
+|    POST | `/api/auth/refresh`         | Refresh JWT via cookie `__Host-rt`        |
+|    POST | `/api/auth/register`        | Inscription                               |
+|    POST | `/api/auth/logout`          | Logout + invalidation tokens              |
+|    POST | `/api/auth/password/forgot` | Demande de reset (email)                  |
+|    POST | `/api/auth/password/reset`  | Réinitialisation via token                |
+|     GET | `/verify-email`             | Validation d’email via lien signé         |
+|    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
+|    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
 
-### Setup initial – `POST /api/setup/admin`
-
-* Disponible uniquement tant qu’aucun utilisateur n’existe.
-* CSRF : `initial_admin`.
-* Corps : `{ "email", "password" }`
-* Crée l’administrateur (`ROLE_ADMIN`) et débloque les autres flux.
-
-### Login – `POST /api/auth/login`
-
-* Corps :
-
-  ```json
-  { "email": "user@example.com", "password": "Secret123!" }
-  ```
-* CSRF : `authenticate`.
-* Effets :
-
-    * Création des cookies `__Secure-at` (access) et `__Host-rt` (refresh).
-    * Réponse :
-
-      ```json
-      { "user": { ... }, "exp": 1700000000 }
-      ```
-
-### Me – `GET /api/auth/me`
-
-* Requiert un JWT valide dans `__Secure-at`.
-* Réponse : `{ "user": { id, email, roles, emailVerified, lastLoginAt } }`.
-
-### Refresh – `POST /api/auth/refresh`
-
-* Requiert uniquement le cookie `__Host-rt` valide.
-* Pas de CSRF.
-* Réponse : `{ "exp": 1700000000 }` + rotation des cookies.
-
-### Logout – `POST /api/auth/logout`
-
-* Auth + CSRF.
-* Effets :
-
-    * Blocklist de l’access token.
-    * Suppression du refresh token.
-    * Expiration des cookies.
-* Réponse : `204 No Content`.
-
-### Inscription – `POST /api/auth/register`
-
-* CSRF requis.
-* Corps : `{ "email", "password" }`
-* Réponse : `201 { "user": { ... } }`
-* Envoie un email de vérification (`/verify-email`).
-
-### Invitation administrateur – `POST /api/auth/invite`
-
-- Accessible uniquement aux administrateurs (`ROLE_ADMIN`).
-- CSRF requis.
-- Corps :
-
-  ```json
-  { "email": "nouvel.utilisateur@entreprise.com" }
-  ```
-
-- Effets :
-  - Crée (ou réutilise) un `User` non activé pour cet email (`emailVerified = false`, mot de passe aléatoire).
-  - Si aucune invitation active n’existe, crée ou réinitialise l’invitation `InviteUser` associée avec un nouveau token et une date d’expiration (7 jours).
-  - Si une invitation existe déjà et qu’elle n’est ni expirée ni acceptée, ne modifie pas le token et renvoie simplement l’email d’invitation (permet un “resend”).
-  - Envoie un email d’invitation en réutilisant le template de bienvenue, avec un lien d’activation pointant vers `/invite/complete?token=...`.
-- Réponse (`202 Accepted`) :
-
-  ```json
-  { "status": "INVITE_SENT" }
-  ```
-
-### Compléter une invitation – `POST /api/auth/invite/complete`
-
-- Endpoint public (accessible via le lien d’invitation).
-- CSRF requis.
-- Corps :
-
-  ```json
-  {
-    "token": "<token d'invitation>",
-    "password": "Secret123!",
-    "confirmPassword": "Secret123!"
-  }
-  ```
-
-- Effets :
-  - Valide le token d’invitation (non expiré, non déjà utilisé).
-  - Applique les mêmes règles de validation que l’inscription (mot de passe).
-  - Met à jour le `User` associé (mot de passe) et marque l’email comme vérifié.
-  - Marque l’invitation comme acceptée.
-- Réponse : `201 { "user": { ... } }`.
-
-### Reset password
-
-* `POST /api/auth/password/forgot`
-
-    * CSRF requis.
-    * Corps : `{ "email" }`
-    * Réponse : `202 { "status": "OK" }` (pas de fuite sur l’existence du compte).
-
-* `POST /api/auth/password/reset`
-
-    * CSRF requis.
-    * Corps : `{ "token", "password" }`
-    * Réponse : `204` + invalidation des sessions de l’utilisateur.
+Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<AUTH_HOST>/api/docs` (OpenAPI).
 
 ---
 
 ## CSRF stateless
 
-Ce projet utilise une protection **CSRF stateless** pour tous les endpoints sensibles (login, register, reset password, logout, setup admin, invitation) :
+Tous les endpoints sensibles (login, register, reset, logout, setup, invitation) utilisent une protection **CSRF stateless** :
 
-- Aucun token CSRF n’est stocké en session ni émis par le backend.
-- Le backend vérifie simplement :
-  - la présence d’un jeton aléatoire suffisamment long dans l’en-tête `csrf-token` ;
-  - et une origine HTTP valide (en-tête `Origin` ou, à défaut, `Referer`) :
-    - soit exactement la même origine que le service d’auth (UI intégrée) ;
-    - soit une origine autorisée par `ALLOWED_ORIGINS` (SPA sur sous-domaine).
+- Aucun token CSRF n’est stocké côté serveur.
+- Le client génère un token aléatoire par requête et le met dans l’en-tête `csrf-token`.
+- Le backend contrôle également l’origine (`Origin` ou `Referer`) via `ALLOWED_ORIGINS`.
 
-Conséquences :
+Pour les SPA sur un autre domaine (ex. `app.example.com` → `auth.example.com`) :
 
-- Il **n’existe plus d’endpoint** de type `GET /api/auth/csrf/{id}` : tous les secrets CSRF sont générés côté client.
-- Les clients (UI Vue intégrée, SPA externes, SDKs) doivent :
-  - générer un token aléatoire par requête sensible (par ex. via `crypto.getRandomValues` ou `random_bytes`) ;
-  - l’envoyer dans l’en-tête `csrf-token` ;
-  - laisser le navigateur gérer l’en-tête `Origin` (pour les frontends web).
-
-Pour les SPA sur sous-domaines (ex. `app.example.com` → `auth.example.com`) :
-
-- le header `csrf-token` + une origine autorisée via `ALLOWED_ORIGINS` (CORS) suffisent ;
-- aucune synchronisation de cookies CSRF n’est requise entre les sous-domaines.
+- la combinaison `csrf-token` + CORS (`ALLOWED_ORIGINS`) suffit, sans cookie CSRF ni endpoint dédié.
 
 ---
 
@@ -312,12 +173,10 @@ Pour les SPA sur sous-domaines (ex. `app.example.com` → `auth.example.com`) :
 
 ### Cookies
 
-* Toujours activer `credentials: 'include'` côté client (`fetch`, Axios, Angular `HttpClient`, etc.), pour que les
-  cookies soient envoyés et reçus.
-* Côté navigateur, **aucune manipulation de token** :
-
-    * pas de stockage dans `localStorage` ou `sessionStorage` ;
-    * le serveur lit directement `__Secure-at`.
+* Toujours activer `credentials: 'include'` côté client (`fetch`, Axios, Angular `HttpClient`, …).
+* Côté navigateur, **aucun stockage manuel de token** :
+  * pas de `localStorage` / `sessionStorage` ;
+  * le serveur lit directement le cookie `__Secure-at`.
 
 ### CSRF
 
@@ -325,8 +184,8 @@ Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/log
 
 ### Refresh silencieux
 
-* Appeler périodiquement `POST /api/auth/refresh` (avec `credentials: 'include'`) avant l’expiration (`exp`).
-* Aucun CSRF requis sur ce endpoint.
+* Appeler régulièrement `POST /api/auth/refresh` (avec `credentials: 'include'`) avant l’expiration (`exp`).
+* Aucun CSRF n’est requis sur ce endpoint.
 
 ---
 
@@ -334,76 +193,53 @@ Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/log
 
 ### `.env` & Docker
 
-* Le `.env` racine fournit les valeurs par défaut (dev).
-* `docker compose` lit automatiquement `.env`.
-* Les valeurs peuvent être surchargées via l’environnement, par ex. :
+* Le `.env` racine fournit désormais des valeurs par défaut **orientées production** (domaine `example.com`, cookies sécurisés, SameSite `lax`). Ne mets aucun secret sensible dans ce fichier versionné.
+* Pour un usage local, crée un `.env.local` ou charge `.env.dev` (APP_ENV=dev, CORS localhost, cookies non Secure, DB `database:3306`, mot de passe niveau 1).
+* `docker compose` lit automatiquement `.env` ; toute variable peut être surchargée par l’environnement du runtime/compose.
+* L’entrypoint génère `APP_SECRET` et `JWT_SECRET` si absents, mais ces valeurs tournent à chaque redémarrage : renseigne-les pour un déploiement réel.
+
+### Variables d’environnement importantes
+
+Les variables ci-dessous couvrent 95 % des cas. Copie/colle ce bloc puis adapte-le à ton infra.
+
+**Bloc prêt à copier-coller (prod typique)**
 
 ```env
-APP_ENV=prod
-APP_SECRET=...
-DATABASE_URL=mysql://user:pass@db-internal:3306/auth
-JWT_SECRET=...
+APP_BASE_DOMAIN=example.com
+AUTH_HOST=auth.${APP_BASE_DOMAIN}
+APP_DEFAULT_URI=https://${AUTH_HOST}
 
-UI_THEME_COLOR=emerald
+APP_SECRET=change-me
+JWT_SECRET=change-me-too
+DATABASE_URL="mysql://app:!ChangeMe!@database:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
+
+JWT_ISSUER=https://${AUTH_HOST}
+JWT_AUDIENCE=core-api
+JWT_ACCESS_TTL=600
+JWT_REFRESH_TTL=2592000
+ALLOWED_ORIGINS="^https?://([a-zA-Z0-9-]+\\.)?${APP_BASE_DOMAIN}(:[0-9]+)?$"
+
+ACCESS_COOKIE_DOMAIN=".${APP_BASE_DOMAIN}"
+FRONTEND_DEFAULT_REDIRECT=https://app.${APP_BASE_DOMAIN}/
+FRONTEND_REDIRECT_ALLOWLIST=https://app.${APP_BASE_DOMAIN}/,https://partners.${APP_BASE_DOMAIN}/
+
 UI_ENABLED=1
 REGISTRATION_ENABLED=1
-FRONTEND_DEFAULT_REDIRECT=https://app.example.com/dashboard
-FRONTEND_REDIRECT_ALLOWLIST=https://app.example.com,https://partners.example.com
+PASSWORD_STRENGTH_LEVEL=2
+
+NOTIFUSE_API_BASE_URL=https://notifuse.example.com
+NOTIFUSE_WORKSPACE_ID=prod-workspace
+NOTIFUSE_API_KEY=change-me
+NOTIFUSE_TEMPLATE_WELCOME=welcome
+NOTIFUSE_TEMPLATE_RESET_PASSWORD=resetpass
 ```
+  
+Variables complémentaires (généralement à garder telles quelles) :
 
-### Variables clés
-
-**Feature flags & UI**
-
-* `UI_ENABLED` (bool) : activer l’UI (`/login`, `/register`, `/reset-password`).
-* `REGISTRATION_ENABLED` (bool) : autoriser l’inscription UI/API.
-* `UI_THEME_COLOR` : couleur Tailwind (`red`, `emerald`, `indigo`, …).
-* `UI_THEME_MODE` : `light` / `dark`.
-* `BRANDING_NAME` : nom affiché dans l’interface et les emails.
-
-**JWT & cookies**
-
-* `JWT_ALGORITHM`, `JWT_SECRET`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`.
-* `ACCESS_COOKIE_*` : config du cookie `__Secure-at`.
-* Cookie `__Host-rt` : configuré dans `config/packages/gesdinet_jwt_refresh_token.yaml`.
-
-**Redirections**
-
-* `FRONTEND_REDIRECT_ALLOWLIST` : liste d’origines autorisées (séparées par virgules).
-* `FRONTEND_DEFAULT_REDIRECT` : URL de fallback si `redirect_uri` est absente ou non autorisée.
-
-**CORS**
-
-* `ALLOWED_ORIGINS` : regex unique, ex :
-
-  ```text
-  ^https?://(app\.example\.com|localhost)(:[0-9]+)?$
-  ```
-
-**Politique de mot de passe**
-
-* La robustesse des mots de passe est vérifiée via la contrainte Symfony `PasswordStrength`.
-* Le niveau minimal requis est piloté par la variable d’environnement :
-  * `PASSWORD_STRENGTH_LEVEL` : entier de `1` (faible) à `4` (très fort). La configuration fournie dans `.env` fixe `1` en développement ; une valeur `2` (niveau moyen) est recommandée pour la production.
-* Le frontend reçoit automatiquement cette politique (props `passwordPolicy`) et applique les mêmes contrôles de force et les mêmes messages que le backend. Il n’est donc plus nécessaire d’aligner manuellement des règles côté Vue/SDK : tout changement d’environnement est immédiatement pris en compte.
-
-**Rate limiting**
-
-* `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`.
-* `RATE_FORGOT_LIMIT`, `RATE_FORGOT_INTERVAL` (réservés pour une configuration fine du rate limiting sur le reset password, non utilisés dans la configuration actuelle).
-
-### Emails transactionnels (Notifuse)
-
-* Emails de bienvenue et de reset envoyés via Notifuse :
-
-    * `NOTIFUSE_API_BASE_URL`
-    * `NOTIFUSE_WORKSPACE_ID`
-    * `NOTIFUSE_API_KEY`
-    * `NOTIFUSE_TEMPLATE_WELCOME`
-    * (d’autres variables telles que `NOTIFUSE_NOTIFICATION_CENTER_URL` ou `NOTIFUSE_TEMPLATE_RESET_PASSWORD` peuvent être utilisées selon votre configuration Notifuse, mais ne sont pas consommées directement par ce projet).
-* Placeholders typiques côté Notifuse :
-
-    * `user_name`, `user_email`, `login_url`, `reset_url`, `reset_token`, `ttl_minutes`, `locale`, `brand_name`.
+- `JWT_ALGORITHM` (HS256), `JWT_AUDIENCE`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`
+- `ACCESS_COOKIE_NAME`, `ACCESS_COOKIE_PATH`, `ACCESS_COOKIE_SAMESITE`, `ACCESS_COOKIE_SECURE`
+- `UI_THEME_COLOR`, `UI_THEME_MODE`, `BRANDING_NAME`
+- Rate limiting : `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`, `RATE_LOGIN_GLOBAL_LIMIT`
 
 ---
 

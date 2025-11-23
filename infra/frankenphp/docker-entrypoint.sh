@@ -3,6 +3,18 @@ set -e
 
 if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 
+	if [ -z "${APP_SECRET:-}" ]; then
+		APP_SECRET=$(php -r 'echo bin2hex(random_bytes(32));')
+		export APP_SECRET
+		echo "APP_SECRET not set - generated random secret"
+	fi
+
+	if [ -z "${JWT_SECRET:-}" ]; then
+		JWT_SECRET=$(php -r 'echo bin2hex(random_bytes(64));')
+		export JWT_SECRET
+		echo "JWT_SECRET not set - generated random secret"
+	fi
+
 	if grep -q ^DATABASE_URL= .env; then
 		echo 'Waiting for database to be ready...'
 
