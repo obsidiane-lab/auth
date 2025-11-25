@@ -12,6 +12,8 @@
     {{ encore_entry_link_tags('app') }}
 
     {% block stylesheets %}{% endblock %}
+    {{ encore_entry_script_tags('app') }}
+    {% block javascripts %}{% endblock %}
 </head>
 <body
     class="bg-background font-poppins text-foreground selection:bg-primary selection:text-primary-foreground min-h-screen"
@@ -21,9 +23,5 @@
     data-theme-direction-value="{{ initial_direction }}">
 
 {% block body %}{% endblock %}
-
-{{ encore_entry_script_tags('app') }}
-
-{% block javascripts %}{% endblock %}
 </body>
 </html>

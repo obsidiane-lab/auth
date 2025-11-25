@@ -15,6 +15,10 @@ framework:
         cookie_httponly: true
         cookie_samesite: lax
 
+    # Behind reverse proxies (Traefik/Cloudflare), trust forwarded headers to recover the original scheme/host.
+    trusted_proxies: '%env(TRUSTED_PROXIES)%'
+    trusted_headers: ['x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto', 'x-forwarded-port', 'x-forwarded-prefix']
+
     #esi: true
     #fragments: true
 
