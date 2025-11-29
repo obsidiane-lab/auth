@@ -163,7 +163,7 @@ Les fonctionnalités clés sont pilotées par variables d’environnement (Docke
 | Variable | Effet |
 | --- | --- |
 | `UI_ENABLED` | Active l’interface publique (Twig/Vue). |
-| `REGISTRATION_ENABLED` | Autorise l’inscription côté UI/API. |
+| `REGISTRATION_ENABLED` | Autorise l’inscription autonome côté UI/API. |
 | `UI_THEME_COLOR` | Définit la couleur Tailwind par défaut (ex. `emerald`, `indigo`). |
 | `UI_THEME_MODE` | Définit le mode (light/dark) de l’interface (défaut `dark`). Piloté par l’environnement, non modifiable par l’utilisateur. |
 | `BRANDING_NAME` | Détermine le nom affiché dans les titres UI/emails (défaut `Obsidiane Auth`). |

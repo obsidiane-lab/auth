@@ -4,7 +4,6 @@ namespace App\Controller\Auth;
 
 use App\Auth\InvitationManager;
 use App\Auth\Exception\RegistrationException;
-use App\Config\FeatureFlags;
 use App\Http\JsonRequestDecoderTrait;
 use App\Mail\MailDispatchException;
 use App\Response\ApiResponseFactory;
@@ -23,7 +22,6 @@ final class InviteUserController extends AbstractController
 
     public function __construct(
         private readonly InvitationManager $invitationManager,
-        private readonly FeatureFlags $featureFlags,
         private readonly ApiResponseFactory $responses,
         private readonly InitialAdminManager $initialAdminManager,
     ) {
@@ -33,10 +31,6 @@ final class InviteUserController extends AbstractController
     {
         if ($this->initialAdminManager->needsBootstrap()) {
             return $this->responses->error('INITIAL_ADMIN_REQUIRED', Response::HTTP_CONFLICT);
-        }
-
-        if (!$this->featureFlags->isRegistrationEnabled()) {
-            return $this->responses->error('REGISTRATION_DISABLED', Response::HTTP_FORBIDDEN);
         }
 
         try {
