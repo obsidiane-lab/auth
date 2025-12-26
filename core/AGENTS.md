@@ -88,8 +88,8 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 ## 5. Infra
 
-- Un seul Caddyfile racine (projet): `/api/*` -> backend, reste -> webfront.
-- `compose.yaml` racine orchestre `core`, `webfront`, `caddy`, `database`.
+- Un seul Caddyfile côté projet: `infra/caddy/Caddyfile.dev` (`/api/*` -> backend, reste -> webfront).
+- `compose.yaml` orchestre `core`, `webfront`, `caddy`, `database`.
 
 ---
 
@@ -109,4 +109,3 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 - Pas de tests automatisés fournis.
 - Vérifier les parcours via curl/API et via l’UI Angular.
-

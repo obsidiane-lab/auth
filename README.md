@@ -79,11 +79,8 @@ protection **CSRF stateless** (Symfony).
 
 ## Démarrage rapide
 
-Par défaut, `docker compose` expose le **core** sur `http://localhost:8001` (Symfony/FrankenPHP).
-
-Le **webfront** se lance via `ng serve` sur `http://localhost:4200` (proxy `/api` -> `http://localhost:8001`).
-
-Optionnel : `docker compose --profile fullstack up -d` démarre Caddy + webfront containerisés (entrée unique `http://localhost:8000`).
+Par défaut, `docker compose` expose une entrée unique sur `http://localhost:8000` (Caddy).
+`/api` est routé vers Symfony, le reste vers le webfront (Angular en `ng serve`).
 
 La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8001/api/docs`.
 
