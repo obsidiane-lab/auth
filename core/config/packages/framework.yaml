@@ -7,7 +7,7 @@ framework:
         providers:
 
     csrf_protection:
-        enabled: true
+        enabled: false
 
     session:
         enabled: false

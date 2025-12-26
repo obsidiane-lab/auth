@@ -6,6 +6,8 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use ApiPlatform\OpenApi\Model\Parameter as OpenApiParameter;
 use App\Auth\Dto\InviteCompleteInput;
 use App\Auth\Dto\InviteUserInput;
 use App\Auth\Dto\PasswordForgotInput;
@@ -33,16 +35,17 @@ use Symfony\Component\HttpFoundation\Response;
             input: RegisterUserInput::class,
             denormalizationContext: ['groups' => ['user:register']],
             write: false,
-            openapiContext: [
-                'parameters' => [
-                    [
-                        'name' => 'csrf-token',
-                        'in' => 'header',
-                        'required' => true,
-                        'schema' => ['type' => 'string'],
-                    ],
-                ],
-            ],
+            openapi: new OpenApiOperation(
+                parameters: [
+                    new OpenApiParameter(
+                        name: 'csrf-token',
+                        in: 'header',
+                        description: 'Jeton CSRF stateless',
+                        required: true,
+                        schema: ['type' => 'string']
+                    ),
+                ]
+            ),
             name: 'api_auth_register',
         ),
         new Post(
@@ -56,16 +59,17 @@ use Symfony\Component\HttpFoundation\Response;
             input: InviteUserInput::class,
             denormalizationContext: ['groups' => ['invite:send']],
             write: false,
-            openapiContext: [
-                'parameters' => [
-                    [
-                        'name' => 'csrf-token',
-                        'in' => 'header',
-                        'required' => true,
-                        'schema' => ['type' => 'string'],
-                    ],
-                ],
-            ],
+            openapi: new OpenApiOperation(
+                parameters: [
+                    new OpenApiParameter(
+                        name: 'csrf-token',
+                        in: 'header',
+                        description: 'Jeton CSRF stateless',
+                        required: true,
+                        schema: ['type' => 'string']
+                    ),
+                ]
+            ),
             name: 'api_auth_invite',
         ),
         new Post(
@@ -79,16 +83,17 @@ use Symfony\Component\HttpFoundation\Response;
             input: InviteCompleteInput::class,
             denormalizationContext: ['groups' => ['invite:complete']],
             write: false,
-            openapiContext: [
-                'parameters' => [
-                    [
-                        'name' => 'csrf-token',
-                        'in' => 'header',
-                        'required' => true,
-                        'schema' => ['type' => 'string'],
-                    ],
-                ],
-            ],
+            openapi: new OpenApiOperation(
+                parameters: [
+                    new OpenApiParameter(
+                        name: 'csrf-token',
+                        in: 'header',
+                        description: 'Jeton CSRF stateless',
+                        required: true,
+                        schema: ['type' => 'string']
+                    ),
+                ]
+            ),
             name: 'api_auth_invite_complete',
         ),
         new Post(
@@ -100,16 +105,17 @@ use Symfony\Component\HttpFoundation\Response;
             deserialize: false,
             validate: false,
             write: false,
-            openapiContext: [
-                'parameters' => [
-                    [
-                        'name' => 'csrf-token',
-                        'in' => 'header',
-                        'required' => true,
-                        'schema' => ['type' => 'string'],
-                    ],
-                ],
-            ],
+            openapi: new OpenApiOperation(
+                parameters: [
+                    new OpenApiParameter(
+                        name: 'csrf-token',
+                        in: 'header',
+                        description: 'Jeton CSRF stateless',
+                        required: true,
+                        schema: ['type' => 'string']
+                    ),
+                ]
+            ),
             name: 'api_auth_logout',
         ),
         new Post(
@@ -123,16 +129,17 @@ use Symfony\Component\HttpFoundation\Response;
             input: PasswordForgotInput::class,
             denormalizationContext: ['groups' => ['password:forgot']],
             write: false,
-            openapiContext: [
-                'parameters' => [
-                    [
-                        'name' => 'csrf-token',
-                        'in' => 'header',
-                        'required' => true,
-                        'schema' => ['type' => 'string'],
-                    ],
-                ],
-            ],
+            openapi: new OpenApiOperation(
+                parameters: [
+                    new OpenApiParameter(
+                        name: 'csrf-token',
+                        in: 'header',
+                        description: 'Jeton CSRF stateless',
+                        required: true,
+                        schema: ['type' => 'string']
+                    ),
+                ]
+            ),
             name: 'api_auth_password_forgot',
         ),
         new Post(
@@ -146,16 +153,17 @@ use Symfony\Component\HttpFoundation\Response;
             input: PasswordResetInput::class,
             denormalizationContext: ['groups' => ['password:reset']],
             write: false,
-            openapiContext: [
-                'parameters' => [
-                    [
-                        'name' => 'csrf-token',
-                        'in' => 'header',
-                        'required' => true,
-                        'schema' => ['type' => 'string'],
-                    ],
-                ],
-            ],
+            openapi: new OpenApiOperation(
+                parameters: [
+                    new OpenApiParameter(
+                        name: 'csrf-token',
+                        in: 'header',
+                        description: 'Jeton CSRF stateless',
+                        required: true,
+                        schema: ['type' => 'string']
+                    ),
+                ]
+            ),
             name: 'api_auth_password_reset',
         ),
         new Get(

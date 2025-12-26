@@ -36,6 +36,7 @@ Phase 1 - Backend API-only (en cours)
 - [x] DTOs restants (setup admin).
 - [ ] DTO verify email (si on migre vers POST/DTO).
 - [x] Fix verify-email (_hash) front + OpenAPI.
+- [x] Desactiver `framework.csrf_protection` (sessions off, CSRF stateless custom).
 - [x] AGENTS.md mis a jour (API-only + Angular).
 - [x] README a mettre a jour (routes, Caddy, compose root).
 
