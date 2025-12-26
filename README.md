@@ -19,6 +19,7 @@ protection **CSRF stateless** (Symfony).
 - [Intégration front (SPA)](#intégration-front-spa)
 - [Configuration & déploiement](#configuration--déploiement)
 - [SDKs](#sdks)
+- [Bridge Meridiane](#bridge-meridiane)
 - [Notes de sécurité](#notes-de-sécurité)
 - [Contribuer](#contribuer)
 - [Licence](#licence)
@@ -281,6 +282,18 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
 
 * Client HTTP Symfony pour ce service d’authentification.
 * Sources & doc : `packages/auth-client-php`.
+
+---
+
+## Bridge Meridiane
+
+Un bridge Angular peut être généré depuis la spec OpenAPI (API Platform) via le Makefile racine :
+
+```bash
+make bridge
+```
+
+La documentation d’usage et les bonnes pratiques frontend sont dans `docs/meridiane.md`.
 
 ---
 

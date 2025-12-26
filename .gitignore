@@ -1,1 +1,4 @@
 .idea
+/openapi.json
+/dist
+/webfront/bridge
