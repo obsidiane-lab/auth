@@ -44,6 +44,7 @@ Phase 2 - Webfront Angular (a faire)
 - [x] AuthApiService + interceptor CSRF.
 - [x] Pages auth branchees (login/register/reset/verify/invite/setup).
 - [x] Proxy `/api` en dev (ng serve sans config manuelle).
+- [x] Nettoyage webfront: suppression dashboard/layout/uikit + shared inutiles.
 - [ ] Guard auth minimal + refresh.
 
 Phase 3 - Infra unifiee (a faire)
