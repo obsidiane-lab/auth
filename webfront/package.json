@@ -1,5 +1,5 @@
 {
-  "name": "angular-tailwind",
+  "name": "angular",
   "displayName": "Angular Tailwind",
   "version": "0.11.0",
   "description": "Angular & Tailwind CSS Admin Dashboard Starter Kit, Free and Open Source",
@@ -20,7 +20,7 @@
   "license": "MIT",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --open",
+    "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
@@ -32,7 +32,6 @@
   },
   "private": true,
   "dependencies": {
-    "@decodeur/bridge": "file:bridge",
     "@angular/animations": "^20.0.2",
     "@angular/common": "^20.0.2",
     "@angular/compiler": "^20.0.2",
@@ -47,8 +46,6 @@
     "@tailwindcss/postcss": "^4.0.3",
     "@tailwindcss/typography": "^0.5.16",
     "angular-svg-icon": "^13.0.0",
-    "apexcharts": "^3.35.3",
-    "ng-apexcharts": "^1.7.1",
     "ngx-sonner": "^2.0.1",
     "rxjs": "^7.8.2",
     "tslib": "^2.3.0"

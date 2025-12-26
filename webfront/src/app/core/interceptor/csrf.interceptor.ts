@@ -1,6 +1,7 @@
 import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, switchMap, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
+import { normalizeApiBaseUrl, resolveApiBaseUrl } from '../api-base-url';
 
 const CSRF_RETRY = new HttpContextToken<boolean>(() => false);
 const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
@@ -11,9 +12,15 @@ function generateCsrfToken(): string {
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
+const rawApiBaseUrl = normalizeApiBaseUrl(environment.apiBaseUrl);
+const absoluteApiBaseUrl = normalizeApiBaseUrl(resolveApiBaseUrl(environment.apiBaseUrl));
+
 function isApiRequest(url: string): boolean {
-  const prefix = environment.apiBaseUrl.replace(/\/$/, '');
-  return url.startsWith(prefix);
+  if (rawApiBaseUrl !== '' && url.startsWith(rawApiBaseUrl)) {
+    return true;
+  }
+
+  return absoluteApiBaseUrl !== '' && url.startsWith(absoluteApiBaseUrl);
 }
 
 function shouldAttachCsrf(url: string, method: string): boolean {

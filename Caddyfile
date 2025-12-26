@@ -3,9 +3,9 @@
 }
 
 :80 {
-    encode zstd br gzip
+    encode zstd gzip
 
-    @api path /api/*
+    @api path /api/* /bundles/*
     handle @api {
         reverse_proxy core:80
     }

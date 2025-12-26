@@ -10,6 +10,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { csrfInterceptor } from './app/core/interceptor/csrf.interceptor';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { provideBridge } from '@decodeur/bridge';
+import { resolveApiBaseUrl } from './app/core/api-base-url';
 
 if (environment.production) {
   enableProdMode();
@@ -28,7 +29,7 @@ bootstrapApplication(AppComponent, {
     provideAnimations(),
     provideZonelessChangeDetection(),
     provideBridge({
-      baseUrl: environment.apiBaseUrl,
+      baseUrl: resolveApiBaseUrl(environment.apiBaseUrl),
       extraInterceptors: [csrfInterceptor],
     }),
   ],
