@@ -1,7 +1,7 @@
 services:
-  php:
+  core:
     build:
-      context: .
+      context: ./core
       target: frankenphp_dev
     environment:
       APP_BASE_DOMAIN: "localhost"
@@ -14,7 +14,7 @@ services:
       ACCESS_COOKIE_PATH: "/"
       ACCESS_COOKIE_SAMESITE: "lax"
       ACCESS_COOKIE_SECURE: "0"
-      MERCURE_URL: "http://php/.well-known/mercure"
+      MERCURE_URL: "http://core/.well-known/mercure"
       FRANKENPHP_WORKER_CONFIG: "watch"
       XDEBUG_MODE: "off"
       ALLOWED_ORIGINS: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
@@ -32,14 +32,37 @@ services:
       NOTIFUSE_TEMPLATE_WELCOME: "welcome"
       NOTIFUSE_TEMPLATE_RESET_PASSWORD: "resetpass"
       API_DOCS_ENABLED: "1"
-    volumes:
-      - ./:/app
-      - ./infra/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
-      - ./infra/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
     ports:
       - "8001:80"
+    volumes:
+      - ./core:/app
+      - ./core/infra/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
+      - ./core/infra/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
     depends_on:
       - database
+
+  webfront:
+    profiles:
+      - fullstack
+    image: node:20-alpine
+    working_dir: /app
+    command: sh -c "npm install && npm start -- --host 0.0.0.0 --port 4200"
+    volumes:
+      - ./webfront:/app
+    ports:
+      - "4200:4200"
+
+  caddy:
+    profiles:
+      - fullstack
+    image: caddy:2
+    ports:
+      - "8000:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    depends_on:
+      - core
+      - webfront
 
   database:
     image: mariadb

@@ -17,16 +17,6 @@ _security_logout:
     resource: security.route_loader.logout
     type: service
 
-api_auth_password_forgot:
-    path: /api/auth/password/forgot
-    controller: App\Controller\ResetPasswordController::request
-    methods: [ POST ]
-
-api_auth_password_reset:
-    path: /api/auth/password/reset
-    controller: App\Controller\ResetPasswordController::reset
-    methods: [ POST ]
-
 when@dev:
     _errors:
         resource: '@FrameworkBundle/Resources/config/routing/errors.php'

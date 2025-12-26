@@ -1,0 +1,16 @@
+{
+    {$CADDY_GLOBAL_OPTIONS}
+}
+
+:80 {
+    encode zstd br gzip
+
+    @api path /api/*
+    handle @api {
+        reverse_proxy core:80
+    }
+
+    handle {
+        reverse_proxy webfront:4200
+    }
+}

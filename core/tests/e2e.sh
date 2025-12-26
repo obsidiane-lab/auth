@@ -10,7 +10,7 @@ set -euo pipefail
 # - admin invitation + invite completion (manual link)
 # - admin role update on a user
 
-BASE_URL="${BASE_URL:-http://localhost:8000}"
+BASE_URL="${BASE_URL:-http://localhost:8001}"
 # Origin used for CSRF validation (defaults to BASE_URL).
 ORIGIN="${ORIGIN:-$BASE_URL}"
 
@@ -79,25 +79,25 @@ generate_csrf() {
 }
 
 step_initial_admin() {
-  info "Checking if initial admin is needed..."
-
-  # Try hitting /setup: if it redirects or returns 200, we can attempt setup
-  http_code=$(curl -s -o /dev/null -w '%{http_code}' "${BASE_URL}/setup" || echo "000")
-
-  if [[ "$http_code" != "200" ]]; then
-    info "Initial admin page not available (http $http_code). Assuming admin already exists."
-    return 0
-  fi
-
-  warn "Initial admin seems required. Creating admin: ${ADMIN_EMAIL}"
-
+  info "Ensuring initial admin exists..."
   csrf=$(generate_csrf)
-  curl -s -i \
+  body_file="$(mktemp)"
+  http_code=$(curl -s -o "${body_file}" -w '%{http_code}' \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
-    "${BASE_URL}/api/setup/admin"
+    "${BASE_URL}/api/setup/admin")
+
+  if [[ "$http_code" == "201" ]]; then
+    info "Initial admin created."
+  elif [[ "$http_code" == "409" ]]; then
+    info "Initial admin already exists."
+  else
+    warn "Initial admin setup returned HTTP ${http_code}."
+    cat "${body_file}"
+  fi
+  rm -f "${body_file}"
 }
 
 step_login_admin() {
@@ -159,7 +159,7 @@ step_password_reset_flow() {
     "${BASE_URL}/api/auth/password/forgot"
 
   warn "A reset-password email should be available for ${REGISTER_EMAIL}."
-  warn "Open Maildev / Notifuse, retrieve the reset link (/reset-password/reset/{token}), and test it manually in the browser."
+  warn "Open Maildev / Notifuse, retrieve the reset link (/reset-password/confirm?token=...), and test it manually in the browser."
   warn "Press ENTER to continue once done."
   read -r _
 }

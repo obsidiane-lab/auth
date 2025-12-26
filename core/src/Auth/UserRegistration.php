@@ -100,11 +100,9 @@ final readonly class UserRegistration
             return;
         }
 
-        $signature = $this->emailVerifier->generateSignature($user);
-
         $context = [
             'first_name' => $recipient,
-            'activate_link' => $signature->getSignedUrl(),
+            'activate_link' => $this->emailVerifier->generateFrontendSignature($user),
         ];
 
         $this->mailer->dispatch($recipient, $this->welcomeTemplateId, $context);

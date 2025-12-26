@@ -2,24 +2,20 @@
 
 namespace App\Controller\Auth;
 
-use App\Auth\InvitationManager;
 use App\Auth\Exception\RegistrationException;
-use App\Http\JsonRequestDecoderTrait;
+use App\Auth\InvitationManager;
+use App\Auth\Dto\InviteUserInput;
 use App\Mail\MailDispatchException;
 use App\Response\ApiResponseFactory;
 use App\Setup\InitialAdminManager;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Serializer\Exception\NotEncodableValueException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[IsGranted('ROLE_ADMIN')]
 final class InviteUserController extends AbstractController
 {
-    use JsonRequestDecoderTrait;
-
     public function __construct(
         private readonly InvitationManager $invitationManager,
         private readonly ApiResponseFactory $responses,
@@ -27,19 +23,13 @@ final class InviteUserController extends AbstractController
     ) {
     }
 
-    public function __invoke(Request $request): JsonResponse
+    public function __invoke(InviteUserInput $input): JsonResponse
     {
         if ($this->initialAdminManager->needsBootstrap()) {
             return $this->responses->error('INITIAL_ADMIN_REQUIRED', Response::HTTP_CONFLICT);
         }
 
-        try {
-            $payload = $this->decodeJson($request);
-        } catch (NotEncodableValueException) {
-            return $this->responses->error('INVALID_PAYLOAD', Response::HTTP_BAD_REQUEST);
-        }
-
-        $email = isset($payload['email']) ? trim((string) $payload['email']) : '';
+        $email = trim((string) ($input->email ?? ''));
 
         if ($email == '') {
             return $this->responses->error('INVALID_EMAIL', Response::HTTP_UNPROCESSABLE_ENTITY);

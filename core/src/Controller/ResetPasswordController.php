@@ -2,9 +2,10 @@
 
 namespace App\Controller;
 
-use App\Auth\View\AuthViewPropsBuilder;
-use App\Config\FeatureFlags;
+use App\Auth\Dto\PasswordForgotInput;
+use App\Auth\Dto\PasswordResetInput;
 use App\Entity\User;
+use App\Frontend\FrontendUrlBuilder;
 use App\Mail\MailDispatchException;
 use App\Mail\MailerGateway;
 use App\Repository\RefreshTokenRepository;
@@ -14,34 +15,25 @@ use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use App\Security\PasswordStrengthChecker;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
-#[Route('/reset-password')]
 final class ResetPasswordController extends AbstractController
 {
-    private const RESET_TOKEN_SESSION_KEY = 'app_reset_password_token';
-
     public function __construct(
         private readonly ResetPasswordHelperInterface $resetPasswordHelper,
         private readonly UserRepository               $userRepository,
         private readonly RefreshTokenRepository       $refreshTokenRepository,
         private readonly UserPasswordHasherInterface  $passwordHasher,
         private readonly MailerGateway                $mailer,
-        private readonly UrlGeneratorInterface        $urlGenerator,
+        private readonly FrontendUrlBuilder           $frontendUrlBuilder,
         private readonly TranslatorInterface          $translator,
         private readonly EntityManagerInterface       $entityManager,
-        private readonly FeatureFlags                 $featureFlags,
-        private readonly AuthViewPropsBuilder         $viewPropsBuilder,
         private readonly InitialAdminManager          $initialAdminManager,
         private readonly PasswordStrengthChecker      $passwordStrengthChecker,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_RESET_PASSWORD)%')]
@@ -50,34 +42,13 @@ final class ResetPasswordController extends AbstractController
     ) {
     }
 
-    #[Route('', name: 'app_forgot_password_request', methods: ['GET', 'POST'])]
-    public function request(Request $request): Response
+    public function request(PasswordForgotInput $input): Response
     {
         if ($this->initialAdminManager->needsBootstrap()) {
-            if ($request->isMethod('GET')) {
-                return $this->redirectToRoute('setup_admin_page');
-            }
-
             return $this->createErrorResponse('INITIAL_ADMIN_REQUIRED', Response::HTTP_CONFLICT);
         }
 
-        if ($request->isMethod('GET')) {
-            if (!$this->featureFlags->isUiEnabled()) {
-                throw new NotFoundHttpException();
-            }
-
-        $context = $this->viewPropsBuilder->build($request);
-
-            return $this->render('reset_password/request.html.twig', [
-                'component_props' => $context['props'],
-                'theme_color' => $context['theme_color'],
-                'theme_mode' => $context['theme_mode'],
-            ]);
-        }
-
-        // JSON submission from Vue component / API client
-        $data = $this->decodeJson($request);
-        $email = isset($data['email']) ? trim(mb_strtolower((string) $data['email'])) : '';
+        $email = trim(mb_strtolower((string) ($input->email ?? '')));
 
         if ($email !== '') {
             $user = $this->userRepository->findOneBy(['email' => $email]);
@@ -86,11 +57,7 @@ final class ResetPasswordController extends AbstractController
                 try {
                     $resetToken = $this->resetPasswordHelper->generateResetToken($user);
 
-                    $resetUrl = $this->urlGenerator->generate(
-                        'app_reset_password',
-                        ['token' => $resetToken->getToken()],
-                        UrlGeneratorInterface::ABSOLUTE_URL
-                    );
+                    $resetUrl = $this->frontendUrlBuilder->resetPasswordUrl($resetToken->getToken());
 
                     $recipient = $user->getEmail() ?? $email;
                     $this->mailer->dispatch(
@@ -145,61 +112,14 @@ final class ResetPasswordController extends AbstractController
         return new JsonResponse($payload, $statusCode);
     }
 
-    #[Route('/check-email', name: 'app_check_email', methods: ['GET'])]
-    public function checkEmail(): Response
+    public function reset(PasswordResetInput $input): Response
     {
         if ($this->initialAdminManager->needsBootstrap()) {
-            return $this->redirectToRoute('setup_admin_page');
-        }
-
-        // Display a generic message with TTL to prevent user enumeration
-        $ttlMinutes = (int)ceil($this->resetPasswordHelper->getTokenLifetime() / 60);
-
-        return $this->render('reset_password/check_email.html.twig', [
-            'tokenLifetime' => $ttlMinutes,
-        ]);
-    }
-
-    #[Route('/reset/{token}', name: 'app_reset_password', methods: ['GET', 'POST'])]
-    public function reset(Request $request, ?string $token = null): Response
-    {
-        if ($this->initialAdminManager->needsBootstrap()) {
-            if ($request->isMethod('GET')) {
-                return $this->redirectToRoute('setup_admin_page');
-            }
-
             return new JsonResponse(['error' => 'INITIAL_ADMIN_REQUIRED'], Response::HTTP_CONFLICT);
         }
 
-        if ($token) {
-            // Store token in session and avoid keeping it in the URL
-            $request->getSession()->set(self::RESET_TOKEN_SESSION_KEY, $token);
-
-            return $this->redirectToRoute('app_reset_password');
-        }
-
-        if ($request->isMethod('GET')) {
-            if (!$this->featureFlags->isUiEnabled()) {
-                throw new NotFoundHttpException();
-            }
-
-            $tokenInSession = (string)$request->getSession()->get(self::RESET_TOKEN_SESSION_KEY, '');
-
-        $context = $this->viewPropsBuilder->build($request);
-            $props = $context['props'];
-            $props['resetToken'] = $tokenInSession;
-
-            return $this->render('reset_password/reset.html.twig', [
-                'component_props' => $props,
-                'theme_color' => $context['theme_color'],
-                'theme_mode' => $context['theme_mode'],
-            ]);
-        }
-
-        // JSON submission from Vue component
-        $data = $this->decodeJson($request);
-        $tokenInSession = isset($data['token']) ? (string) $data['token'] : '';
-        $plainPassword = isset($data['password']) ? (string) $data['password'] : '';
+        $tokenInSession = (string) ($input->token ?? '');
+        $plainPassword = (string) ($input->password ?? '');
 
         if ($tokenInSession === '') {
             return new JsonResponse(['error' => 'INVALID_REQUEST'], Response::HTTP_BAD_REQUEST);
@@ -230,9 +150,6 @@ final class ResetPasswordController extends AbstractController
         $this->resetPasswordHelper->removeResetRequest($tokenInSession);
         $this->refreshTokenRepository->deleteAllForUser($user->getUserIdentifier());
 
-        // Clean token from session if present
-        $request->getSession()->remove(self::RESET_TOKEN_SESSION_KEY);
-
         $this->logger->info('Password successfully reset', [
             'user_id' => $user->getId(),
             'email' => $user->getEmail(),
@@ -241,19 +158,4 @@ final class ResetPasswordController extends AbstractController
         return new Response('', Response::HTTP_NO_CONTENT);
     }
 
-    /**
-     * @return array<string, mixed>
-     */
-    private function decodeJson(Request $request): array
-    {
-        $content = $request->getContent();
-
-        if ($content === '') {
-            return [];
-        }
-
-        $data = json_decode($content, true);
-
-        return is_array($data) ? $data : [];
-    }
 }

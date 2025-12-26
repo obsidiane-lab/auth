@@ -9,11 +9,8 @@ framework:
     csrf_protection:
         enabled: true
 
-    # Note that the session will be started ONLY if you read or write from it.
     session:
-        cookie_secure: 'auto'
-        cookie_httponly: true
-        cookie_samesite: lax
+        enabled: false
 
     # Behind reverse proxies (Traefik/Cloudflare), trust forwarded headers to recover the original scheme/host.
     trusted_proxies: '%env(TRUSTED_PROXIES)%'
@@ -25,5 +22,3 @@ framework:
 when@test:
     framework:
         test: true
-        session:
-            storage_factory_id: session.storage.factory.mock_file

@@ -3,6 +3,7 @@
 namespace App\Security;
 
 use App\Entity\User;
+use App\Frontend\FrontendUrlBuilder;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
@@ -14,7 +15,8 @@ final readonly class EmailVerifier
     public function __construct(
         private VerifyEmailHelperInterface $verifyEmailHelper,
         private EntityManagerInterface     $entityManager,
-        private string                     $verifyRoute = 'app_verify_email',
+        private FrontendUrlBuilder         $frontendUrlBuilder,
+        private string                     $verifyRoute = 'api_auth_verify_email',
     ) {
     }
 
@@ -37,6 +39,14 @@ final readonly class EmailVerifier
         );
     }
 
+    public function generateFrontendSignature(User $user): string
+    {
+        $components = $this->generateSignature($user);
+        $query = $this->extractQueryParams($components->getSignedUrl());
+
+        return $this->frontendUrlBuilder->verifyEmailUrl($query);
+    }
+
     /**
      * @throws VerifyEmailExceptionInterface
      */
@@ -55,5 +65,20 @@ final readonly class EmailVerifier
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
+    }
+
+    /**
+     * @return array<string, scalar>
+     */
+    private function extractQueryParams(string $signedUrl): array
+    {
+        $parts = parse_url($signedUrl);
+        if (!is_array($parts) || !isset($parts['query'])) {
+            return [];
+        }
+
+        parse_str($parts['query'], $params);
+
+        return is_array($params) ? $params : [];
     }
 }

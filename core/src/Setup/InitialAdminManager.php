@@ -47,16 +47,4 @@ final class InitialAdminManager
 
         return $user;
     }
-
-    /**
-     * @param array<string, mixed> $payload
-     */
-    public function createInputFromPayload(array $payload): RegisterUserInput
-    {
-        $input = new RegisterUserInput();
-        $input->email = isset($payload['email']) ? trim((string) $payload['email']) : null;
-        $input->plainPassword = isset($payload['password']) ? (string) $payload['password'] : null;
-
-        return $input;
-    }
 }

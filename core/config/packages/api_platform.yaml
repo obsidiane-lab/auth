@@ -1,7 +1,8 @@
 api_platform:
     title: Obsidiane Auth
     version: 1.0.0
-    enable_docs: true
+    enable_docs: '%env(bool:API_DOCS_ENABLED)%'
+    enable_swagger_ui: '%env(bool:API_DOCS_ENABLED)%'
     use_symfony_listeners: true
     patch_formats:
         json: [ "application/merge-patch+json" ]
@@ -28,4 +29,3 @@ api_platform:
             JWT:
                 name: Authorization
                 type: header
-

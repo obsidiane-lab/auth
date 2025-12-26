@@ -10,6 +10,7 @@ Objectif: backend API-only expose sous `/api`, front Angular unique pour toute l
 - Liens email pointent vers des routes Angular qui transmettent a l API.
 - Pas de compatibilite UI legacy: suppression totale de Vue/Twig/Encore/webpack dans `core`.
 - Dev: `ng serve` uniquement (pas de build statique local via Caddy en dev).
+- Dev: proxy Angular `/api` -> core (`localhost:8001`) pour rester same-origin.
 - Login conserve via Lexik `json_login`, cookies HttpOnly (access + refresh).
 - Suppression des sessions Symfony (reset token passe en payload).
 - CORS/ALLOWED_ORIGINS remains via variables d environnement.
@@ -18,6 +19,39 @@ Objectif: backend API-only expose sous `/api`, front Angular unique pour toute l
 - Pas de tests a livrer dans cette refonte.
 - Pas d impact DB attendu (ou impact maitrise si necessaire).
 - SDKs a revoir et regenerer via OpenAPITools openapi-generator.
+
+## 1.1) Progression (suivi execution)
+
+Phase 1 - Backend API-only (en cours)
+- [x] Retirer les controllers UI (login/register/setup/invite) et templates Twig associes.
+- [x] Supprimer les assets Vue/Encore + config Webpack dans `core`.
+- [x] Ajouter `FrontendUrlBuilder` et migrer emails (welcome/reset/invite) vers liens Angular.
+- [x] Refondre reset password en API-only (token en payload, pas de session).
+- [x] Exposer verify-email en endpoint API JSON.
+- [x] Nettoyer `security.yaml` (suppression UI routes/firewall, ajout verify-email API).
+- [x] Desactiver les bundles Vue/Webpack/Turbo/Stimulus dans `bundles.php`.
+- [x] OpenAPI: documenter login/verify/password/setup + headers CSRF.
+- [x] Desactiver `/api/docs` en prod via config.
+- [x] DTOs API Platform + suppression du parsing manuel (register/invite/password).
+- [x] DTOs restants (setup admin).
+- [ ] DTO verify email (si on migre vers POST/DTO).
+- [x] Fix verify-email (_hash) front + OpenAPI.
+- [x] AGENTS.md mis a jour (API-only + Angular).
+- [x] README a mettre a jour (routes, Caddy, compose root).
+
+Phase 2 - Webfront Angular (a faire)
+- [x] AuthApiService + interceptor CSRF.
+- [x] Pages auth branchees (login/register/reset/verify/invite/setup).
+- [x] Proxy `/api` en dev (ng serve sans config manuelle).
+- [ ] Guard auth minimal + refresh.
+
+Phase 3 - Infra unifiee (a faire)
+- [x] Caddyfile root (route /api -> core, reste -> webfront).
+- [x] Compose root (services core + webfront + caddy).
+
+Phase 4 - SDKs (a faire)
+- [ ] OpenAPI stable -> generation SDKs (JS/TS + PHP) via openapi-generator.
+- [ ] Remplacement des SDKs existants.
 
 ## 2) Etat des lieux detaille (audit rapide)
 
@@ -57,7 +91,7 @@ Infra:
 - Un seul Caddyfile root:
   - `/api/*` -> backend core
   - reste -> webfront (SPA)
-- Dev: on garde `ng serve` direct (pas de Caddy proxy pour webfront en local si non souhaite).
+- Dev: `ng serve` direct + proxy `/api` vers core (pas de Caddy requis en local).
 
 ## 4) Contrat API (version cible)
 
@@ -73,7 +107,7 @@ Infra:
 - POST `/api/auth/invite` -> 202.
 - POST `/api/auth/invite/complete` -> 201.
 - POST `/api/setup/admin` -> 201.
-- POST `/api/auth/verify-email` -> 200/400 (validation lien).
+- GET  `/api/auth/verify-email` -> 200/400 (validation lien).
 
 ### 4.2 DTOs proposes
 
@@ -84,7 +118,7 @@ Infra:
 - `InviteUserInput` (email, roles?).
 - `InviteCompleteInput` (token, password, profile...).
 - `SetupInitialAdminInput` / `SetupInitialAdminOutput`.
-- `VerifyEmailInput` (id, token, signature, expires) ou token unique selon format.
+- `VerifyEmail` reste un GET (query `id`, `token`, `expires`, `_hash`).
 
 ### 4.3 Regles transverses
 

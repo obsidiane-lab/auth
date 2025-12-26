@@ -5,7 +5,7 @@ Refresh Tokens**.
 Il fournit un login centré **cookies HttpOnly** (`__Secure-at` / `__Host-rt`), des endpoints API simples et une
 protection **CSRF stateless** (Symfony).
 
-> UI intégrée (Twig + Vue), tokens en cookies sécurisés, refresh rotatif, vérification d’email, prêts pour la prod.
+> UI Angular (dossier `/webfront`), tokens en cookies sécurisés, refresh rotatif, vérification d’email.
 
 ---
 
@@ -29,7 +29,7 @@ protection **CSRF stateless** (Symfony).
 
 - Service d’auth centré **cookies HttpOnly** : access token JWT (`__Secure-at`) + refresh opaque (`__Host-rt`).
 - Deux usages possibles :
-  - UI intégrée (Twig + Vue) : `/login`, `/register`, `/reset-password`, `/setup`, `/invite/complete`.
+  - UI Angular : `/login`, `/register`, `/reset-password`, `/reset-password/confirm`, `/verify-email`, `/invite/complete`, `/setup`.
   - API JSON : `/api/auth/...` pour front SPA, mobile, backends.
 - Sécurité intégrée : CSRF stateless (`csrf-token`), vérification d’email, rate limiting, redirections allowlistées.
 - Au premier démarrage, si aucun user n’existe, tout redirige vers `/setup` pour créer l’admin.
@@ -39,10 +39,11 @@ protection **CSRF stateless** (Symfony).
 
 ## Fonctionnalités
 
-- **UI Twig + Vue**
-  - `/login`, `/register`, `/reset-password`, `/reset-password/reset/{token}`.
+- **UI Angular**
+  - `/login`, `/register`, `/reset-password`, `/reset-password/confirm`.
   - `/setup` pour créer l’admin initial.
   - `/invite/complete` pour finaliser une invitation.
+  - `/verify-email` pour la vérification d’email (appelle l’API).
 
 - **API JSON principale**
   - Auth : `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/refresh`, `POST /api/auth/logout`.
@@ -70,16 +71,20 @@ protection **CSRF stateless** (Symfony).
   - Token aléatoire dans `csrf-token` + contrôle `Origin`/`Referer`.
 
 - **Vérification d’email**
-  - L’inscription envoie un lien signé `/verify-email`.
+  - L’inscription envoie un lien vers `/verify-email?...` (front), qui appelle `/api/auth/verify-email`.
   - Tant que l’email n’est pas confirmé, le login est refusé (`EMAIL_NOT_VERIFIED`).
 
 ---
 
 ## Démarrage rapide
 
-Par défaut, `docker compose` expose le service sur `http://localhost:8000`.
+Par défaut, `docker compose` expose le **core** sur `http://localhost:8001` (Symfony/FrankenPHP).
 
-La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8000/api/docs`.
+Le **webfront** se lance via `ng serve` sur `http://localhost:4200` (proxy `/api` -> `http://localhost:8001`).
+
+Optionnel : `docker compose --profile fullstack up -d` démarre Caddy + webfront containerisés (entrée unique `http://localhost:8000`).
+
+La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8001/api/docs`.
 
 ### Installation
 
@@ -87,8 +92,13 @@ La documentation OpenAPI générée par API Platform est disponible sur `http://
 # Dépendances PHP
 composer install
 
-# Démarrer les services
+# Démarrer le core (racine)
 docker compose up -d
+
+# Démarrer le webfront (local)
+cd webfront
+npm install
+npm start
 
 # Migrations
 php bin/console doctrine:migrations:migrate
@@ -96,19 +106,20 @@ php bin/console doctrine:migrations:migrate
 
 ### URLs utiles (dev)
 
-* UI :
+* UI Angular (ng serve) :
 
-    * `http://localhost:8000/login`
-    * `http://localhost:8000/register`
-    * `http://localhost:8000/reset-password`
-* Setup initial :
-
-    * `http://localhost:8000/setup` (tant que la base ne contient aucun user).
+    * `http://localhost:4200/login`
+    * `http://localhost:4200/register`
+    * `http://localhost:4200/reset-password`
+    * `http://localhost:4200/reset-password/confirm?token=...`
+    * `http://localhost:4200/verify-email?...`
+    * `http://localhost:4200/invite/complete?token=...`
+    * `http://localhost:4200/setup` (tant que la base ne contient aucun user).
 * API :
 
-    * `http://localhost:8000/api/auth/login`
-    * `http://localhost:8000/api/auth/me`
-    * `http://localhost:8000/api/auth/refresh`
+    * `http://localhost:8001/api/auth/login`
+    * `http://localhost:8001/api/auth/me`
+    * `http://localhost:8001/api/auth/refresh`
 
 ### Exemple minimal avec `curl`
 
@@ -122,13 +133,13 @@ curl -i \
   -H 'Content-Type: application/json' \
   -H "csrf-token: $LOGIN_CSRF" \
   -d '{"email":"user@example.com","password":"Secret123!"}' \
-  http://localhost:8000/api/auth/login
+  http://localhost:8001/api/auth/login
 
 # Profil courant
-curl -i -b cookiejar.txt http://localhost:8000/api/auth/me
+curl -i -b cookiejar.txt http://localhost:8001/api/auth/me
 
 # Refresh
-curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
+curl -i -b cookiejar.txt -X POST http://localhost:8001/api/auth/refresh
 ```
 
 ---
@@ -147,7 +158,7 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 |    POST | `/api/auth/logout`          | Logout + invalidation tokens              |
 |    POST | `/api/auth/password/forgot` | Demande de reset (email)                  |
 |    POST | `/api/auth/password/reset`  | Réinitialisation via token                |
-|     GET | `/verify-email`             | Validation d’email via lien signé         |
+|     GET | `/api/auth/verify-email`    | Validation d’email via lien signé         |
 |    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
 |    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
 
@@ -224,10 +235,11 @@ ALLOWED_ORIGINS="^https?://([a-zA-Z0-9-]+\\.)?${APP_BASE_DOMAIN}(:[0-9]+)?$"
 ACCESS_COOKIE_DOMAIN=".${APP_BASE_DOMAIN}"
 FRONTEND_DEFAULT_REDIRECT=https://app.${APP_BASE_DOMAIN}/
 FRONTEND_REDIRECT_ALLOWLIST=https://app.${APP_BASE_DOMAIN}/,https://partners.${APP_BASE_DOMAIN}/
+FRONTEND_BASE_URL=${APP_DEFAULT_URI}
 
-UI_ENABLED=1
 REGISTRATION_ENABLED=1
 PASSWORD_STRENGTH_LEVEL=2
+API_DOCS_ENABLED=0
 
 NOTIFUSE_API_BASE_URL=https://notifuse.example.com
 NOTIFUSE_WORKSPACE_ID=prod-workspace
@@ -240,7 +252,7 @@ Variables complémentaires (généralement à garder telles quelles) :
 
 - `JWT_ALGORITHM` (HS256), `JWT_AUDIENCE`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`
 - `ACCESS_COOKIE_NAME`, `ACCESS_COOKIE_PATH`, `ACCESS_COOKIE_SAMESITE`, `ACCESS_COOKIE_SECURE`
-- `UI_THEME_COLOR`, `UI_THEME_MODE`, `BRANDING_NAME`
+- `BRANDING_NAME`, `FRONTEND_BASE_URL`, `API_DOCS_ENABLED`
 - Rate limiting : `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`, `RATE_LOGIN_GLOBAL_LIMIT`
 
 ---
@@ -256,7 +268,7 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
 ```
 
 - Le script est interactif : il te demande la base URL, les emails/mots de passe à utiliser pour l’admin, l’utilisateur d’inscription et l’utilisateur invité.
-- À chaque étape nécessitant une action sur l’email (clic sur `/verify-email`, `/reset-password/reset/...`, `/invite/complete?...`), il affiche un message du type :
+- À chaque étape nécessitant une action sur l’email (clic sur `/verify-email?...`, `/reset-password/confirm?token=...`, `/invite/complete?...`), il affiche un message du type :
   - `Attente de confirmation d’email… Ouvrez Maildev/Notifuse et cliquez sur le lien`, puis attend `ENTER`.
 - Il utilise la même mécanique CSRF stateless que le reste du projet (`csrf-token` + cookies).
 

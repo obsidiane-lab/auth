@@ -10,12 +10,12 @@ use App\Mail\MailDispatchException;
 use App\Mail\MailerGateway;
 use App\Repository\InviteUserRepository;
 use App\Repository\UserRepository;
+use App\Frontend\FrontendUrlBuilder;
 use App\Security\PasswordStrengthChecker;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -28,7 +28,7 @@ final readonly class InvitationManager
         private UserPasswordHasherInterface $passwordHasher,
         private ValidatorInterface $validator,
         private MailerGateway $mailer,
-        private UrlGeneratorInterface $router,
+        private FrontendUrlBuilder $frontendUrlBuilder,
         private Security $security,
         private PasswordStrengthChecker $passwordStrengthChecker,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
@@ -166,11 +166,7 @@ final readonly class InvitationManager
             return;
         }
 
-        $url = $this->router->generate(
-            'auth_invite_complete_page',
-            ['token' => $invite->getToken()],
-            UrlGeneratorInterface::ABSOLUTE_URL
-        );
+        $url = $this->frontendUrlBuilder->inviteCompleteUrl($invite->getToken());
 
         $this->mailer->dispatch($recipient, $this->welcomeTemplateId, [
             'first_name' => $recipient,

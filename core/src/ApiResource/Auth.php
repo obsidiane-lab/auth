@@ -6,11 +6,17 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
+use App\Auth\Dto\InviteCompleteInput;
+use App\Auth\Dto\InviteUserInput;
+use App\Auth\Dto\PasswordForgotInput;
+use App\Auth\Dto\PasswordResetInput;
+use App\Auth\Dto\RegisterUserInput;
 use App\Controller\Auth\AcceptInvitationController;
 use App\Controller\Auth\InviteUserController;
 use App\Controller\Auth\LogoutController;
 use App\Controller\Auth\MeController;
 use App\Controller\Auth\RegisterController;
+use App\Controller\ResetPasswordController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(
@@ -22,9 +28,21 @@ use Symfony\Component\HttpFoundation\Response;
             controller: RegisterController::class,
             description: 'Inscrit un nouvel utilisateur (CSRF `register`).',
             read: false,
-            deserialize: false,
+            deserialize: true,
             validate: false,
+            input: RegisterUserInput::class,
+            denormalizationContext: ['groups' => ['user:register']],
             write: false,
+            openapiContext: [
+                'parameters' => [
+                    [
+                        'name' => 'csrf-token',
+                        'in' => 'header',
+                        'required' => true,
+                        'schema' => ['type' => 'string'],
+                    ],
+                ],
+            ],
             name: 'api_auth_register',
         ),
         new Post(
@@ -33,9 +51,21 @@ use Symfony\Component\HttpFoundation\Response;
             controller: InviteUserController::class,
             description: 'Invite un utilisateur (admin uniquement, CSRF `invite_user`).',
             read: false,
-            deserialize: false,
+            deserialize: true,
             validate: false,
+            input: InviteUserInput::class,
+            denormalizationContext: ['groups' => ['invite:send']],
             write: false,
+            openapiContext: [
+                'parameters' => [
+                    [
+                        'name' => 'csrf-token',
+                        'in' => 'header',
+                        'required' => true,
+                        'schema' => ['type' => 'string'],
+                    ],
+                ],
+            ],
             name: 'api_auth_invite',
         ),
         new Post(
@@ -44,9 +74,21 @@ use Symfony\Component\HttpFoundation\Response;
             controller: AcceptInvitationController::class,
             description: 'Complète une invitation (mot de passe + profil).',
             read: false,
-            deserialize: false,
+            deserialize: true,
             validate: false,
+            input: InviteCompleteInput::class,
+            denormalizationContext: ['groups' => ['invite:complete']],
             write: false,
+            openapiContext: [
+                'parameters' => [
+                    [
+                        'name' => 'csrf-token',
+                        'in' => 'header',
+                        'required' => true,
+                        'schema' => ['type' => 'string'],
+                    ],
+                ],
+            ],
             name: 'api_auth_invite_complete',
         ),
         new Post(
@@ -58,7 +100,63 @@ use Symfony\Component\HttpFoundation\Response;
             deserialize: false,
             validate: false,
             write: false,
+            openapiContext: [
+                'parameters' => [
+                    [
+                        'name' => 'csrf-token',
+                        'in' => 'header',
+                        'required' => true,
+                        'schema' => ['type' => 'string'],
+                    ],
+                ],
+            ],
             name: 'api_auth_logout',
+        ),
+        new Post(
+            uriTemplate: '/auth/password/forgot',
+            status: Response::HTTP_ACCEPTED,
+            controller: ResetPasswordController::class . '::request',
+            description: 'Demande de réinitialisation du mot de passe.',
+            read: false,
+            deserialize: true,
+            validate: false,
+            input: PasswordForgotInput::class,
+            denormalizationContext: ['groups' => ['password:forgot']],
+            write: false,
+            openapiContext: [
+                'parameters' => [
+                    [
+                        'name' => 'csrf-token',
+                        'in' => 'header',
+                        'required' => true,
+                        'schema' => ['type' => 'string'],
+                    ],
+                ],
+            ],
+            name: 'api_auth_password_forgot',
+        ),
+        new Post(
+            uriTemplate: '/auth/password/reset',
+            status: Response::HTTP_NO_CONTENT,
+            controller: ResetPasswordController::class . '::reset',
+            description: 'Réinitialise le mot de passe via token.',
+            read: false,
+            deserialize: true,
+            validate: false,
+            input: PasswordResetInput::class,
+            denormalizationContext: ['groups' => ['password:reset']],
+            write: false,
+            openapiContext: [
+                'parameters' => [
+                    [
+                        'name' => 'csrf-token',
+                        'in' => 'header',
+                        'required' => true,
+                        'schema' => ['type' => 'string'],
+                    ],
+                ],
+            ],
+            name: 'api_auth_password_reset',
         ),
         new Get(
             uriTemplate: '/auth/me',

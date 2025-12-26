@@ -22,12 +22,6 @@ final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
         'api_auth_invite' => [],
         'api_auth_invite_complete' => [],
         'api_users_update_roles' => [],
-        'app_forgot_password_request' => [
-            'soft' => true,
-            'response' => ['status' => 'OK'],
-            'status' => Response::HTTP_ACCEPTED,
-        ],
-        'app_reset_password' => [],
         'api_auth_logout' => [],
         'api_auth_password_forgot' => [
             'soft' => true,

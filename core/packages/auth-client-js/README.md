@@ -69,7 +69,7 @@ ou via un script dans le `package.json` racine :
 
 - `baseUrl` doit pointer vers la racine d’Obsidiane Auth, par ex. :
   - `https://auth.example.com`
-  - `http://localhost:8000`
+  - `http://localhost:8001`
 - Côté navigateur, pensez à :
   - autoriser l’origine dans `ALLOWED_ORIGINS` côté backend ;
   - toujours activer `credentials: 'include'` (géré par le SDK).
