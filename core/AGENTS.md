@@ -88,8 +88,8 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 ## 5. Infra
 
-- Un seul Caddyfile côté projet: `infra/caddy/Caddyfile.dev` (`/api/*` -> backend, reste -> webfront).
-- `compose.yaml` orchestre `core`, `webfront`, `caddy`, `database`.
+- Caddyfiles dev/prod dans `obsidiane/caddy/` (reverse proxy côté core).
+- `compose.yaml` orchestre `core`, `webfront`, `database` (le core est l’entrypoint).
 
 ---
 

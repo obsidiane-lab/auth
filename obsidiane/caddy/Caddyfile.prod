@@ -20,7 +20,6 @@
 		}
 	}
 
-	root * /app/public
 	encode zstd gzip
 
 	vulcain
@@ -38,16 +37,20 @@
 		file_server
 	}
 
-	@phpRoute {
-		not path /.well-known/mercure*
-		not file {path}
-	}
-	rewrite @phpRoute index.php
+	handle {
+		root * /app/public
 
-	@frontController path index.php
-	php @frontController
+		@phpRoute {
+			not path /.well-known/mercure*
+			not file {path}
+		}
+		rewrite @phpRoute index.php
 
-	file_server {
-		hide *.php
+		@frontController path index.php
+		php @frontController
+
+		file_server {
+			hide *.php
+		}
 	}
 }

@@ -79,10 +79,10 @@ protection **CSRF stateless** (Symfony).
 
 ## Démarrage rapide
 
-Par défaut, `docker compose` expose une entrée unique sur `http://localhost:8000` (Caddy).
-`/api` est routé vers Symfony, le reste vers le webfront (Angular en `ng serve`).
+Par défaut, `docker compose` expose une entrée unique sur `http://localhost:8000` (Caddy dans le core).
+`/api` est routé vers Symfony, le reste vers le webfront (Angular via `ng serve`).
 
-La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8001/api/docs`.
+La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8000/api/docs`.
 
 ### Installation
 
@@ -93,10 +93,11 @@ composer install
 # Démarrer le core (racine)
 docker compose up -d
 
-# Démarrer le webfront (local)
-cd webfront
-npm install
-npm start
+# Installer les dépendances du webfront (premier lancement)
+docker compose run --rm webfront npm install
+
+# Lancer le webfront (si besoin)
+docker compose up -d webfront
 
 # Migrations
 php bin/console doctrine:migrations:migrate
@@ -104,20 +105,20 @@ php bin/console doctrine:migrations:migrate
 
 ### URLs utiles (dev)
 
-* UI Angular (ng serve) :
+* UI Angular :
 
-    * `http://localhost:4200/login`
-    * `http://localhost:4200/register`
-    * `http://localhost:4200/reset-password`
-    * `http://localhost:4200/reset-password/confirm?token=...`
-    * `http://localhost:4200/verify-email?...`
-    * `http://localhost:4200/invite/complete?token=...`
-    * `http://localhost:4200/setup` (tant que la base ne contient aucun user).
+    * `http://localhost:8000/login`
+    * `http://localhost:8000/register`
+    * `http://localhost:8000/reset-password`
+    * `http://localhost:8000/reset-password/confirm?token=...`
+    * `http://localhost:8000/verify-email?...`
+    * `http://localhost:8000/invite/complete?token=...`
+    * `http://localhost:8000/setup` (tant que la base ne contient aucun user).
 * API :
 
-    * `http://localhost:8001/api/auth/login`
-    * `http://localhost:8001/api/auth/me`
-    * `http://localhost:8001/api/auth/refresh`
+    * `http://localhost:8000/api/auth/login`
+    * `http://localhost:8000/api/auth/me`
+    * `http://localhost:8000/api/auth/refresh`
 
 ### Exemple minimal avec `curl`
 
@@ -131,13 +132,13 @@ curl -i \
   -H 'Content-Type: application/json' \
   -H "csrf-token: $LOGIN_CSRF" \
   -d '{"email":"user@example.com","password":"Secret123!"}' \
-  http://localhost:8001/api/auth/login
+  http://localhost:8000/api/auth/login
 
 # Profil courant
-curl -i -b cookiejar.txt http://localhost:8001/api/auth/me
+curl -i -b cookiejar.txt http://localhost:8000/api/auth/me
 
 # Refresh
-curl -i -b cookiejar.txt -X POST http://localhost:8001/api/auth/refresh
+curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 ```
 
 ---

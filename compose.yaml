@@ -2,8 +2,11 @@ name: auth
 services:
   core:
     build:
-      context: ./core
+      context: .
+      dockerfile: Dockerfile
       target: frankenphp_dev
+    ports:
+      - "${CADDY_HTTP_PORT:-8000}:80"
     environment:
       APP_BASE_DOMAIN: "localhost"
       AUTH_HOST: "localhost:${CADDY_HTTP_PORT:-8000}"
@@ -35,14 +38,16 @@ services:
       API_DOCS_ENABLED: "1"
     volumes:
       - ./core:/app
-      - ./core/infra/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
-      - ./core/infra/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
+      - ./obsidiane/caddy/Caddyfile.dev:/etc/frankenphp/Caddyfile:ro
+      - ./obsidiane/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
     depends_on:
       - database
+      - webfront
 
   webfront:
     build:
-      context: ./webfront
+      context: .
+      dockerfile: Dockerfile
       target: angular-dev
     working_dir: /app
     volumes:
@@ -50,16 +55,6 @@ services:
       - webfront_node_modules:/app/node_modules
     expose:
       - "4200"
-
-  caddy:
-    image: caddy:2
-    ports:
-      - "${CADDY_HTTP_PORT:-8000}:80"
-    volumes:
-      - ./infra/caddy/Caddyfile.dev:/etc/caddy/Caddyfile:ro
-    depends_on:
-      - core
-      - webfront
 
   database:
     image: mariadb
