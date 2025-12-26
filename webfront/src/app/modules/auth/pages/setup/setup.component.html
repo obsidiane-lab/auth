@@ -1,0 +1,73 @@
+<form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="text-center">
+    <h2 class="text-foreground mb-1 text-3xl font-semibold">Configuration initiale</h2>
+    <p class="text-muted-foreground text-sm">Créez le premier compte administrateur.</p>
+  </div>
+
+  <div class="space-y-3 text-left">
+    <div class="relative">
+      <input
+        type="text"
+        id="email"
+        class="peer block"
+        placeholder=" "
+        formControlName="email"
+        [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }" />
+      <label
+        for="email"
+        class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
+        Email address
+      </label>
+    </div>
+    <div *ngIf="submitted && f['email'].errors" class="is__invalid-error">
+      <div *ngIf="f['email'].errors['required']">Required field</div>
+      <div *ngIf="f['email'].errors['email']">Email must be an email address valid</div>
+    </div>
+
+    <div class="relative">
+      <input
+        type="password"
+        id="password"
+        class="peer block"
+        placeholder=" "
+        formControlName="password"
+        [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }" />
+      <label
+        for="password"
+        class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
+        Password
+      </label>
+    </div>
+    <div *ngIf="submitted && f['password'].errors" class="is__invalid-error">
+      <div *ngIf="f['password'].errors['required']">Required field</div>
+    </div>
+
+    <div class="relative">
+      <input
+        type="password"
+        id="confirm-password"
+        class="peer block"
+        placeholder=" "
+        formControlName="confirmPassword"
+        [ngClass]="{ 'is__invalid-input': submitted && f['confirmPassword'].errors }" />
+      <label
+        for="confirm-password"
+        class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
+        Confirm Password
+      </label>
+    </div>
+    <div *ngIf="submitted && f['confirmPassword'].errors" class="is__invalid-error">
+      <div *ngIf="f['confirmPassword'].errors['required']">Required field</div>
+    </div>
+  </div>
+
+  <div *ngIf="errorMessage" class="text-destructive text-sm">
+    {{ errorMessage }}
+  </div>
+
+  <div>
+    <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting">
+      Créer le compte
+    </app-button>
+  </div>
+</form>

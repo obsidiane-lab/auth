@@ -1,0 +1,180 @@
+{
+  "common": {
+    "yes": "Oui",
+    "no": "Non",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "reset": "Réinitialiser",
+    "loading": "Chargement...",
+    "status": {
+      "active": "Actif",
+      "inactive": "Inactif",
+      "onboarding": "En onboarding"
+    }
+  },
+  "table": {
+    "show": "Afficher",
+    "per_page": "par page",
+    "of": "sur",
+    "search": "Rechercher",
+    "filters": "Filtres",
+    "active": "Actifs",
+    "reset_filters": "Réinitialiser les filtres",
+    "apply_filters": "Appliquer les filtres",
+    "no_data_found": "Aucune donnée disponible"
+  },
+  "form": {
+    "select": {
+      "placeholder": "Sélectionnez une option"
+    },
+    "required": "Ce champ est obligatoire.",
+    "minlength": "La longueur minimale est de {{ requiredLength }} caractères.",
+    "maxlength": "La longueur maximale est de {{ requiredLength }} caractères.",
+    "valide": "Ce champ est invalide."
+  },
+  "uikit": {
+    "nav": {
+      "table": "Tableau",
+      "forms": "Formulaires",
+      "buttons": "Boutons",
+      "modals": "Modales"
+    },
+    "buttons": {
+      "title": "Boutons",
+      "description": "Aperçu des variantes disponibles pour le composant bouton : tonalités, tailles, formes et états particuliers.",
+      "groups": {
+        "impact": {
+          "title": "Impacts et tonalités",
+          "description": "Chaque bouton peut combiner une tonalité et un niveau d’impact pour adapter la hiérarchie visuelle."
+        },
+        "size": {
+          "title": "Tailles et formes",
+          "description": "Les boutons sont disponibles en plusieurs tailles et formes pour s’adapter aux différents contextes."
+        },
+        "states": {
+          "title": "États particuliers",
+          "description": "Démonstration des états de chargement, plein largeur et désactivé pour guider l’utilisateur."
+        }
+      },
+      "variants": {
+        "primaryBold": "Principal plein",
+        "primaryLight": "Principal léger",
+        "primaryGhost": "Principal transparent",
+        "danger": "Danger",
+        "success": "Succès",
+        "warning": "Avertissement",
+        "info": "Info",
+        "light": "Neutre",
+        "smallSquare": "Petit carré",
+        "mediumRounded": "Moyen arrondi",
+        "largePill": "Grand pilule",
+        "fullWidth": "Plein largeur",
+        "loading": "Chargement",
+        "disabled": "Désactivé"
+      },
+      "lastAction": "Dernier bouton cliqué : {{label}}"
+    },
+    "forms": {
+      "title": "Formulaires",
+      "description": "Exemple d’intégration des composants de formulaire personnalisés : select unitaire ou multiple et switch accessible.",
+      "country": {
+        "label": "Pays",
+        "placeholder": "Sélectionnez un pays",
+        "helper": "Utilise le composant app-select en mode simple avec validation requise.",
+        "options": {
+          "fr": "France",
+          "be": "Belgique",
+          "ca": "Canada",
+          "ch": "Suisse"
+        }
+      },
+      "skills": {
+        "label": "Compétences",
+        "placeholder": "Choisissez une ou plusieurs compétences",
+        "helper": "Multi-sélection : une coche apparaît pour les éléments sélectionnés.",
+        "options": {
+          "design": "Design",
+          "ux": "UX",
+          "frontend": "Frontend",
+          "backend": "Backend",
+          "marketing": "Marketing"
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "switchLabel": "Recevoir les notifications produit",
+        "helper": "Le switch implémente ControlValueAccessor pour s’intégrer sans effort aux formulaires réactifs."
+      },
+      "submittedValues": {
+        "title": "Valeurs soumises"
+      }
+    },
+    "modals": {
+      "title": "Modales et confirmations",
+      "description": "Illustrations de l’utilisation du composant modal et du flux de confirmation associé.",
+      "basic": {
+        "title": "Modal basique",
+        "description": "Commandez l’ouverture et la fermeture en pilotant la propriété isOpen.",
+        "open": "Ouvrir le modal",
+        "modalTitle": "Aperçu du modal",
+        "body": "Ce contenu est libre : vous pouvez y intégrer du texte, des formulaires ou des listes d’actions."
+      },
+      "confirm": {
+        "title": "Confirmation",
+        "description": "Le composant app-confirm s’appuie sur le modal et fournit un déclencheur personnalisable.",
+        "modalTitle": "Confirmer l’action",
+        "message": "Êtes-vous sûr de vouloir effectuer cette action ?",
+        "trigger": "Supprimer un élément"
+      },
+      "log": {
+        "title": "Historique des actions",
+        "entries": {
+          "modalOpened": "Modal ouvert",
+          "modalClosed": "Modal fermé",
+          "actionConfirmed": "Action confirmée",
+          "actionCancelled": "Action annulée"
+        }
+      }
+    },
+    "table": {
+      "title": "Tableau",
+      "description": "Exemple complet d’utilisation du composant app-table avec recherche, filtres et actions.",
+      "quickActions": {
+        "title": "Actions rapides",
+        "export": "Exporter CSV",
+        "addMember": "Ajouter un collaborateur"
+      },
+      "filters": {
+        "role": {
+          "title": "Rôle",
+          "helper": "Sélection multiple disponible (Ctrl/Cmd + clic)."
+        },
+        "status": {
+          "title": "Statut"
+        }
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Nom",
+        "role": "Rôle",
+        "team": "Équipe",
+        "location": "Localisation",
+        "status": "Statut",
+        "activity": "Activité récente",
+        "productivity": "Productivité"
+      },
+      "summary": {
+        "none": "Aucun filtre appliqué",
+        "filtersActive": "Filtres actifs",
+        "export": "Export CSV simulé à partir de la sélection courante",
+        "items": {
+          "search": "Recherche : \"{{term}}\"",
+          "roles": "Rôles : {{roles}}",
+          "statuses": "Statuts"
+        }
+      }
+    }
+  }
+}
