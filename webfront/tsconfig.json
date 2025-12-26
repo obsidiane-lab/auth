@@ -4,7 +4,7 @@
 		"compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@decodeur/bridge": ["bridge"]
+      "bridge": ["bridge"]
     },
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,

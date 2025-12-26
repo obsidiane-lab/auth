@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { BridgeFacade } from '@decodeur/bridge';
+import { BridgeFacade } from 'bridge';
 
 export interface AuthUser {
   id: number;

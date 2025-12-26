@@ -15,7 +15,7 @@ else
   MERIDIANE_FORMATS_ARG := --formats "$(MERIDIANE_FORMATS)"
 endif
 LIB_NAME ?= bridge
-NPM_PACKAGE_NAME ?= @decodeur/bridge
+NPM_PACKAGE_NAME ?= bridge
 APP_VERSION ?= 0.0.0-dev
 
 FRONTEND_DIR ?= webfront
