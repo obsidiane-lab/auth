@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, effect } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -9,7 +8,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
   selector: 'app-verify-email',
   templateUrl: './verify-email.component.html',
   styleUrls: ['./verify-email.component.css'],
-  imports: [NgIf, RouterLink, ButtonComponent],
+  imports: [RouterLink, ButtonComponent],
 })
 export class VerifyEmailComponent {
   status: 'loading' | 'success' | 'error' = 'loading';

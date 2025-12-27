@@ -2,15 +2,17 @@
   <h2 class="text-foreground text-3xl font-semibold">Vérification d’email</h2>
   <p class="text-muted-foreground text-sm">{{ message }}</p>
 
-  <div *ngIf="status !== 'loading'" class="mt-6">
-    <app-button
-      routerLink="/login"
-      [queryParams]="loginQueryParams"
-      impact="bold"
-      tone="primary"
-      shape="rounded"
-      size="medium">
-      Se connecter
-    </app-button>
-  </div>
+  @if (status !== 'loading') {
+    <div class="mt-6">
+      <app-button
+        routerLink="/login"
+        [queryParams]="loginQueryParams"
+        impact="bold"
+        tone="primary"
+        shape="rounded"
+        size="medium">
+        Se connecter
+      </app-button>
+    </div>
+  }
 </div>

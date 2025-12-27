@@ -1,20 +1,6 @@
 <app-already-authenticated [redirectTarget]="redirectTarget">
   <form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
     <div class="space-y-4">
-      <div *ngIf="flashMessage" class="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
-        <div class="flex items-start justify-between gap-4">
-          <span>{{ flashMessage }}</span>
-          <button
-            type="button"
-            class="text-emerald-700 transition hover:text-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
-            aria-label="Close"
-            (click)="flashMessage = ''"
-          >
-            &times;
-          </button>
-        </div>
-      </div>
-
       <div class="text-center">
         <h2 class="text-foreground mb-1 text-3xl font-semibold">
           Ravi de vous revoir <span class="text-primary">!</span>
@@ -25,7 +11,9 @@
 
     <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
     <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
-    <app-form-status-message *ngIf="status.infoMessage" kind="info" [message]="status.infoMessage"></app-form-status-message>
+    @if (status.infoMessage) {
+      <app-form-status-message kind="info" [message]="status.infoMessage"></app-form-status-message>
+    }
 
     <div class="space-y-3 text-left">
       <div class="form__group">
@@ -44,10 +32,16 @@
             Adresse email
           </label>
         </div>
-        <p *ngIf="submitted && f['email'].errors" class="is__invalid-error">
-          <span *ngIf="f['email'].errors['required']">Identifiants requis.</span>
-          <span *ngIf="f['email'].errors['email']">Requête invalide.</span>
-        </p>
+        @if (submitted && f['email'].errors) {
+          <p class="is__invalid-error">
+            @if (f['email'].hasError('required')) {
+              <span>Adresse email requise.</span>
+            }
+            @if (f['email'].hasError('email')) {
+              <span>Adresse email invalide.</span>
+            }
+          </p>
+        }
       </div>
 
       <div class="form__group">
@@ -71,7 +65,9 @@
             ></svg-icon>
           </button>
         </div>
-        <p *ngIf="submitted && f['password'].errors" class="is__invalid-error">Identifiants requis.</p>
+        @if (submitted && f['password'].errors) {
+          <p class="is__invalid-error">Mot de passe requis.</p>
+        }
       </div>
     </div>
 
@@ -94,18 +90,20 @@
       </app-button>
     </div>
 
-    <div *ngIf="canRegister" class="text-muted-foreground flex items-center text-sm">
-      Pas encore membre ?
-      <app-button
-        routerLink="/register"
-        [queryParams]="returnUrl ? { returnUrl } : null"
-        impact="none"
-        tone="primary"
-        shape="rounded"
-        size="small"
-      >
-        Inscrivez-vous
-      </app-button>
-    </div>
+    @if (canRegister) {
+      <div class="text-muted-foreground flex items-center text-sm">
+        Pas encore membre ?
+        <app-button
+          routerLink="/register"
+          [queryParams]="returnUrl ? { returnUrl } : null"
+          impact="none"
+          tone="primary"
+          shape="rounded"
+          size="small"
+        >
+          Inscrivez-vous
+        </app-button>
+      </div>
+    }
   </form>
 </app-already-authenticated>

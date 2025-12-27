@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 
@@ -8,7 +7,7 @@ type FormStatusKind = 'success' | 'error' | 'info';
   selector: 'app-form-status-message',
   templateUrl: './form-status-message.component.html',
   standalone: true,
-  imports: [NgIf, TranslateModule],
+  imports: [TranslateModule],
 })
 export class FormStatusMessageComponent {
   @Input() kind: FormStatusKind = 'info';

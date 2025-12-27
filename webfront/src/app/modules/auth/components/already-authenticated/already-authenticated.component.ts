@@ -1,4 +1,3 @@
-import { NgIf } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -9,7 +8,7 @@ import { isInternalPath } from '../../../../core/utils/redirect-policy.util';
   selector: 'app-already-authenticated',
   templateUrl: './already-authenticated.component.html',
   standalone: true,
-  imports: [NgIf, ButtonComponent],
+  imports: [ButtonComponent],
 })
 export class AlreadyAuthenticatedComponent {
   @Input() redirectTarget: string | null = null;

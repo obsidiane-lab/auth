@@ -1,4 +1,4 @@
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -14,7 +14,7 @@ import { ForgotPasswordFormType, type ForgotPasswordFormControls } from '../../f
   selector: 'app-forgot-password',
   templateUrl: './forgot-password.component.html',
   styleUrls: ['./forgot-password.component.css'],
-  imports: [ReactiveFormsModule, RouterLink, ButtonComponent, NgIf, NgClass, FormStatusMessageComponent],
+  imports: [ReactiveFormsModule, RouterLink, ButtonComponent, NgClass, FormStatusMessageComponent],
 })
 export class ForgotPasswordComponent {
   form: FormGroup<ForgotPasswordFormControls>;
@@ -57,7 +57,7 @@ export class ForgotPasswordComponent {
 
     try {
       await this.authService.forgotPassword(email);
-      this.status.successMessage = 'Si un compte existe, un email de réinitialisation a été envoyé.';
+      this.status.successMessage = 'Si un compte existe, un email de réinitialisation vient d’être envoyé.';
     } catch (error) {
       this.status.errorMessage = this.resolveErrorMessage(error);
     } finally {

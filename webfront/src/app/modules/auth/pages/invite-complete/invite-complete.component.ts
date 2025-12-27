@@ -1,4 +1,4 @@
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, DestroyRef, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -17,7 +17,7 @@ import { InviteCompleteFormType, type InviteCompleteFormControls } from '../../f
   selector: 'app-invite-complete',
   templateUrl: './invite-complete.component.html',
   styleUrls: ['./invite-complete.component.css'],
-  imports: [ReactiveFormsModule, ButtonComponent, NgIf, NgClass, NgFor, AngularSvgIconModule, FormStatusMessageComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, NgClass, AngularSvgIconModule, FormStatusMessageComponent],
 })
 export class InviteCompleteComponent {
   form: FormGroup<InviteCompleteFormControls>;
@@ -95,7 +95,7 @@ export class InviteCompleteComponent {
 
     try {
       await this.authService.inviteComplete(this.inviteToken, password, confirmPassword);
-      this.status.successMessage = 'Invitation confirmée. Vous pouvez vous connecter.';
+      this.status.successMessage = 'Compte activé. Vous pouvez vous connecter.';
       window.setTimeout(() => {
         const queryParams: { status?: string; returnUrl?: string } = { status: 'invited' };
         if (this.returnUrl) {
@@ -118,8 +118,7 @@ export class InviteCompleteComponent {
       this.inviteExpired = preview.expired ?? false;
 
       if (this.alreadyCompleted) {
-        this.status.successMessage =
-          'Ce lien a déjà été utilisé et votre compte est activé. Vous pouvez vous connecter avec vos identifiants.';
+        this.status.successMessage = 'Ce lien a déjà été utilisé. Vous pouvez vous connecter.';
       }
 
       if (this.inviteExpired) {

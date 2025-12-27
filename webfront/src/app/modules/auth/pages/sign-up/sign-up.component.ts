@@ -1,4 +1,4 @@
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, DestroyRef, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -24,9 +24,7 @@ import { SignUpFormType, type SignUpFormControls } from '../../forms/sign-up.for
     RouterLink,
     AngularSvgIconModule,
     ButtonComponent,
-    NgIf,
     NgClass,
-    NgFor,
     FormStatusMessageComponent,
     AlreadyAuthenticatedComponent,
   ],
@@ -101,8 +99,7 @@ export class SignUpComponent {
     this.isSubmitting = true;
     try {
       await this.authService.register(email, password);
-      this.status.successMessage =
-        'Inscription réussie ! Vérifiez vos emails pour confirmer votre adresse avant de vous connecter.';
+      this.status.successMessage = 'Compte créé. Vérifiez votre email pour activer l’accès.';
       window.setTimeout(() => {
         const queryParams: { status?: string; email?: string; returnUrl?: string } = {
           status: 'registered',

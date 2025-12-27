@@ -26,10 +26,19 @@
           Adresse email
         </label>
       </div>
-      <p *ngIf="apiFieldErrors.email || (submitted && f['email'].errors)" class="is__invalid-error">
-        <span *ngIf="apiFieldErrors.email">{{ apiFieldErrors.email }}</span>
-        <span *ngIf="!apiFieldErrors.email">Adresse email invalide.</span>
-      </p>
+      @if (apiFieldErrors.email || (submitted && f['email'].errors)) {
+        <p class="is__invalid-error">
+          @if (apiFieldErrors.email) {
+            <span>{{ apiFieldErrors.email }}</span>
+          }
+          @if (!apiFieldErrors.email && f['email'].hasError('required')) {
+            <span>Adresse email requise.</span>
+          }
+          @if (!apiFieldErrors.email && f['email'].hasError('email')) {
+            <span>Adresse email invalide.</span>
+          }
+        </p>
+      }
     </div>
 
     <div class="form__group">
@@ -59,17 +68,26 @@
           ></svg-icon>
         </button>
       </div>
-      <p *ngIf="apiFieldErrors.password || (submitted && f['password'].errors)" class="is__invalid-error">
-        <span *ngIf="apiFieldErrors.password">{{ apiFieldErrors.password }}</span>
-        <span *ngIf="!apiFieldErrors.password && f['password'].errors?.['weakPassword']">Mot de passe trop faible.</span>
-        <span *ngIf="!apiFieldErrors.password && f['password'].errors?.['required']">Identifiants requis.</span>
-      </p>
+      @if (apiFieldErrors.password || (submitted && f['password'].errors)) {
+        <p class="is__invalid-error">
+          @if (apiFieldErrors.password) {
+            <span>{{ apiFieldErrors.password }}</span>
+          }
+          @if (!apiFieldErrors.password && f['password'].hasError('weakPassword')) {
+            <span>Mot de passe trop faible.</span>
+          }
+          @if (!apiFieldErrors.password && f['password'].hasError('required')) {
+            <span>Mot de passe requis.</span>
+          }
+        </p>
+      }
       <div class="grid grid-cols-4 gap-2">
-        <span
-          *ngFor="let index of [1, 2, 3, 4]"
-          [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-muted'"
-          class="h-1 rounded-xs transition"
-        ></span>
+        @for (index of [1, 2, 3, 4]; track index) {
+          <span
+            [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-muted'"
+            class="h-1 rounded-xs transition"
+          ></span>
+        }
       </div>
       <p class="text-muted-foreground text-xs">
         Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.
@@ -91,13 +109,19 @@
           Confirmez le mot de passe
         </label>
       </div>
-      <p *ngIf="apiFieldErrors.confirmPassword || (submitted && f['confirmPassword'].errors)" class="is__invalid-error">
-        <span *ngIf="apiFieldErrors.confirmPassword">{{ apiFieldErrors.confirmPassword }}</span>
-        <span *ngIf="!apiFieldErrors.confirmPassword && f['confirmPassword'].errors?.['mismatch']">
-          Les mots de passe ne correspondent pas.
-        </span>
-        <span *ngIf="!apiFieldErrors.confirmPassword && f['confirmPassword'].errors?.['required']">Identifiants requis.</span>
-      </p>
+      @if (apiFieldErrors.confirmPassword || (submitted && f['confirmPassword'].errors)) {
+        <p class="is__invalid-error">
+          @if (apiFieldErrors.confirmPassword) {
+            <span>{{ apiFieldErrors.confirmPassword }}</span>
+          }
+          @if (!apiFieldErrors.confirmPassword && f['confirmPassword'].hasError('mismatch')) {
+            <span>Les mots de passe ne correspondent pas.</span>
+          }
+          @if (!apiFieldErrors.confirmPassword && f['confirmPassword'].hasError('required')) {
+            <span>Confirmation requise.</span>
+          }
+        </p>
+      }
     </div>
   </div>
 

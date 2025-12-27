@@ -1,39 +1,36 @@
-<div
-  *ngIf="alreadyAuthenticated; else authContent"
-  class="rounded-xl border border-dashed border-primary/40 bg-background/90 p-4 text-sm shadow-sm"
->
-  <div class="flex flex-col gap-4">
-    <div class="flex items-start gap-3">
-      <div class="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-primary/10 text-primary">
-        <span class="text-lg">↪</span>
+@if (alreadyAuthenticated) {
+  <div class="rounded-xl border border-dashed border-primary/40 bg-background/90 p-4 text-sm shadow-sm">
+    <div class="flex flex-col gap-4">
+      <div class="flex items-start gap-3">
+        <div class="mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <span class="text-lg">↪</span>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-foreground">Vous êtes déjà connecté</p>
+          <p class="mt-1 text-xs text-muted-foreground sm:text-sm">
+            Accédez directement au service ou déconnectez-vous pour utiliser un autre compte.
+          </p>
+        </div>
       </div>
-      <div>
-        <p class="text-sm font-semibold text-foreground">Vous êtes déjà connecté</p>
-        <p class="mt-1 text-xs text-muted-foreground sm:text-sm">
-          Accédez directement au service ou déconnectez-vous pour utiliser un autre compte.
-        </p>
-      </div>
-    </div>
 
-    <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <app-button full impact="bold" tone="primary" size="small" type="button" (buttonClick)="goToService()">
-        Accéder au service
-      </app-button>
-      <app-button
-        full
-        impact="none"
-        tone="primary"
-        size="small"
-        type="button"
-        [disabled]="logoutLoading"
-        (buttonClick)="logout()"
-      >
-        Se déconnecter
-      </app-button>
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <app-button full impact="bold" tone="primary" size="small" type="button" (buttonClick)="goToService()">
+          Accéder au service
+        </app-button>
+        <app-button
+          full
+          impact="none"
+          tone="primary"
+          size="small"
+          type="button"
+          [disabled]="logoutLoading"
+          (buttonClick)="logout()"
+        >
+          Se déconnecter
+        </app-button>
+      </div>
     </div>
   </div>
-</div>
-
-<ng-template #authContent>
+} @else {
   <ng-content />
-</ng-template>
+}

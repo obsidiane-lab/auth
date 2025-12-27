@@ -1,4 +1,4 @@
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, DestroyRef, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -17,7 +17,7 @@ import { SetupFormType, type SetupFormControls } from '../../forms/setup.form';
   selector: 'app-setup',
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.css'],
-  imports: [ReactiveFormsModule, ButtonComponent, NgIf, NgClass, NgFor, AngularSvgIconModule, FormStatusMessageComponent],
+  imports: [ReactiveFormsModule, ButtonComponent, NgClass, AngularSvgIconModule, FormStatusMessageComponent],
 })
 export class SetupComponent {
   form: FormGroup<SetupFormControls>;
@@ -82,7 +82,7 @@ export class SetupComponent {
 
     try {
       await this.setupService.createInitialAdmin(email, password);
-      this.status.successMessage = 'Administrateur créé. Vous pouvez maintenant vous connecter.';
+      this.status.successMessage = 'Administrateur créé. Vous pouvez vous connecter.';
       window.setTimeout(() => {
         const queryParams: { status?: string; returnUrl?: string } = { status: 'setup' };
         if (this.returnUrl) {

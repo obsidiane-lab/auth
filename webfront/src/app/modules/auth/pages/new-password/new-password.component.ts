@@ -1,4 +1,4 @@
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, DestroyRef, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -22,9 +22,7 @@ import { NewPasswordFormType, type NewPasswordFormControls } from '../../forms/n
     RouterLink,
     AngularSvgIconModule,
     ButtonComponent,
-    NgIf,
     NgClass,
-    NgFor,
     FormStatusMessageComponent,
   ],
 })
@@ -96,7 +94,7 @@ export class NewPasswordComponent {
 
     try {
       await this.authService.resetPassword(this.resetToken, password);
-      this.status.successMessage = 'Mot de passe mis à jour. Vous pouvez maintenant vous connecter.';
+      this.status.successMessage = 'Mot de passe mis à jour. Vous pouvez vous connecter.';
       window.setTimeout(() => {
         const queryParams: { status?: string; returnUrl?: string } = { status: 'reset' };
         if (this.returnUrl) {

@@ -85,7 +85,7 @@ export function resolveRedirectTarget(
   return null;
 }
 
-export function isInternalPath(target: string | null | undefined): boolean {
+export function isInternalPath(target: string | null | undefined): target is string {
   if (!target) {
     return false;
   }

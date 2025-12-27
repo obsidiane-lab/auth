@@ -1,4 +1,4 @@
-import { NgClass, NgIf } from '@angular/common';
+import { NgClass } from '@angular/common';
 import { Component, effect } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -23,7 +23,6 @@ import { ApiErrorPayload, LOGIN_ERROR_MESSAGES, resolveApiErrorMessage } from '.
     ReactiveFormsModule,
     RouterLink,
     AngularSvgIconModule,
-    NgIf,
     ButtonComponent,
     NgClass,
     FormStatusMessageComponent,
@@ -38,7 +37,6 @@ export class SignInComponent {
   returnUrl: string | null = null;
   redirectTarget: string | null = null;
   canRegister = true;
-  flashMessage = '';
   status = {
     errorMessage: '',
     successMessage: '',
@@ -78,7 +76,7 @@ export class SignInComponent {
         this.redirectTarget = this.returnUrl;
       }
 
-      this.flashMessage = this.getStatusMessage(queryParams.get('status'));
+      this.status.infoMessage = this.getStatusMessage(queryParams.get('status'));
     });
   }
 
@@ -95,7 +93,6 @@ export class SignInComponent {
     this.status.errorMessage = '';
     this.status.successMessage = '';
     this.status.infoMessage = '';
-    this.flashMessage = '';
     if (this.form.invalid) {
       return;
     }
@@ -105,10 +102,7 @@ export class SignInComponent {
     this.isSubmitting = true;
     try {
       await this.authService.login(email, password);
-      this.status.successMessage = 'Authentification réussie. Redirection en cours...';
-      window.setTimeout(() => {
-        this.status.infoMessage = 'Redirection...';
-      }, 350);
+      this.status.successMessage = 'Connexion réussie. Redirection en cours...';
 
       window.setTimeout(() => {
         if (this.redirectTarget) {
@@ -136,11 +130,11 @@ export class SignInComponent {
       case 'verified':
         return 'Email vérifié. Vous pouvez vous connecter.';
       case 'reset':
-        return 'Mot de passe mis à jour. Connectez-vous.';
+        return 'Mot de passe mis à jour. Vous pouvez vous connecter.';
       case 'invited':
         return 'Invitation confirmée. Vous pouvez vous connecter.';
       case 'setup':
-        return 'Administrateur créé. Connectez-vous.';
+        return 'Administrateur créé. Vous pouvez vous connecter.';
       case 'logged-in':
         return 'Connexion réussie. Vous pouvez fermer cette fenêtre.';
       default:

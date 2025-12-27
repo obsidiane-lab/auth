@@ -3,21 +3,24 @@
     <h2 class="text-foreground mb-1 text-3xl font-semibold">
       Complétez votre <span class="text-primary">compte</span>
     </h2>
-    <p class="text-muted-foreground text-sm">
-      Définissez votre profil et votre mot de passe pour activer votre accès.
-    </p>
+      <p class="text-muted-foreground text-sm">
+        Définissez votre mot de passe pour activer votre accès.
+      </p>
   </header>
 
   <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
   <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
 
-  <div *ngIf="alreadyCompleted" class="flex justify-center">
-    <app-button impact="none" tone="primary" size="small" type="button" (buttonClick)="goToLogin()">
-      Retour à la connexion
-    </app-button>
-  </div>
+  @if (alreadyCompleted) {
+    <div class="flex justify-center">
+      <app-button impact="none" tone="primary" size="small" type="button" (buttonClick)="goToLogin()">
+        Retour à la connexion
+      </app-button>
+    </div>
+  }
 
-  <div *ngIf="!alreadyCompleted" class="space-y-3 text-left">
+  @if (!alreadyCompleted) {
+    <div class="space-y-3 text-left">
     <div class="form__group">
       <div class="form__field">
         <input id="invite-email" [value]="invitedEmail" class="form__input peer cursor-not-allowed opacity-70" type="email" placeholder=" " disabled />
@@ -52,17 +55,26 @@
           ></svg-icon>
         </button>
       </div>
-      <p *ngIf="apiFieldErrors.password || (submitted && f['password'].errors)" class="is__invalid-error">
-        <span *ngIf="apiFieldErrors.password">{{ apiFieldErrors.password }}</span>
-        <span *ngIf="!apiFieldErrors.password && f['password'].errors?.['weakPassword']">Mot de passe invalide.</span>
-        <span *ngIf="!apiFieldErrors.password && f['password'].errors?.['required']">Identifiants requis.</span>
-      </p>
+      @if (apiFieldErrors.password || (submitted && f['password'].errors)) {
+        <p class="is__invalid-error">
+          @if (apiFieldErrors.password) {
+            <span>{{ apiFieldErrors.password }}</span>
+          }
+          @if (!apiFieldErrors.password && f['password'].hasError('weakPassword')) {
+            <span>Mot de passe trop faible.</span>
+          }
+          @if (!apiFieldErrors.password && f['password'].hasError('required')) {
+            <span>Mot de passe requis.</span>
+          }
+        </p>
+      }
       <div class="mt-3 grid grid-cols-4 gap-2">
-        <span
-          *ngFor="let index of [1, 2, 3, 4]"
-          [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-border/80'"
-          class="h-1 rounded-xs transition"
-        ></span>
+        @for (index of [1, 2, 3, 4]; track index) {
+          <span
+            [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-border/80'"
+            class="h-1 rounded-xs transition"
+          ></span>
+        }
       </div>
       <p class="mt-2 text-xs text-muted-foreground">
         Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.
@@ -84,19 +96,28 @@
           Confirmez le mot de passe
         </label>
       </div>
-      <p *ngIf="apiFieldErrors.confirmPassword || (submitted && f['confirmPassword'].errors)" class="is__invalid-error">
-        <span *ngIf="apiFieldErrors.confirmPassword">{{ apiFieldErrors.confirmPassword }}</span>
-        <span *ngIf="!apiFieldErrors.confirmPassword && f['confirmPassword'].errors?.['mismatch']">
-          Les mots de passe ne correspondent pas.
-        </span>
-        <span *ngIf="!apiFieldErrors.confirmPassword && f['confirmPassword'].errors?.['required']">Identifiants requis.</span>
-      </p>
+      @if (apiFieldErrors.confirmPassword || (submitted && f['confirmPassword'].errors)) {
+        <p class="is__invalid-error">
+          @if (apiFieldErrors.confirmPassword) {
+            <span>{{ apiFieldErrors.confirmPassword }}</span>
+          }
+          @if (!apiFieldErrors.confirmPassword && f['confirmPassword'].hasError('mismatch')) {
+            <span>Les mots de passe ne correspondent pas.</span>
+          }
+          @if (!apiFieldErrors.confirmPassword && f['confirmPassword'].hasError('required')) {
+            <span>Confirmation requise.</span>
+          }
+        </p>
+      }
     </div>
-  </div>
+    </div>
+  }
 
-  <div *ngIf="!alreadyCompleted">
-    <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting" [disabled]="!hasToken">
-      Activer mon compte
-    </app-button>
-  </div>
+  @if (!alreadyCompleted) {
+    <div>
+      <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting" [disabled]="!hasToken">
+        Activer mon compte
+      </app-button>
+    </div>
+  }
 </form>
