@@ -1,5 +1,8 @@
 controllers:
-    resource: ../src/Controller/
+    resource:
+        - ../src/Auth/Http/Controller/
+        - ../src/Setup/Http/Controller/
+        - ../src/User/Http/Controller/
     type: attribute
 
 api_token_refresh:

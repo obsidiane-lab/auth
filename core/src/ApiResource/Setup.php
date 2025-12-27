@@ -7,8 +7,8 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter as OpenApiParameter;
-use App\Auth\Dto\RegisterUserInput;
-use App\Controller\Setup\InitialAdminController;
+use App\Auth\Http\Dto\RegisterUserInput;
+use App\Setup\Http\Controller\InitialAdminController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(

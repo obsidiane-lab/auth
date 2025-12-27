@@ -7,7 +7,7 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
-use App\Controller\User\UpdateUserRolesController;
+use App\User\Http\Controller\UpdateUserRolesController;
 use App\Entity\LifeCycle\LifeCycleInterface;
 use App\Entity\LifeCycle\LifeCycleTrait;
 use App\Repository\UserRepository;

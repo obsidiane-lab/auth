@@ -11,3 +11,33 @@ framework:
       policy: token_bucket
       limit: '%env(int:RATE_LOGIN_GLOBAL_LIMIT)%'
       rate: { interval: '%env(string:RATE_LOGIN_INTERVAL)%', amount: '%env(int:RATE_LOGIN_GLOBAL_LIMIT)%' }
+
+    auth_register:
+      policy: token_bucket
+      limit: '%env(int:RATE_LOGIN_LIMIT)%'
+      rate: { interval: '%env(string:RATE_LOGIN_INTERVAL)%', amount: '%env(int:RATE_LOGIN_LIMIT)%' }
+
+    auth_invite:
+      policy: token_bucket
+      limit: '%env(int:RATE_LOGIN_LIMIT)%'
+      rate: { interval: '%env(string:RATE_LOGIN_INTERVAL)%', amount: '%env(int:RATE_LOGIN_LIMIT)%' }
+
+    auth_invite_complete:
+      policy: token_bucket
+      limit: '%env(int:RATE_LOGIN_LIMIT)%'
+      rate: { interval: '%env(string:RATE_LOGIN_INTERVAL)%', amount: '%env(int:RATE_LOGIN_LIMIT)%' }
+
+    auth_password_forgot:
+      policy: token_bucket
+      limit: '%env(int:RATE_LOGIN_LIMIT)%'
+      rate: { interval: '%env(string:RATE_LOGIN_INTERVAL)%', amount: '%env(int:RATE_LOGIN_LIMIT)%' }
+
+    auth_password_reset:
+      policy: token_bucket
+      limit: '%env(int:RATE_LOGIN_LIMIT)%'
+      rate: { interval: '%env(string:RATE_LOGIN_INTERVAL)%', amount: '%env(int:RATE_LOGIN_LIMIT)%' }
+
+    setup_initial_admin:
+      policy: token_bucket
+      limit: '%env(int:RATE_LOGIN_LIMIT)%'
+      rate: { interval: '%env(string:RATE_LOGIN_INTERVAL)%', amount: '%env(int:RATE_LOGIN_LIMIT)%' }

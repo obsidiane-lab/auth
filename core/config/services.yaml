@@ -20,8 +20,16 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Controller\:
-        resource: '../src/Controller/'
+    App\Auth\Http\Controller\:
+        resource: '../src/Auth/Http/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\Setup\Http\Controller\:
+        resource: '../src/Setup/Http/Controller/'
+        tags: ['controller.service_arguments']
+
+    App\User\Http\Controller\:
+        resource: '../src/User/Http/Controller/'
         tags: ['controller.service_arguments']
 
     App\Repository\RefreshTokenRepository:
@@ -29,12 +37,12 @@ services:
         arguments:
             - App\Entity\RefreshToken
 
-    App\OpenApi\AuthRoutesDecorator:
+    App\Auth\Http\OpenApi\AuthRoutesDecorator:
         decorates: 'api_platform.openapi.factory'
         arguments:
-            - '@App\OpenApi\AuthRoutesDecorator.inner'
+            - '@App\Auth\Http\OpenApi\AuthRoutesDecorator.inner'
 
-    App\Security\JsonLoginFailureHandler:
+    App\Auth\Infrastructure\Security\JsonLoginFailureHandler:
         arguments:
             $decorated: '@lexik_jwt_authentication.handler.authentication_failure'
 

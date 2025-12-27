@@ -19,14 +19,14 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 | Fichier | Rôle |
 | --- | --- |
-| `src/Controller/Auth/RegisterController.php` | `POST /api/auth/register` (inscription JSON). |
-| `src/Controller/Auth/InviteUserController.php` | `POST /api/auth/invite` (admin). |
-| `src/Controller/Auth/AcceptInvitationController.php` | `POST /api/auth/invite/complete` (finalisation invitation). |
-| `src/Controller/Auth/MeController.php` | `GET /api/auth/me`. |
-| `src/Controller/Auth/LogoutController.php` | `POST /api/auth/logout`. |
-| `src/Controller/Auth/VerifyEmailController.php` | `GET /api/auth/verify-email` (lien signé). |
-| `src/Controller/ResetPasswordController.php` | `POST /api/auth/password/forgot` + `POST /api/auth/password/reset`. |
-| `src/Controller/Setup/InitialAdminController.php` | `POST /api/setup/admin`. |
+| `src/Auth/Http/Controller/RegisterController.php` | `POST /api/auth/register` (inscription JSON). |
+| `src/Auth/Http/Controller/InviteUserController.php` | `POST /api/auth/invite` (admin). |
+| `src/Auth/Http/Controller/AcceptInvitationController.php` | `POST /api/auth/invite/complete` (finalisation invitation). |
+| `src/Auth/Http/Controller/MeController.php` | `GET /api/auth/me`. |
+| `src/Auth/Http/Controller/LogoutController.php` | `POST /api/auth/logout`. |
+| `src/Auth/Http/Controller/VerifyEmailController.php` | `GET /api/auth/verify-email` (lien signé). |
+| `src/Auth/Http/Controller/ResetPasswordController.php` | `POST /api/auth/password/forgot` + `POST /api/auth/password/reset`. |
+| `src/Setup/Http/Controller/InitialAdminController.php` | `POST /api/setup/admin`. |
 | `json_login (Lexik)` | `POST /api/auth/login` (CSRF `authenticate`). |
 | `refresh_jwt (Gesdinet)` | `POST /api/auth/refresh` (cookie `__Host-rt`). |
 
@@ -34,15 +34,17 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 - `src/ApiResource/Auth.php` expose register/invite/logout/me + password (forgot/reset).
 - `src/ApiResource/Setup.php` expose `/api/setup/admin`.
-- `src/OpenApi/AuthRoutesDecorator.php` documente login/refresh/verify/password/setup.
+- `src/Auth/Http/OpenApi/AuthRoutesDecorator.php` documente login/refresh/verify/password/setup.
 
 ### 2.3 Domaine & services
 
-- `src/Auth` : `TokenCookieFactory`, `RedirectPolicy`, `UserRegistration`, `InvitationManager`.
-- `src/Frontend/FrontendUrlBuilder.php` : construit les liens front (verify, reset, invite).
-- `src/Security` : `CsrfRequestValidator`, `EmailVerifier`, `PasswordStrengthChecker`, `UserChecker`.
-- `src/Setup` : `InitialAdminManager`.
-- `src/Mail` : `MailerGateway`.
+- `src/Auth/Application` : `RegisterUser`, `InviteUser`, `CompleteInvitation`, `RequestPasswordReset`, `ResetPassword`.
+- `src/Auth/Infrastructure/Security` : `TokenCookieFactory`, `EmailVerifier`, `UserChecker`, `JsonLoginFailureHandler`.
+- `src/Shared/Frontend/FrontendUrlBuilder.php` : construit les liens front (verify, reset, invite).
+- `src/Shared/Security` : `CsrfRequestValidator`, `PasswordStrengthChecker`.
+- `src/Shared/Response` : `ApiResponseFactory`, `UserPayloadFactory`.
+- `src/Setup/Application` : `InitialAdminManager`.
+- `src/Shared/Mail` : `MailerGateway`.
 
 ### 2.4 Entités
 

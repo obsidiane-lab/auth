@@ -8,17 +8,17 @@ use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
 use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
 use ApiPlatform\OpenApi\Model\Parameter as OpenApiParameter;
-use App\Auth\Dto\InviteCompleteInput;
-use App\Auth\Dto\InviteUserInput;
-use App\Auth\Dto\PasswordForgotInput;
-use App\Auth\Dto\PasswordResetInput;
-use App\Auth\Dto\RegisterUserInput;
-use App\Controller\Auth\AcceptInvitationController;
-use App\Controller\Auth\InviteUserController;
-use App\Controller\Auth\LogoutController;
-use App\Controller\Auth\MeController;
-use App\Controller\Auth\RegisterController;
-use App\Controller\ResetPasswordController;
+use App\Auth\Http\Dto\InviteCompleteInput;
+use App\Auth\Http\Dto\InviteUserInput;
+use App\Auth\Http\Dto\PasswordForgotInput;
+use App\Auth\Http\Dto\PasswordResetInput;
+use App\Auth\Http\Dto\RegisterUserInput;
+use App\Auth\Http\Controller\AcceptInvitationController;
+use App\Auth\Http\Controller\InviteUserController;
+use App\Auth\Http\Controller\LogoutController;
+use App\Auth\Http\Controller\MeController;
+use App\Auth\Http\Controller\RegisterController;
+use App\Auth\Http\Controller\ResetPasswordController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(

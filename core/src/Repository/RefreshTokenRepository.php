@@ -3,7 +3,6 @@
 namespace App\Repository;
 
 use App\Entity\RefreshToken;
-use Doctrine\ORM\NonUniqueResultException;
 use Gesdinet\JWTRefreshTokenBundle\Entity\RefreshTokenRepository as BaseRefreshTokenRepository;
 
 class RefreshTokenRepository extends BaseRefreshTokenRepository
@@ -18,19 +17,4 @@ class RefreshTokenRepository extends BaseRefreshTokenRepository
             ->execute();
     }
 
-    public function findOneValid(string $refreshToken): ?RefreshToken
-    {
-        try {
-            return $this->createQueryBuilder('token')
-                ->where('token.refreshToken = :refresh')
-                ->andWhere('token.valid >= :now')
-                ->setParameter('refresh', $refreshToken)
-                ->setParameter('now', new \DateTimeImmutable())
-                ->setMaxResults(1)
-                ->getQuery()
-                ->getOneOrNullResult();
-        } catch (NonUniqueResultException) {
-            return null;
-        }
-    }
 }
