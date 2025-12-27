@@ -9,7 +9,7 @@
         <b class="text-md text-foreground font-bold">{{ config().brandingName }}</b>
       </div>
       <!-- Route -->
-      <app-already-authenticated [redirectTarget]="redirectTarget">
+      <app-already-authenticated [redirectTarget]="redirectTarget()">
         <router-outlet></router-outlet>
       </app-already-authenticated>
     </div>

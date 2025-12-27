@@ -31,14 +31,12 @@ export class SignUpComponent {
   form: FormGroup<SignUpFormControls>;
   submitted = false;
   readonly isSubmitting = signal(false);
-  returnUrl: string | null = null;
-  passwordStrength = 0;
+  readonly returnUrl = signal<string | null>(null);
+  readonly passwordStrength = signal(0);
   passwordVisible = false;
-  apiFieldErrors: Partial<Record<'email' | 'password' | 'confirmPassword', string>> = {};
-  status = {
-    errorMessage: '',
-    successMessage: '',
-  };
+  readonly apiFieldErrors = signal<Partial<Record<'email' | 'password' | 'confirmPassword', string>>>({});
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
@@ -53,11 +51,11 @@ export class SignUpComponent {
 
     effect(() => {
       const queryParams = this.queryParamMap();
-      this.returnUrl = normalizeInternalPath(queryParams.get('returnUrl'));
+      this.returnUrl.set(normalizeInternalPath(queryParams.get('returnUrl')));
     });
 
     configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
-      this.passwordStrength = strength;
+      this.passwordStrength.set(strength);
     });
   }
 
@@ -71,9 +69,9 @@ export class SignUpComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.status.errorMessage = '';
-    this.status.successMessage = '';
-    this.apiFieldErrors = {};
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.apiFieldErrors.set({});
 
     if (this.form.invalid) {
       return;
@@ -84,14 +82,15 @@ export class SignUpComponent {
     this.isSubmitting.set(true);
     try {
       await this.authService.register(email, password);
-      this.status.successMessage = 'Compte créé. Vérifiez votre email pour activer l’accès.';
+      this.successMessage.set('Compte créé. Vérifiez votre email pour activer l’accès.');
       window.setTimeout(() => {
+        const returnUrl = this.returnUrl();
         const queryParams: { status?: string; email?: string; returnUrl?: string } = {
           status: 'registered',
           email,
         };
-        if (this.returnUrl) {
-          queryParams.returnUrl = this.returnUrl;
+        if (returnUrl) {
+          queryParams.returnUrl = returnUrl;
         }
         void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
       }, 1200);
@@ -110,17 +109,21 @@ export class SignUpComponent {
         REGISTER_ERROR_MESSAGES,
         { email: 'email', plainPassword: 'password' },
         (field, message) => {
-          this.apiFieldErrors[field as 'email' | 'password' | 'confirmPassword'] = message;
+          this.apiFieldErrors.update((current) => ({
+            ...current,
+            [field as 'email' | 'password' | 'confirmPassword']: message,
+          }));
         },
         'email',
       );
       if (!fieldApplied) {
-        this.status.errorMessage =
+        this.errorMessage.set(
           resolveApiErrorMessage(payload, REGISTER_ERROR_MESSAGES) ?? REGISTER_ERROR_MESSAGES['UNKNOWN'];
+        );
       }
       return;
     }
 
-    this.status.errorMessage = REGISTER_ERROR_MESSAGES['UNKNOWN'];
+    this.errorMessage.set(REGISTER_ERROR_MESSAGES['UNKNOWN']);
   }
 }

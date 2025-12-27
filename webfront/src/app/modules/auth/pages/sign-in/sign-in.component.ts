@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -32,14 +32,12 @@ export class SignInComponent {
   submitted = false;
   passwordTextType = false;
   readonly isSubmitting = signal(false);
-  returnUrl: string | null = null;
+  readonly returnUrl = signal<string | null>(null);
   redirectTarget: string | null = null;
-  canRegister = true;
-  status = {
-    errorMessage: '',
-    successMessage: '',
-    infoMessage: '',
-  };
+  readonly canRegister = computed(() => this.configService.config().registrationEnabled);
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly infoMessage = signal('');
   private readonly queryParamMap = toSignal(this._route.queryParamMap, { initialValue: this._route.snapshot.queryParamMap });
 
   constructor(
@@ -58,23 +56,20 @@ export class SignInComponent {
         this.form.patchValue({ email });
       }
 
-      this.returnUrl = normalizeInternalPath(queryParams.get('returnUrl'));
-
-      const config = this.configService.config();
-      this.canRegister = config.registrationEnabled;
+      this.returnUrl.set(normalizeInternalPath(queryParams.get('returnUrl')));
 
       const redirectUri = queryParams.get('redirect_uri');
       this.redirectTarget = resolveRedirectTarget(
         redirectUri,
-        config.frontendRedirectAllowlist,
-        config.frontendDefaultRedirect,
+        this.configService.config().frontendRedirectAllowlist,
+        this.configService.config().frontendDefaultRedirect,
       );
 
-      if (!this.redirectTarget && this.returnUrl) {
-        this.redirectTarget = this.returnUrl;
+      if (!this.redirectTarget && this.returnUrl()) {
+        this.redirectTarget = this.returnUrl();
       }
 
-      this.status.infoMessage = this.getStatusMessage(queryParams.get('status'));
+      this.infoMessage.set(this.getStatusMessage(queryParams.get('status')));
     });
   }
 
@@ -88,9 +83,9 @@ export class SignInComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.status.errorMessage = '';
-    this.status.successMessage = '';
-    this.status.infoMessage = '';
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.infoMessage.set('');
     if (this.form.invalid) {
       return;
     }
@@ -100,7 +95,7 @@ export class SignInComponent {
     this.isSubmitting.set(true);
     try {
       await this.authService.login(email, password);
-      this.status.successMessage = 'Connexion réussie. Redirection en cours...';
+      this.successMessage.set('Connexion réussie. Redirection en cours...');
 
       window.setTimeout(() => {
         if (this.redirectTarget) {
@@ -115,7 +110,7 @@ export class SignInComponent {
         void this._router.navigate(['/login'], { queryParams: { status: 'logged-in' }, replaceUrl: true });
       }, 1000);
     } catch (error) {
-      this.status.errorMessage = this.resolveErrorMessage(error);
+      this.errorMessage.set(this.resolveErrorMessage(error));
     } finally {
       this.isSubmitting.set(false);
     }

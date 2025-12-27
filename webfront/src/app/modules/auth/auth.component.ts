@@ -1,4 +1,4 @@
-import { Component, effect } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { ActivatedRoute, RouterOutlet } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { FrontendConfigService } from '../../core/services/frontend-config.service';
@@ -14,7 +14,7 @@ import { normalizeInternalPath, resolveRedirectTarget } from '../../core/utils/r
 })
 export class AuthComponent {
   readonly config = this.configService.config;
-  redirectTarget: string | null = null;
+  readonly redirectTarget = signal<string | null>(null);
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
@@ -26,13 +26,15 @@ export class AuthComponent {
       const returnUrl = normalizeInternalPath(queryParams.get('returnUrl'));
       const config = this.configService.config();
       const redirectUri = queryParams.get('redirect_uri');
-      this.redirectTarget = resolveRedirectTarget(
-        redirectUri,
-        config.frontendRedirectAllowlist,
-        config.frontendDefaultRedirect,
+      this.redirectTarget.set(
+        resolveRedirectTarget(
+          redirectUri,
+          config.frontendRedirectAllowlist,
+          config.frontendDefaultRedirect,
+        ),
       );
-      if (!this.redirectTarget && returnUrl) {
-        this.redirectTarget = returnUrl;
+      if (!this.redirectTarget() && returnUrl) {
+        this.redirectTarget.set(returnUrl);
       }
     });
   }

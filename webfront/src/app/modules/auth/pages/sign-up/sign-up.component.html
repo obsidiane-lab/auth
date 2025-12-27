@@ -6,8 +6,8 @@
     </div>
   </div>
 
-  <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
-  <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
+  <app-form-status-message kind="error" [message]="errorMessage()"></app-form-status-message>
+  <app-form-status-message kind="success" [message]="successMessage()"></app-form-status-message>
 
   <div class="space-y-3 text-left">
     <div class="form__group">
@@ -26,15 +26,15 @@
           Adresse email
         </label>
       </div>
-      @if (apiFieldErrors.email || (submitted && f['email'].errors)) {
+      @if (apiFieldErrors().email || (submitted && f['email'].errors)) {
         <p class="is__invalid-error">
-          @if (apiFieldErrors.email) {
-            <span>{{ apiFieldErrors.email }}</span>
+          @if (apiFieldErrors().email) {
+            <span>{{ apiFieldErrors().email }}</span>
           }
-          @if (!apiFieldErrors.email && f['email'].hasError('email')) {
+          @if (!apiFieldErrors().email && f['email'].hasError('email')) {
             <span>Adresse email invalide.</span>
           }
-          @if (!apiFieldErrors.email && f['email'].hasError('required')) {
+          @if (!apiFieldErrors().email && f['email'].hasError('required')) {
             <span>Adresse email requise.</span>
           }
         </p>
@@ -68,15 +68,15 @@
           ></svg-icon>
         </button>
       </div>
-      @if (apiFieldErrors.password || (submitted && f['password'].errors)) {
+      @if (apiFieldErrors().password || (submitted && f['password'].errors)) {
         <p class="is__invalid-error">
-          @if (apiFieldErrors.password) {
-            <span>{{ apiFieldErrors.password }}</span>
+          @if (apiFieldErrors().password) {
+            <span>{{ apiFieldErrors().password }}</span>
           }
-          @if (!apiFieldErrors.password && f['password'].hasError('weakPassword')) {
+          @if (!apiFieldErrors().password && f['password'].hasError('weakPassword')) {
             <span>Mot de passe trop faible.</span>
           }
-          @if (!apiFieldErrors.password && f['password'].hasError('required')) {
+          @if (!apiFieldErrors().password && f['password'].hasError('required')) {
             <span>Mot de passe requis.</span>
           }
         </p>
@@ -84,7 +84,7 @@
       <div class="grid grid-cols-4 gap-2">
         @for (index of [1, 2, 3, 4]; track index) {
           <span
-            [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-muted'"
+            [ngClass]="passwordStrength() >= index ? 'bg-primary' : 'bg-muted'"
             class="h-1 rounded-xs transition"
           ></span>
         }
@@ -130,7 +130,7 @@
     Déjà un compte ?
     <app-button
       routerLink="/login"
-      [queryParams]="returnUrl ? { returnUrl } : null"
+      [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : null"
       type="button"
       impact="none"
       tone="primary"

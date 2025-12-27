@@ -20,11 +20,9 @@ export class ForgotPasswordComponent {
   form: FormGroup<ForgotPasswordFormControls>;
   submitted = false;
   readonly isSubmitting = signal(false);
-  returnUrl: string | null = null;
-  status = {
-    errorMessage: '',
-    successMessage: '',
-  };
+  readonly returnUrl = signal<string | null>(null);
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
@@ -35,7 +33,7 @@ export class ForgotPasswordComponent {
     this.form = this.forgotPasswordForm.createForm(null);
 
     effect(() => {
-      this.returnUrl = this.queryParamMap().get('returnUrl');
+      this.returnUrl.set(this.queryParamMap().get('returnUrl'));
     });
   }
 
@@ -45,8 +43,8 @@ export class ForgotPasswordComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.status.errorMessage = '';
-    this.status.successMessage = '';
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
     if (this.form.invalid) {
       return;
@@ -57,9 +55,9 @@ export class ForgotPasswordComponent {
 
     try {
       await this.authService.forgotPassword(email);
-      this.status.successMessage = 'Si un compte existe, un email de réinitialisation vient d’être envoyé.';
+      this.successMessage.set('Si un compte existe, un email de réinitialisation vient d’être envoyé.');
     } catch (error) {
-      this.status.errorMessage = this.resolveErrorMessage(error);
+      this.errorMessage.set(this.resolveErrorMessage(error));
     } finally {
       this.isSubmitting.set(false);
     }

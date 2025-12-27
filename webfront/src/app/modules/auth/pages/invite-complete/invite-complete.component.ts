@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -23,18 +23,17 @@ export class InviteCompleteComponent {
   form: FormGroup<InviteCompleteFormControls>;
   submitted = false;
   readonly isSubmitting = signal(false);
-  passwordStrength = 0;
+  readonly passwordStrength = signal(0);
   passwordVisible = false;
-  invitedEmail = '';
-  alreadyCompleted = false;
-  inviteExpired = false;
-  private inviteToken = '';
-  returnUrl: string | null = null;
-  apiFieldErrors: Partial<Record<'password' | 'confirmPassword', string>> = {};
-  status = {
-    errorMessage: '',
-    successMessage: '',
-  };
+  readonly invitedEmail = signal('');
+  readonly alreadyCompleted = signal(false);
+  readonly inviteExpired = signal(false);
+  private readonly inviteToken = signal('');
+  readonly returnUrl = signal<string | null>(null);
+  readonly apiFieldErrors = signal<Partial<Record<'password' | 'confirmPassword', string>>>({});
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly hasToken = computed(() => this.inviteToken().trim().length > 0);
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
@@ -49,25 +48,21 @@ export class InviteCompleteComponent {
 
     effect(() => {
       const params = this.queryParamMap();
-      this.inviteToken = params.get('token') ?? '';
-      this.returnUrl = params.get('returnUrl');
+      this.inviteToken.set(params.get('token') ?? '');
+      this.returnUrl.set(params.get('returnUrl'));
 
-      if (this.inviteToken) {
-        void this.loadInvitePreview(this.inviteToken);
+      if (this.inviteToken()) {
+        void this.loadInvitePreview(this.inviteToken());
       }
     });
 
     configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
-      this.passwordStrength = strength;
+      this.passwordStrength.set(strength);
     });
   }
 
   get f() {
     return this.form.controls;
-  }
-
-  get hasToken(): boolean {
-    return this.inviteToken.trim().length > 0;
   }
 
   togglePasswordVisibility(): void {
@@ -76,16 +71,17 @@ export class InviteCompleteComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.status.errorMessage = '';
-    this.status.successMessage = '';
-    this.apiFieldErrors = {};
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.apiFieldErrors.set({});
 
     if (this.form.invalid) {
       return;
     }
 
-    if (!this.inviteToken) {
-      this.status.errorMessage = INVITE_ERROR_MESSAGES['INVALID_INVITATION'];
+    const inviteToken = this.inviteToken();
+    if (!inviteToken) {
+      this.errorMessage.set(INVITE_ERROR_MESSAGES['INVALID_INVITATION']);
       return;
     }
 
@@ -94,12 +90,13 @@ export class InviteCompleteComponent {
     this.isSubmitting.set(true);
 
     try {
-      await this.authService.inviteComplete(this.inviteToken, password, confirmPassword);
-      this.status.successMessage = 'Compte activé. Vous pouvez vous connecter.';
+      await this.authService.inviteComplete(inviteToken, password, confirmPassword);
+      this.successMessage.set('Compte activé. Vous pouvez vous connecter.');
       window.setTimeout(() => {
+        const returnUrl = this.returnUrl();
         const queryParams: { status?: string; returnUrl?: string } = { status: 'invited' };
-        if (this.returnUrl) {
-          queryParams.returnUrl = this.returnUrl;
+        if (returnUrl) {
+          queryParams.returnUrl = returnUrl;
         }
         void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
       }, 1200);
@@ -113,19 +110,19 @@ export class InviteCompleteComponent {
   private async loadInvitePreview(token: string): Promise<void> {
     try {
       const preview = await this.authService.invitePreview(token);
-      this.invitedEmail = preview.email ?? '';
-      this.alreadyCompleted = preview.accepted ?? false;
-      this.inviteExpired = preview.expired ?? false;
+      this.invitedEmail.set(preview.email ?? '');
+      this.alreadyCompleted.set(preview.accepted ?? false);
+      this.inviteExpired.set(preview.expired ?? false);
 
-      if (this.alreadyCompleted) {
-        this.status.successMessage = 'Ce lien a déjà été utilisé. Vous pouvez vous connecter.';
+      if (this.alreadyCompleted()) {
+        this.successMessage.set('Ce lien a déjà été utilisé. Vous pouvez vous connecter.');
       }
 
-      if (this.inviteExpired) {
-        this.status.errorMessage = INVITE_ERROR_MESSAGES['INVITATION_EXPIRED'];
+      if (this.inviteExpired()) {
+        this.errorMessage.set(INVITE_ERROR_MESSAGES['INVITATION_EXPIRED']);
       }
     } catch {
-      this.status.errorMessage = 'Impossible de vérifier l’invitation. Vous pouvez réessayer plus tard.';
+      this.errorMessage.set('Impossible de vérifier l’invitation. Vous pouvez réessayer plus tard.');
     }
   }
 
@@ -137,21 +134,26 @@ export class InviteCompleteComponent {
         REGISTER_ERROR_MESSAGES,
         { plainPassword: 'password' },
         (field, message) => {
-          this.apiFieldErrors[field as 'password' | 'confirmPassword'] = message;
+          this.apiFieldErrors.update((current) => ({
+            ...current,
+            [field as 'password' | 'confirmPassword']: message,
+          }));
         },
         'password',
       );
       if (!fieldApplied) {
-        this.status.errorMessage =
-          resolveApiErrorMessage(payload, INVITE_ERROR_MESSAGES) ?? INVITE_ERROR_MESSAGES['UNKNOWN'];
+        this.errorMessage.set(
+          resolveApiErrorMessage(payload, INVITE_ERROR_MESSAGES) ?? INVITE_ERROR_MESSAGES['UNKNOWN'],
+        );
       }
       return;
     }
 
-    this.status.errorMessage = INVITE_ERROR_MESSAGES['UNKNOWN'];
+    this.errorMessage.set(INVITE_ERROR_MESSAGES['UNKNOWN']);
   }
 
   goToLogin(): void {
-    void this.router.navigate(['/login'], { queryParams: this.returnUrl ? { returnUrl: this.returnUrl } : undefined });
+    const returnUrl = this.returnUrl();
+    void this.router.navigate(['/login'], { queryParams: returnUrl ? { returnUrl } : undefined });
   }
 }

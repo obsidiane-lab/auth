@@ -8,10 +8,10 @@
     </div>
   </div>
 
-  <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
-  <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
-  @if (status.infoMessage) {
-    <app-form-status-message kind="info" [message]="status.infoMessage"></app-form-status-message>
+  <app-form-status-message kind="error" [message]="errorMessage()"></app-form-status-message>
+  <app-form-status-message kind="success" [message]="successMessage()"></app-form-status-message>
+  @if (infoMessage()) {
+    <app-form-status-message kind="info" [message]="infoMessage()"></app-form-status-message>
   }
 
   <div class="space-y-3 text-left">
@@ -79,7 +79,7 @@
   <div class="mb-2 flex items-center justify-end">
     <app-button
       routerLink="/reset-password"
-      [queryParams]="returnUrl ? { returnUrl } : null"
+      [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : null"
       type="button"
       impact="none"
       tone="primary"
@@ -96,12 +96,12 @@
     </app-button>
   </div>
 
-  @if (canRegister) {
+  @if (canRegister()) {
     <div class="text-muted-foreground flex items-center text-sm">
       Pas encore membre ?
       <app-button
         routerLink="/register"
-        [queryParams]="returnUrl ? { returnUrl } : null"
+        [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : null"
         type="button"
         impact="none"
         tone="primary"

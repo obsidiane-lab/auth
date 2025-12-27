@@ -43,14 +43,15 @@ final readonly class JwtEventSubscriber implements EventSubscriberInterface
         $now = new \DateTimeImmutable();
         $ttl = $this->cookieFactory->getAccessTtl();
         $expiresAt = $ttl > 0 ? $now->modify(sprintf('+%d seconds', $ttl)) : $now;
+        $timestamp = $now->getTimestamp();
 
         $payload = $event->getData();
         $payload['iss'] = $this->issuer;
         $payload['aud'] = $this->audience;
         $payload['sub'] = $user->getUserIdentifier();
-        $payload['iat'] = $now;
-        $payload['nbf'] = $now;
-        $payload['exp'] = $expiresAt;
+        $payload['iat'] = $timestamp;
+        $payload['nbf'] = $timestamp;
+        $payload['exp'] = $expiresAt->getTimestamp();
         $payload['jti'] = bin2hex(random_bytes(16));
 
         $event->setData($payload);

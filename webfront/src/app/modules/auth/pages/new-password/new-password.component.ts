@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -30,15 +30,14 @@ export class NewPasswordComponent {
   form: FormGroup<NewPasswordFormControls>;
   submitted = false;
   readonly isSubmitting = signal(false);
-  passwordStrength = 0;
+  readonly passwordStrength = signal(0);
   passwordVisible = false;
   confirmVisible = false;
-  status = {
-    errorMessage: '',
-    successMessage: '',
-  };
-  private resetToken = '';
-  returnUrl: string | null = null;
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
+  private readonly resetToken = signal('');
+  readonly returnUrl = signal<string | null>(null);
+  readonly hasToken = computed(() => this.resetToken().trim().length > 0);
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
@@ -53,12 +52,12 @@ export class NewPasswordComponent {
 
     effect(() => {
       const params = this.queryParamMap();
-      this.resetToken = params.get('token') ?? '';
-      this.returnUrl = params.get('returnUrl');
+      this.resetToken.set(params.get('token') ?? '');
+      this.returnUrl.set(params.get('returnUrl'));
     });
 
     configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
-      this.passwordStrength = strength;
+      this.passwordStrength.set(strength);
     });
   }
 
@@ -76,41 +75,39 @@ export class NewPasswordComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.status.errorMessage = '';
-    this.status.successMessage = '';
+    this.errorMessage.set('');
+    this.successMessage.set('');
 
     if (this.form.invalid) {
       return;
     }
 
-    if (!this.resetToken) {
-      this.status.errorMessage = PASSWORD_RESET_ERROR_MESSAGES['INVALID_TOKEN'];
+    if (!this.hasToken()) {
+      this.errorMessage.set(PASSWORD_RESET_ERROR_MESSAGES['INVALID_TOKEN']);
       return;
     }
 
     const { password } = this.newPasswordForm.toCreatePayload(this.form);
+    const token = this.resetToken();
 
     this.isSubmitting.set(true);
 
     try {
-      await this.authService.resetPassword(this.resetToken, password);
-      this.status.successMessage = 'Mot de passe mis à jour. Vous pouvez vous connecter.';
+      await this.authService.resetPassword(token, password);
+      this.successMessage.set('Mot de passe mis à jour. Vous pouvez vous connecter.');
       window.setTimeout(() => {
+        const returnUrl = this.returnUrl();
         const queryParams: { status?: string; returnUrl?: string } = { status: 'reset' };
-        if (this.returnUrl) {
-          queryParams.returnUrl = this.returnUrl;
+        if (returnUrl) {
+          queryParams.returnUrl = returnUrl;
         }
         void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
       }, 800);
     } catch (error) {
-      this.status.errorMessage = this.resolveErrorMessage(error);
+      this.errorMessage.set(this.resolveErrorMessage(error));
     } finally {
       this.isSubmitting.set(false);
     }
-  }
-
-  get hasToken(): boolean {
-    return this.resetToken.trim().length > 0;
   }
 
   private resolveErrorMessage(error: unknown): string {

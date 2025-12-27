@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -23,15 +23,13 @@ export class SetupComponent {
   form: FormGroup<SetupFormControls>;
   submitted = false;
   readonly isSubmitting = signal(false);
-  returnUrl: string | null = null;
-  passwordStrength = 0;
+  readonly returnUrl = signal<string | null>(null);
+  readonly passwordStrength = signal(0);
   passwordVisible = false;
-  brandingName = '';
-  apiFieldErrors: Partial<Record<'email' | 'password' | 'confirmPassword', string>> = {};
-  status = {
-    errorMessage: '',
-    successMessage: '',
-  };
+  readonly brandingName = computed(() => this.configService.config().brandingName);
+  readonly apiFieldErrors = signal<Partial<Record<'email' | 'password' | 'confirmPassword', string>>>({});
+  readonly errorMessage = signal('');
+  readonly successMessage = signal('');
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
@@ -45,16 +43,11 @@ export class SetupComponent {
     this.form = this.setupForm.createForm(null);
 
     effect(() => {
-      this.returnUrl = this.queryParamMap().get('returnUrl');
-    });
-
-    effect(() => {
-      const config = this.configService.config();
-      this.brandingName = config.brandingName;
+      this.returnUrl.set(this.queryParamMap().get('returnUrl'));
     });
 
     configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
-      this.passwordStrength = strength;
+      this.passwordStrength.set(strength);
     });
   }
 
@@ -68,9 +61,9 @@ export class SetupComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.status.errorMessage = '';
-    this.status.successMessage = '';
-    this.apiFieldErrors = {};
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.apiFieldErrors.set({});
 
     if (this.form.invalid) {
       return;
@@ -82,11 +75,12 @@ export class SetupComponent {
 
     try {
       await this.setupService.createInitialAdmin(email, password);
-      this.status.successMessage = 'Administrateur créé. Vous pouvez vous connecter.';
+      this.successMessage.set('Administrateur créé. Vous pouvez vous connecter.');
       window.setTimeout(() => {
+        const returnUrl = this.returnUrl();
         const queryParams: { status?: string; returnUrl?: string } = { status: 'setup' };
-        if (this.returnUrl) {
-          queryParams.returnUrl = this.returnUrl;
+        if (returnUrl) {
+          queryParams.returnUrl = returnUrl;
         }
         void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
       }, 500);
@@ -101,21 +95,25 @@ export class SetupComponent {
     if (error instanceof HttpErrorResponse) {
       const payload = (error.error ?? null) as { error?: string; message?: string; details?: Record<string, string> } | null;
       const fieldApplied = applyFieldErrors(
-        payload,
-        INITIAL_ADMIN_ERROR_MESSAGES,
-        { email: 'email', plainPassword: 'password', password: 'password' },
-        (field, message) => {
-          this.apiFieldErrors[field as 'email' | 'password' | 'confirmPassword'] = message;
+          payload,
+          INITIAL_ADMIN_ERROR_MESSAGES,
+          { email: 'email', plainPassword: 'password', password: 'password' },
+          (field, message) => {
+          this.apiFieldErrors.update((current) => ({
+            ...current,
+            [field as 'email' | 'password' | 'confirmPassword']: message,
+          }));
         },
         'email',
       );
       if (!fieldApplied) {
-        this.status.errorMessage =
-          resolveApiErrorMessage(payload, INITIAL_ADMIN_ERROR_MESSAGES) ?? INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN'];
+        this.errorMessage.set(
+          resolveApiErrorMessage(payload, INITIAL_ADMIN_ERROR_MESSAGES) ?? INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN'],
+        );
       }
       return;
     }
 
-    this.status.errorMessage = INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN'];
+    this.errorMessage.set(INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN']);
   }
 }
