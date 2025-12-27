@@ -7,11 +7,12 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
 import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { resolveRedirectTarget, isInternalPath } from '../../../../core/utils/redirect-policy.util';
+import { isInternalPath, normalizeInternalPath, resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { AlreadyAuthenticatedComponent } from '../../components/already-authenticated/already-authenticated.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SignInFormType, type SignInFormControls } from '../../forms/sign-in.form';
+import { ApiErrorPayload, LOGIN_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
 
 @Component({
   selector: 'app-sign-in',
@@ -61,7 +62,7 @@ export class SignInComponent {
         this.form.patchValue({ email });
       }
 
-      this.returnUrl = this.normalizeReturnUrl(queryParams.get('returnUrl'));
+      this.returnUrl = normalizeInternalPath(queryParams.get('returnUrl'));
 
       const config = this.configService.config();
       this.canRegister = config.registrationEnabled;
@@ -128,18 +129,6 @@ export class SignInComponent {
     }
   }
 
-  private normalizeReturnUrl(value: string | null): string | null {
-    if (!value) {
-      return null;
-    }
-
-    if (value.startsWith('/') && !value.startsWith('//')) {
-      return value;
-    }
-
-    return null;
-  }
-
   private getStatusMessage(status: string | null): string {
     switch (status) {
       case 'registered':
@@ -161,18 +150,20 @@ export class SignInComponent {
 
   private resolveErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
-      const payload = error.error as { message?: string } | null;
-      if (payload?.message) {
-        return payload.message;
+      const payload = (error.error ?? null) as ApiErrorPayload | null;
+      const resolved = resolveApiErrorMessage(payload, LOGIN_ERROR_MESSAGES);
+      if (resolved) {
+        return resolved;
       }
+
       if (error.status === 401) {
-        return 'Identifiants invalides.';
+        return LOGIN_ERROR_MESSAGES['INVALID_CREDENTIALS'];
       }
       if (error.status === 429) {
-        return 'Trop de tentatives. Réessayez plus tard.';
+        return LOGIN_ERROR_MESSAGES['RATE_LIMIT'];
       }
     }
 
-    return 'Impossible de vous connecter pour le moment.';
+    return LOGIN_ERROR_MESSAGES['UNKNOWN'];
   }
 }

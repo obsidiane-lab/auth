@@ -8,7 +8,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
+import { normalizeInternalPath, resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
 import { applyFieldErrors, REGISTER_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { configurePasswordForm } from '../../utils/password-form.util';
@@ -58,7 +58,7 @@ export class SignUpComponent {
 
     effect(() => {
       const queryParams = this.queryParamMap();
-      this.returnUrl = this.normalizeReturnUrl(queryParams.get('returnUrl'));
+      this.returnUrl = normalizeInternalPath(queryParams.get('returnUrl'));
 
       const config = this.configService.config();
       const redirectUri = queryParams.get('redirect_uri');
@@ -118,18 +118,6 @@ export class SignUpComponent {
     } finally {
       this.isSubmitting = false;
     }
-  }
-
-  private normalizeReturnUrl(value: string | null): string | null {
-    if (!value) {
-      return null;
-    }
-
-    if (value.startsWith('/') && !value.startsWith('//')) {
-      return value;
-    }
-
-    return null;
   }
 
   private handleError(error: unknown): void {

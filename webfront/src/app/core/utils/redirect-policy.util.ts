@@ -92,3 +92,7 @@ export function isInternalPath(target: string | null | undefined): boolean {
 
   return target.startsWith('/') && !target.startsWith('//');
 }
+
+export function normalizeInternalPath(target: string | null | undefined): string | null {
+  return isInternalPath(target) ? target : null;
+}
