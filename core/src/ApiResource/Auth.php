@@ -28,13 +28,6 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/auth/register',
             status: Response::HTTP_CREATED,
             controller: RegisterController::class,
-            description: 'Inscrit un nouvel utilisateur (CSRF `register`).',
-            read: false,
-            deserialize: true,
-            validate: false,
-            input: RegisterUserInput::class,
-            denormalizationContext: ['groups' => ['user:register']],
-            write: false,
             openapi: new OpenApiOperation(
                 parameters: [
                     new OpenApiParameter(
@@ -46,19 +39,19 @@ use Symfony\Component\HttpFoundation\Response;
                     ),
                 ]
             ),
+            description: 'Inscrit un nouvel utilisateur (CSRF `register`).',
+            denormalizationContext: ['groups' => ['user:register']],
+            input: RegisterUserInput::class,
+            read: false,
+            deserialize: true,
+            validate: false,
+            write: false,
             name: 'api_auth_register',
         ),
         new Post(
             uriTemplate: '/auth/invite',
             status: Response::HTTP_ACCEPTED,
             controller: InviteUserController::class,
-            description: 'Invite un utilisateur (admin uniquement, CSRF `invite_user`).',
-            read: false,
-            deserialize: true,
-            validate: false,
-            input: InviteUserInput::class,
-            denormalizationContext: ['groups' => ['invite:send']],
-            write: false,
             openapi: new OpenApiOperation(
                 parameters: [
                     new OpenApiParameter(
@@ -70,19 +63,19 @@ use Symfony\Component\HttpFoundation\Response;
                     ),
                 ]
             ),
+            description: 'Invite un utilisateur (admin uniquement, CSRF `invite_user`).',
+            denormalizationContext: ['groups' => ['invite:send']],
+            input: InviteUserInput::class,
+            read: false,
+            deserialize: true,
+            validate: false,
+            write: false,
             name: 'api_auth_invite',
         ),
         new Post(
             uriTemplate: '/auth/invite/complete',
             status: Response::HTTP_CREATED,
             controller: AcceptInvitationController::class,
-            description: 'Complète une invitation (mot de passe + profil).',
-            read: false,
-            deserialize: true,
-            validate: false,
-            input: InviteCompleteInput::class,
-            denormalizationContext: ['groups' => ['invite:complete']],
-            write: false,
             openapi: new OpenApiOperation(
                 parameters: [
                     new OpenApiParameter(
@@ -94,17 +87,19 @@ use Symfony\Component\HttpFoundation\Response;
                     ),
                 ]
             ),
+            description: 'Complète une invitation (mot de passe + profil).',
+            denormalizationContext: ['groups' => ['invite:complete']],
+            input: InviteCompleteInput::class,
+            read: false,
+            deserialize: true,
+            validate: false,
+            write: false,
             name: 'api_auth_invite_complete',
         ),
         new Post(
             uriTemplate: '/auth/logout',
             status: Response::HTTP_NO_CONTENT,
             controller: LogoutController::class,
-            description: 'Déconnecte l’utilisateur (CSRF `logout`).',
-            read: false,
-            deserialize: false,
-            validate: false,
-            write: false,
             openapi: new OpenApiOperation(
                 parameters: [
                     new OpenApiParameter(
@@ -116,19 +111,17 @@ use Symfony\Component\HttpFoundation\Response;
                     ),
                 ]
             ),
+            description: 'Déconnecte l’utilisateur (CSRF `logout`).',
+            read: false,
+            deserialize: false,
+            validate: false,
+            write: false,
             name: 'api_auth_logout',
         ),
         new Post(
             uriTemplate: '/auth/password/forgot',
             status: Response::HTTP_ACCEPTED,
             controller: ResetPasswordController::class . '::request',
-            description: 'Demande de réinitialisation du mot de passe.',
-            read: false,
-            deserialize: true,
-            validate: false,
-            input: PasswordForgotInput::class,
-            denormalizationContext: ['groups' => ['password:forgot']],
-            write: false,
             openapi: new OpenApiOperation(
                 parameters: [
                     new OpenApiParameter(
@@ -140,19 +133,19 @@ use Symfony\Component\HttpFoundation\Response;
                     ),
                 ]
             ),
+            description: 'Demande de réinitialisation du mot de passe.',
+            denormalizationContext: ['groups' => ['password:forgot']],
+            input: PasswordForgotInput::class,
+            read: false,
+            deserialize: true,
+            validate: false,
+            write: false,
             name: 'api_auth_password_forgot',
         ),
         new Post(
             uriTemplate: '/auth/password/reset',
             status: Response::HTTP_NO_CONTENT,
             controller: ResetPasswordController::class . '::reset',
-            description: 'Réinitialise le mot de passe via token.',
-            read: false,
-            deserialize: true,
-            validate: false,
-            input: PasswordResetInput::class,
-            denormalizationContext: ['groups' => ['password:reset']],
-            write: false,
             openapi: new OpenApiOperation(
                 parameters: [
                     new OpenApiParameter(
@@ -164,6 +157,13 @@ use Symfony\Component\HttpFoundation\Response;
                     ),
                 ]
             ),
+            description: 'Réinitialise le mot de passe via token.',
+            denormalizationContext: ['groups' => ['password:reset']],
+            input: PasswordResetInput::class,
+            read: false,
+            deserialize: true,
+            validate: false,
+            write: false,
             name: 'api_auth_password_reset',
         ),
         new Get(

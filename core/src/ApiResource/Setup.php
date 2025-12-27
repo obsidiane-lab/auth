@@ -18,13 +18,6 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/setup/admin',
             status: Response::HTTP_CREATED,
             controller: InitialAdminController::class,
-            description: 'Crée le premier administrateur (CSRF `initial_admin`).',
-            read: false,
-            deserialize: true,
-            validate: false,
-            input: RegisterUserInput::class,
-            denormalizationContext: ['groups' => ['user:register']],
-            write: false,
             openapi: new OpenApiOperation(
                 parameters: [
                     new OpenApiParameter(
@@ -36,6 +29,13 @@ use Symfony\Component\HttpFoundation\Response;
                     ),
                 ]
             ),
+            description: 'Crée le premier administrateur (CSRF `initial_admin`).',
+            denormalizationContext: ['groups' => ['user:register']],
+            input: RegisterUserInput::class,
+            read: false,
+            deserialize: true,
+            validate: false,
+            write: false,
             name: 'api_setup_initial_admin',
         ),
     ],
