@@ -1,109 +1,115 @@
-<app-already-authenticated [redirectTarget]="redirectTarget">
-  <form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="space-y-4">
-      <div class="text-center">
-        <h2 class="text-foreground mb-1 text-3xl font-semibold">
-          Ravi de vous revoir <span class="text-primary">!</span>
-        </h2>
-        <p class="text-muted-foreground text-sm">Entrez vos identifiants pour accéder à votre compte.</p>
+<form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="space-y-4">
+    <div class="text-center">
+      <h2 class="text-foreground mb-1 text-3xl font-semibold">
+        Ravi de vous revoir <span class="text-primary">!</span>
+      </h2>
+      <p class="text-muted-foreground text-sm">Entrez vos identifiants pour accéder à votre compte.</p>
+    </div>
+  </div>
+
+  <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
+  <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
+  @if (status.infoMessage) {
+    <app-form-status-message kind="info" [message]="status.infoMessage"></app-form-status-message>
+  }
+
+  <div class="space-y-3 text-left">
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="login-email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          class="form__input peer"
+          placeholder=" "
+          formControlName="email"
+          [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="login-email">
+          Adresse email
+        </label>
       </div>
+      @if (submitted && f['email'].errors) {
+        <p class="is__invalid-error">
+          @if (f['email'].hasError('required')) {
+            <span>Adresse email requise.</span>
+          }
+          @if (f['email'].hasError('email')) {
+            <span>Adresse email invalide.</span>
+          }
+        </p>
+      }
     </div>
 
-    <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
-    <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
-    @if (status.infoMessage) {
-      <app-form-status-message kind="info" [message]="status.infoMessage"></app-form-status-message>
-    }
-
-    <div class="space-y-3 text-left">
-      <div class="form__group">
-        <div class="form__field">
-          <input
-            id="login-email"
-            type="email"
-            inputmode="email"
-            autocomplete="email"
-            class="form__input peer"
-            placeholder=" "
-            formControlName="email"
-            [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
-          />
-          <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="login-email">
-            Adresse email
-          </label>
-        </div>
-        @if (submitted && f['email'].errors) {
-          <p class="is__invalid-error">
-            @if (f['email'].hasError('required')) {
-              <span>Adresse email requise.</span>
-            }
-            @if (f['email'].hasError('email')) {
-              <span>Adresse email invalide.</span>
-            }
-          </p>
-        }
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="login-password"
+          [type]="passwordTextType ? 'text' : 'password'"
+          autocomplete="current-password"
+          class="form__input peer pr-12"
+          placeholder=" "
+          formControlName="password"
+          [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="login-password">
+          Mot de passe
+        </label>
+        <button
+          type="button"
+          class="form__toggle"
+          aria-label="Afficher ou masquer le mot de passe"
+          [attr.aria-pressed]="passwordTextType"
+          (click)="togglePasswordTextType()"
+        >
+          <svg-icon
+            [src]="!passwordTextType ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
+            [svgClass]="'h-5 w-5'"
+          ></svg-icon>
+        </button>
       </div>
-
-      <div class="form__group">
-        <div class="form__field">
-          <input
-            id="login-password"
-            [type]="passwordTextType ? 'text' : 'password'"
-            autocomplete="current-password"
-            class="form__input peer pr-12"
-            placeholder=" "
-            formControlName="password"
-            [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
-          />
-          <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="login-password">
-            Mot de passe
-          </label>
-          <button type="button" class="form__toggle" aria-label="Afficher ou masquer le mot de passe" [attr.aria-pressed]="passwordTextType" (click)="togglePasswordTextType()">
-            <svg-icon
-              [src]="!passwordTextType ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
-              [svgClass]="'h-5 w-5'"
-            ></svg-icon>
-          </button>
-        </div>
-        @if (submitted && f['password'].errors) {
-          <p class="is__invalid-error">Mot de passe requis.</p>
-        }
-      </div>
+      @if (submitted && f['password'].errors) {
+        <p class="is__invalid-error">Mot de passe requis.</p>
+      }
     </div>
+  </div>
 
-    <div class="mb-2 flex items-center justify-end">
+  <div class="mb-2 flex items-center justify-end">
+    <app-button
+      routerLink="/reset-password"
+      [queryParams]="returnUrl ? { returnUrl } : null"
+      type="button"
+      impact="none"
+      tone="primary"
+      shape="rounded"
+      size="small"
+    >
+      Mot de passe oublié ?
+    </app-button>
+  </div>
+
+  <div>
+    <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting()">
+      Se connecter
+    </app-button>
+  </div>
+
+  @if (canRegister) {
+    <div class="text-muted-foreground flex items-center text-sm">
+      Pas encore membre ?
       <app-button
-        routerLink="/reset-password"
+        routerLink="/register"
         [queryParams]="returnUrl ? { returnUrl } : null"
+        type="button"
         impact="none"
         tone="primary"
         shape="rounded"
         size="small"
       >
-        Mot de passe oublié ?
+        Inscrivez-vous
       </app-button>
     </div>
-
-    <div>
-      <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting">
-        Se connecter
-      </app-button>
-    </div>
-
-    @if (canRegister) {
-      <div class="text-muted-foreground flex items-center text-sm">
-        Pas encore membre ?
-        <app-button
-          routerLink="/register"
-          [queryParams]="returnUrl ? { returnUrl } : null"
-          impact="none"
-          tone="primary"
-          shape="rounded"
-          size="small"
-        >
-          Inscrivez-vous
-        </app-button>
-      </div>
-    }
-  </form>
-</app-already-authenticated>
+  }
+</form>

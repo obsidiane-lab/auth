@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type { UserUserRead } from 'bridge';
 import { AuthRepository } from '../repositories/auth.repository';
@@ -9,6 +10,11 @@ import { AuthRepository } from '../repositories/auth.repository';
 export class AuthService {
   readonly user = this.authRepository.user;
   readonly sessionExp = this.authRepository.sessionExp;
+  readonly checkingSession = signal(false);
+  readonly sessionCheckError = signal<string | null>(null);
+  private sessionChecked = false;
+  private sessionCheckPromise: Promise<boolean> | null = null;
+  private readonly sessionCheckTimeoutMs = 2500;
 
   constructor(private readonly authRepository: AuthRepository) {}
 
@@ -23,6 +29,45 @@ export class AuthService {
   async me(): Promise<UserUserRead> {
     const response = await firstValueFrom(this.authRepository.me$());
     return response.user;
+  }
+
+  async checkSessionOnce(): Promise<boolean> {
+    if (this.sessionChecked) {
+      return this.user() !== null;
+    }
+    if (this.sessionCheckPromise) {
+      return this.sessionCheckPromise;
+    }
+
+    this.checkingSession.set(true);
+    this.sessionCheckError.set(null);
+    let timedOut = false;
+    const timeoutId = setTimeout(() => {
+      timedOut = true;
+      this.checkingSession.set(false);
+    }, this.sessionCheckTimeoutMs);
+
+    this.sessionCheckPromise = (async () => {
+      try {
+        await this.me();
+        return true;
+      } catch (error) {
+        if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
+          return false;
+        }
+        this.sessionCheckError.set('Impossible de vérifier la session. Vous pouvez continuer à vous connecter.');
+        return false;
+      } finally {
+        this.sessionChecked = true;
+        if (!timedOut) {
+          this.checkingSession.set(false);
+        }
+        clearTimeout(timeoutId);
+        this.sessionCheckPromise = null;
+      }
+    })();
+
+    return this.sessionCheckPromise;
   }
 
   async logout(): Promise<void> {

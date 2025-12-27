@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect } from '@angular/core';
+import { Component, DestroyRef, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -8,11 +8,10 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { normalizeInternalPath, resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
+import { normalizeInternalPath } from '../../../../core/utils/redirect-policy.util';
 import { applyFieldErrors, REGISTER_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { configurePasswordForm } from '../../utils/password-form.util';
-import { AlreadyAuthenticatedComponent } from '../../components/already-authenticated/already-authenticated.component';
 import { SignUpFormType, type SignUpFormControls } from '../../forms/sign-up.form';
 
 @Component({
@@ -26,15 +25,13 @@ import { SignUpFormType, type SignUpFormControls } from '../../forms/sign-up.for
     ButtonComponent,
     NgClass,
     FormStatusMessageComponent,
-    AlreadyAuthenticatedComponent,
   ],
 })
 export class SignUpComponent {
   form: FormGroup<SignUpFormControls>;
   submitted = false;
-  isSubmitting = false;
+  readonly isSubmitting = signal(false);
   returnUrl: string | null = null;
-  redirectTarget: string | null = null;
   passwordStrength = 0;
   passwordVisible = false;
   apiFieldErrors: Partial<Record<'email' | 'password' | 'confirmPassword', string>> = {};
@@ -57,18 +54,6 @@ export class SignUpComponent {
     effect(() => {
       const queryParams = this.queryParamMap();
       this.returnUrl = normalizeInternalPath(queryParams.get('returnUrl'));
-
-      const config = this.configService.config();
-      const redirectUri = queryParams.get('redirect_uri');
-      this.redirectTarget = resolveRedirectTarget(
-        redirectUri,
-        config.frontendRedirectAllowlist,
-        config.frontendDefaultRedirect,
-      );
-
-      if (!this.redirectTarget && this.returnUrl) {
-        this.redirectTarget = this.returnUrl;
-      }
     });
 
     configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
@@ -96,7 +81,7 @@ export class SignUpComponent {
 
     const { email, password } = this.signUpForm.toCreatePayload(this.form);
 
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
     try {
       await this.authService.register(email, password);
       this.status.successMessage = 'Compte créé. Vérifiez votre email pour activer l’accès.';
@@ -113,7 +98,7 @@ export class SignUpComponent {
     } catch (error) {
       this.handleError(error);
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 

@@ -1,4 +1,14 @@
-@if (alreadyAuthenticated) {
+@if (sessionCheckError()) {
+  <div class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
+    {{ sessionCheckError() }}
+  </div>
+}
+
+@if (checkingSession()) {
+  <div class="rounded-xl border border-dashed border-primary/40 bg-background/90 p-4 text-sm shadow-sm">
+    <p class="text-sm text-muted-foreground">Vérification de votre session...</p>
+  </div>
+} @else if (alreadyAuthenticated()) {
   <div class="rounded-xl border border-dashed border-primary/40 bg-background/90 p-4 text-sm shadow-sm">
     <div class="flex flex-col gap-4">
       <div class="flex items-start gap-3">
@@ -13,6 +23,10 @@
         </div>
       </div>
 
+      @if (logoutError()) {
+        <p class="text-xs text-destructive" role="alert">{{ logoutError() }}</p>
+      }
+
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
         <app-button full impact="bold" tone="primary" size="small" type="button" (buttonClick)="goToService()">
           Accéder au service
@@ -23,7 +37,7 @@
           tone="primary"
           size="small"
           type="button"
-          [disabled]="logoutLoading"
+          [disabled]="logoutLoading()"
           (buttonClick)="logout()"
         >
           Se déconnecter

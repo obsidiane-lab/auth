@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, effect } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
@@ -19,7 +19,7 @@ import { ForgotPasswordFormType, type ForgotPasswordFormControls } from '../../f
 export class ForgotPasswordComponent {
   form: FormGroup<ForgotPasswordFormControls>;
   submitted = false;
-  isSubmitting = false;
+  readonly isSubmitting = signal(false);
   returnUrl: string | null = null;
   status = {
     errorMessage: '',
@@ -53,7 +53,7 @@ export class ForgotPasswordComponent {
     }
 
     const { email } = this.forgotPasswordForm.toCreatePayload(this.form);
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
 
     try {
       await this.authService.forgotPassword(email);
@@ -61,7 +61,7 @@ export class ForgotPasswordComponent {
     } catch (error) {
       this.status.errorMessage = this.resolveErrorMessage(error);
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 

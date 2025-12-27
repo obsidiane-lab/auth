@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, effect } from '@angular/core';
+import { Component, effect, signal } from '@angular/core';
 import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -9,7 +9,6 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
 import { isInternalPath, normalizeInternalPath, resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
-import { AlreadyAuthenticatedComponent } from '../../components/already-authenticated/already-authenticated.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { SignInFormType, type SignInFormControls } from '../../forms/sign-in.form';
 import { ApiErrorPayload, LOGIN_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
@@ -26,14 +25,13 @@ import { ApiErrorPayload, LOGIN_ERROR_MESSAGES, resolveApiErrorMessage } from '.
     ButtonComponent,
     NgClass,
     FormStatusMessageComponent,
-    AlreadyAuthenticatedComponent,
   ],
 })
 export class SignInComponent {
   form: FormGroup<SignInFormControls>;
   submitted = false;
   passwordTextType = false;
-  isSubmitting = false;
+  readonly isSubmitting = signal(false);
   returnUrl: string | null = null;
   redirectTarget: string | null = null;
   canRegister = true;
@@ -99,7 +97,7 @@ export class SignInComponent {
 
     const { email, password } = this.signInForm.toCreatePayload(this.form);
 
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
     try {
       await this.authService.login(email, password);
       this.status.successMessage = 'Connexion réussie. Redirection en cours...';
@@ -119,7 +117,7 @@ export class SignInComponent {
     } catch (error) {
       this.status.errorMessage = this.resolveErrorMessage(error);
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 

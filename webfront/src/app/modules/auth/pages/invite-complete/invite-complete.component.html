@@ -115,7 +115,7 @@
 
   @if (!alreadyCompleted) {
     <div>
-      <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting" [disabled]="!hasToken">
+      <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting()" [disabled]="!hasToken">
         Activer mon compte
       </app-button>
     </div>

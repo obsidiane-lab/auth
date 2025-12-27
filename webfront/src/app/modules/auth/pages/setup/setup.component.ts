@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect } from '@angular/core';
+import { Component, DestroyRef, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -22,7 +22,7 @@ import { SetupFormType, type SetupFormControls } from '../../forms/setup.form';
 export class SetupComponent {
   form: FormGroup<SetupFormControls>;
   submitted = false;
-  isSubmitting = false;
+  readonly isSubmitting = signal(false);
   returnUrl: string | null = null;
   passwordStrength = 0;
   passwordVisible = false;
@@ -78,7 +78,7 @@ export class SetupComponent {
 
     const { email, password } = this.setupForm.toCreatePayload(this.form);
 
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
 
     try {
       await this.setupService.createInitialAdmin(email, password);
@@ -93,7 +93,7 @@ export class SetupComponent {
     } catch (error) {
       this.handleError(error);
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 

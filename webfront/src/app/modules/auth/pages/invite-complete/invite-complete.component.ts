@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect } from '@angular/core';
+import { Component, DestroyRef, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -22,7 +22,7 @@ import { InviteCompleteFormType, type InviteCompleteFormControls } from '../../f
 export class InviteCompleteComponent {
   form: FormGroup<InviteCompleteFormControls>;
   submitted = false;
-  isSubmitting = false;
+  readonly isSubmitting = signal(false);
   passwordStrength = 0;
   passwordVisible = false;
   invitedEmail = '';
@@ -91,7 +91,7 @@ export class InviteCompleteComponent {
 
     const { password, confirmPassword } = this.inviteCompleteForm.toCreatePayload(this.form);
 
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
 
     try {
       await this.authService.inviteComplete(this.inviteToken, password, confirmPassword);
@@ -106,7 +106,7 @@ export class InviteCompleteComponent {
     } catch (error) {
       this.handleError(error);
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 
@@ -125,7 +125,7 @@ export class InviteCompleteComponent {
         this.status.errorMessage = INVITE_ERROR_MESSAGES['INVITATION_EXPIRED'];
       }
     } catch {
-      // Silence: on laisse la validation se faire au submit.
+      this.status.errorMessage = 'Impossible de vérifier l’invitation. Vous pouvez réessayer plus tard.';
     }
   }
 

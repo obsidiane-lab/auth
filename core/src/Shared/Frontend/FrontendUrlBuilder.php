@@ -11,7 +11,7 @@ final readonly class FrontendUrlBuilder
     private const INVITE_COMPLETE_PATH = '/invite/complete';
 
     public function __construct(
-        #[Autowire('%env(default:APP_DEFAULT_URI:FRONTEND_BASE_URL)%')]
+        #[Autowire('%env(FRONTEND_BASE_URL)%')]
         private string $baseUrl,
     ) {
     }

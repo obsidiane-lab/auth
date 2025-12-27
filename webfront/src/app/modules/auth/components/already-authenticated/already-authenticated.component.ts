@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, computed, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -13,27 +13,17 @@ import { isInternalPath } from '../../../../core/utils/redirect-policy.util';
 export class AlreadyAuthenticatedComponent {
   @Input() redirectTarget: string | null = null;
 
-  alreadyAuthenticated = false;
-  checkingSession = false;
-  logoutLoading = false;
+  readonly alreadyAuthenticated = computed(() => this.authService.user() !== null);
+  readonly checkingSession = this.authService.checkingSession;
+  readonly sessionCheckError = this.authService.sessionCheckError;
+  readonly logoutLoading = signal(false);
+  readonly logoutError = signal<string | null>(null);
 
   constructor(
     private readonly authService: AuthService,
     private readonly router: Router,
   ) {
-    void this.checkSession();
-  }
-
-  async checkSession(): Promise<void> {
-    this.checkingSession = true;
-    try {
-      await this.authService.me();
-      this.alreadyAuthenticated = true;
-    } catch {
-      this.alreadyAuthenticated = false;
-    } finally {
-      this.checkingSession = false;
-    }
+    void this.authService.checkSessionOnce();
   }
 
   goToService(): void {
@@ -52,17 +42,20 @@ export class AlreadyAuthenticatedComponent {
   }
 
   async logout(): Promise<void> {
-    if (this.logoutLoading) {
+    if (this.logoutLoading()) {
       return;
     }
 
-    this.logoutLoading = true;
+    this.logoutLoading.set(true);
+    this.logoutError.set(null);
     try {
       await this.authService.logout();
+    } catch {
+      this.logoutError.set('Impossible de vous déconnecter. Réessayez.');
     } finally {
-      this.logoutLoading = false;
-      if (typeof window !== 'undefined') {
-        window.location.reload();
+      this.logoutLoading.set(false);
+      if (this.authService.user() === null) {
+        this.checkingSession.set(false);
       }
     }
   }

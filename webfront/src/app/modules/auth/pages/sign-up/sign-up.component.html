@@ -1,144 +1,143 @@
-<app-already-authenticated [redirectTarget]="redirectTarget">
-  <form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
-    <div class="space-y-4">
-      <div class="text-center">
-        <h2 class="text-foreground mb-1 text-3xl font-semibold">Créer un compte <span class="text-primary">!</span></h2>
-        <p class="text-muted-foreground text-sm">Créez votre compte pour aller plus loin.</p>
-      </div>
+<form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="space-y-4">
+    <div class="text-center">
+      <h2 class="text-foreground mb-1 text-3xl font-semibold">Créer un compte <span class="text-primary">!</span></h2>
+      <p class="text-muted-foreground text-sm">Créez votre compte pour aller plus loin.</p>
     </div>
+  </div>
 
-    <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
-    <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
+  <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
+  <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
 
-    <div class="space-y-3 text-left">
-      <div class="form__group">
-        <div class="form__field">
-          <input
-            id="register-email"
-            type="email"
-            inputmode="email"
-            autocomplete="email"
-            class="form__input peer"
-            placeholder=" "
-            formControlName="email"
-            [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
-          />
-          <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="register-email">
-            Adresse email
-          </label>
-        </div>
-        @if (apiFieldErrors.email || (submitted && f['email'].errors)) {
-          <p class="is__invalid-error">
-            @if (apiFieldErrors.email) {
-              <span>{{ apiFieldErrors.email }}</span>
-            }
-            @if (!apiFieldErrors.email && f['email'].hasError('email')) {
-              <span>Adresse email invalide.</span>
-            }
-            @if (!apiFieldErrors.email && f['email'].hasError('required')) {
-              <span>Adresse email requise.</span>
-            }
-          </p>
-        }
+  <div class="space-y-3 text-left">
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="register-email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          class="form__input peer"
+          placeholder=" "
+          formControlName="email"
+          [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="register-email">
+          Adresse email
+        </label>
       </div>
-
-      <div class="form__group">
-        <div class="form__field">
-          <input
-            id="register-password"
-            [type]="passwordVisible ? 'text' : 'password'"
-            autocomplete="new-password"
-            class="form__input peer pr-12"
-            placeholder=" "
-            formControlName="password"
-            [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
-          />
-          <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="register-password">
-            Mot de passe
-          </label>
-          <button
-            type="button"
-            class="form__toggle"
-            aria-label="Afficher ou masquer le mot de passe"
-            [attr.aria-pressed]="passwordVisible"
-            (click)="togglePasswordVisibility()"
-          >
-            <svg-icon
-              [src]="!passwordVisible ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
-              [svgClass]="'h-5 w-5'"
-            ></svg-icon>
-          </button>
-        </div>
-        @if (apiFieldErrors.password || (submitted && f['password'].errors)) {
-          <p class="is__invalid-error">
-            @if (apiFieldErrors.password) {
-              <span>{{ apiFieldErrors.password }}</span>
-            }
-            @if (!apiFieldErrors.password && f['password'].hasError('weakPassword')) {
-              <span>Mot de passe trop faible.</span>
-            }
-            @if (!apiFieldErrors.password && f['password'].hasError('required')) {
-              <span>Mot de passe requis.</span>
-            }
-          </p>
-        }
-        <div class="grid grid-cols-4 gap-2">
-          @for (index of [1, 2, 3, 4]; track index) {
-            <span
-              [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-muted'"
-              class="h-1 rounded-xs transition"
-            ></span>
+      @if (apiFieldErrors.email || (submitted && f['email'].errors)) {
+        <p class="is__invalid-error">
+          @if (apiFieldErrors.email) {
+            <span>{{ apiFieldErrors.email }}</span>
           }
-        </div>
-        <p class="text-muted-foreground text-xs">Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.</p>
-      </div>
+          @if (!apiFieldErrors.email && f['email'].hasError('email')) {
+            <span>Adresse email invalide.</span>
+          }
+          @if (!apiFieldErrors.email && f['email'].hasError('required')) {
+            <span>Adresse email requise.</span>
+          }
+        </p>
+      }
+    </div>
 
-      <div class="form__group">
-        <div class="form__field">
-          <input
-            id="register-confirm-password"
-            type="password"
-            autocomplete="new-password"
-            class="form__input peer"
-            placeholder=" "
-            formControlName="confirmPassword"
-            [ngClass]="{ 'is__invalid-input': submitted && f['confirmPassword'].errors }"
-          />
-          <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['confirmPassword'].errors }" for="register-confirm-password">
-            Confirmez le mot de passe
-          </label>
-        </div>
-        @if (submitted && f['confirmPassword'].errors) {
-          <p class="is__invalid-error">
-            @if (f['confirmPassword'].hasError('mismatch')) {
-              <span>Les mots de passe ne correspondent pas.</span>
-            }
-            @if (f['confirmPassword'].hasError('required')) {
-              <span>Confirmation requise.</span>
-            }
-          </p>
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="register-password"
+          [type]="passwordVisible ? 'text' : 'password'"
+          autocomplete="new-password"
+          class="form__input peer pr-12"
+          placeholder=" "
+          formControlName="password"
+          [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="register-password">
+          Mot de passe
+        </label>
+        <button
+          type="button"
+          class="form__toggle"
+          aria-label="Afficher ou masquer le mot de passe"
+          [attr.aria-pressed]="passwordVisible"
+          (click)="togglePasswordVisibility()"
+        >
+          <svg-icon
+            [src]="!passwordVisible ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
+            [svgClass]="'h-5 w-5'"
+          ></svg-icon>
+        </button>
+      </div>
+      @if (apiFieldErrors.password || (submitted && f['password'].errors)) {
+        <p class="is__invalid-error">
+          @if (apiFieldErrors.password) {
+            <span>{{ apiFieldErrors.password }}</span>
+          }
+          @if (!apiFieldErrors.password && f['password'].hasError('weakPassword')) {
+            <span>Mot de passe trop faible.</span>
+          }
+          @if (!apiFieldErrors.password && f['password'].hasError('required')) {
+            <span>Mot de passe requis.</span>
+          }
+        </p>
+      }
+      <div class="grid grid-cols-4 gap-2">
+        @for (index of [1, 2, 3, 4]; track index) {
+          <span
+            [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-muted'"
+            class="h-1 rounded-xs transition"
+          ></span>
         }
       </div>
+      <p class="text-muted-foreground text-xs">Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.</p>
     </div>
 
-    <div>
-      <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting">
-        Créer mon compte
-      </app-button>
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="register-confirm-password"
+          type="password"
+          autocomplete="new-password"
+          class="form__input peer"
+          placeholder=" "
+          formControlName="confirmPassword"
+          [ngClass]="{ 'is__invalid-input': submitted && f['confirmPassword'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['confirmPassword'].errors }" for="register-confirm-password">
+          Confirmez le mot de passe
+        </label>
+      </div>
+      @if (submitted && f['confirmPassword'].errors) {
+        <p class="is__invalid-error">
+          @if (f['confirmPassword'].hasError('mismatch')) {
+            <span>Les mots de passe ne correspondent pas.</span>
+          }
+          @if (f['confirmPassword'].hasError('required')) {
+            <span>Confirmation requise.</span>
+          }
+        </p>
+      }
     </div>
+  </div>
 
-    <div class="text-muted-foreground flex items-center text-sm">
-      Déjà un compte ?
-      <app-button
-        routerLink="/login"
-        [queryParams]="returnUrl ? { returnUrl } : null"
-        impact="none"
-        tone="primary"
-        shape="rounded"
-        size="small"
-      >
-        Se connecter
-      </app-button>
-    </div>
-  </form>
-</app-already-authenticated>
+  <div>
+    <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting()">
+      Créer mon compte
+    </app-button>
+  </div>
+
+  <div class="text-muted-foreground flex items-center text-sm">
+    Déjà un compte ?
+    <app-button
+      routerLink="/login"
+      [queryParams]="returnUrl ? { returnUrl } : null"
+      type="button"
+      impact="none"
+      tone="primary"
+      shape="rounded"
+      size="small"
+    >
+      Se connecter
+    </app-button>
+  </div>
+</form>

@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect } from '@angular/core';
+import { Component, DestroyRef, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -29,7 +29,7 @@ import { NewPasswordFormType, type NewPasswordFormControls } from '../../forms/n
 export class NewPasswordComponent {
   form: FormGroup<NewPasswordFormControls>;
   submitted = false;
-  isSubmitting = false;
+  readonly isSubmitting = signal(false);
   passwordStrength = 0;
   passwordVisible = false;
   confirmVisible = false;
@@ -90,7 +90,7 @@ export class NewPasswordComponent {
 
     const { password } = this.newPasswordForm.toCreatePayload(this.form);
 
-    this.isSubmitting = true;
+    this.isSubmitting.set(true);
 
     try {
       await this.authService.resetPassword(this.resetToken, password);
@@ -105,7 +105,7 @@ export class NewPasswordComponent {
     } catch (error) {
       this.status.errorMessage = this.resolveErrorMessage(error);
     } finally {
-      this.isSubmitting = false;
+      this.isSubmitting.set(false);
     }
   }
 
