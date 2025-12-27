@@ -7,15 +7,15 @@ use App\Auth\Http\Dto\RegisterUserInput;
 use App\Entity\InviteUser;
 use App\Entity\User;
 use App\Repository\InviteUserRepository;
+use App\Shared\Security\UserPasswordUpdater;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final readonly class CompleteInvitation
 {
     public function __construct(
         private InviteUserRepository $inviteRepository,
         private EntityManagerInterface $entityManager,
-        private UserPasswordHasherInterface $passwordHasher,
+        private UserPasswordUpdater $passwordUpdater,
         private RegisterUserInputValidator $inputValidator,
     ) {
     }
@@ -47,8 +47,7 @@ final readonly class CompleteInvitation
 
         $this->inputValidator->validate($input);
 
-        $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
-        $user->eraseCredentials();
+        $this->passwordUpdater->apply($user, $plainPassword);
         $user->setEmailVerified(true);
 
         $invite->setAcceptedAt(new \DateTimeImmutable());

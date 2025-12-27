@@ -1,43 +1,20 @@
-import { EnvironmentInjector, Injectable, effect, runInInjectionContext, type Signal } from '@angular/core';
+import { EnvironmentInjector, Injectable, effect, runInInjectionContext } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
-import type { AnyQuery, Collection, HttpCallOptions, UserUserRead } from 'bridge';
+import type { UserUserRead } from 'bridge';
+import { BaseEntityService } from './base-entity.service';
 import { UsersRepository } from '../repositories/users.repository';
 
 @Injectable({
   providedIn: 'root',
 })
-export class UsersService {
-  readonly entities = this.usersRepository.entities;
-
-  private readonly loadingByIri = new Set<string>();
+export class UsersService extends BaseEntityService<UserUserRead, UsersRepository> {
   private loadingCollection = false;
 
   constructor(
     private readonly usersRepository: UsersRepository,
-    private readonly injector: EnvironmentInjector,
-  ) {}
-
-  entity(iri: string): Signal<UserUserRead | undefined> {
-    const entitySignal = this.usersRepository.entity(iri);
-
-    runInInjectionContext(this.injector, () => {
-      effect(() => {
-        if (entitySignal() || this.loadingByIri.has(iri)) {
-          return;
-        }
-
-        this.loadingByIri.add(iri);
-        void this.fetchByIri(iri).finally(() => {
-          this.loadingByIri.delete(iri);
-        });
-      });
-    });
-
-    return entitySignal;
-  }
-
-  peekEntity(iri: string): UserUserRead | undefined {
-    return this.usersRepository.peek(iri);
+    injector: EnvironmentInjector,
+  ) {
+    super(usersRepository, injector);
   }
 
   userByEmail(email: string) {
@@ -57,18 +34,6 @@ export class UsersService {
     });
 
     return userSignal;
-  }
-
-  async list(query?: AnyQuery, opts?: HttpCallOptions): Promise<Collection<UserUserRead>> {
-    return firstValueFrom(this.usersRepository.collection$(query, opts));
-  }
-
-  async fetchByIri(iri: string, opts?: HttpCallOptions): Promise<UserUserRead> {
-    return firstValueFrom(this.usersRepository.get$(iri, opts));
-  }
-
-  async delete(iri: string, opts?: HttpCallOptions): Promise<void> {
-    await firstValueFrom(this.usersRepository.delete$(iri, opts));
   }
 
   async updateRoles(id: number, roles: string[]): Promise<UserUserRead> {

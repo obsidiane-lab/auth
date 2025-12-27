@@ -1,6 +1,6 @@
 import { NgClass, NgIf } from '@angular/common';
 import { Component, effect } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -8,6 +8,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PASSWORD_REQUEST_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
+import { ForgotPasswordFormType, type ForgotPasswordFormControls } from '../../forms/forgot-password.form';
 
 @Component({
   selector: 'app-forgot-password',
@@ -16,7 +17,7 @@ import { PASSWORD_REQUEST_ERROR_MESSAGES, resolveApiErrorMessage } from '../../u
   imports: [ReactiveFormsModule, RouterLink, ButtonComponent, NgIf, NgClass, FormStatusMessageComponent],
 })
 export class ForgotPasswordComponent {
-  form: FormGroup;
+  form: FormGroup<ForgotPasswordFormControls>;
   submitted = false;
   isSubmitting = false;
   returnUrl: string | null = null;
@@ -27,13 +28,11 @@ export class ForgotPasswordComponent {
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
-    private readonly formBuilder: FormBuilder,
     private readonly authService: AuthService,
     private readonly route: ActivatedRoute,
+    private readonly forgotPasswordForm: ForgotPasswordFormType,
   ) {
-    this.form = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
-    });
+    this.form = this.forgotPasswordForm.createForm(null);
 
     effect(() => {
       this.returnUrl = this.queryParamMap().get('returnUrl');
@@ -53,7 +52,7 @@ export class ForgotPasswordComponent {
       return;
     }
 
-    const { email } = this.form.value;
+    const { email } = this.forgotPasswordForm.toCreatePayload(this.form);
     this.isSubmitting = true;
 
     try {

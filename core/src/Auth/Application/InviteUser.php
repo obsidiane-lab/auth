@@ -11,10 +11,10 @@ use App\Shared\Mail\MailerGateway;
 use App\Repository\InviteUserRepository;
 use App\Repository\UserRepository;
 use App\Shared\Frontend\FrontendUrlBuilder;
+use App\Shared\Utils\EmailNormalizer;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final readonly class InviteUser
 {
@@ -22,11 +22,12 @@ final readonly class InviteUser
         private UserRepository $userRepository,
         private InviteUserRepository $inviteRepository,
         private EntityManagerInterface $entityManager,
-        private UserPasswordHasherInterface $passwordHasher,
         private InviteUserInputValidator $inputValidator,
         private MailerGateway $mailer,
         private FrontendUrlBuilder $frontendUrlBuilder,
         private Security $security,
+        private EmailNormalizer $emailNormalizer,
+        private UserFactory $userFactory,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
         private string $welcomeTemplateId = 'welcome',
     ) {
@@ -39,7 +40,7 @@ final readonly class InviteUser
     public function handle(InviteUserInput $input): InviteUserEntity
     {
         $this->inputValidator->validate($input);
-        $normalizedEmail = mb_strtolower(trim((string) $input->email));
+        $normalizedEmail = $this->emailNormalizer->normalize($input->email);
 
         $existingUser = $this->userRepository->findOneBy(['email' => $normalizedEmail]);
 
@@ -47,7 +48,7 @@ final readonly class InviteUser
             throw new RegistrationException(['email' => 'EMAIL_ALREADY_USED']);
         }
 
-        $user = $existingUser ?? $this->createInvitedUser($normalizedEmail);
+        $user = $existingUser ?? $this->userFactory->createWithRandomPassword($normalizedEmail);
 
         $existingInvite = $this->inviteRepository->findOneBy(['user' => $user]);
 
@@ -79,20 +80,6 @@ final readonly class InviteUser
         $this->sendInvitationEmail($invite);
 
         return $invite;
-    }
-
-    private function createInvitedUser(string $email): User
-    {
-        $user = new User();
-        $user->setEmail($email);
-
-        $randomPassword = bin2hex(random_bytes(16));
-        $user->setPassword($this->passwordHasher->hashPassword($user, $randomPassword));
-        $user->eraseCredentials();
-        $user->setRoles([]);
-        $user->setEmailVerified(false);
-
-        return $user;
     }
 
     /**

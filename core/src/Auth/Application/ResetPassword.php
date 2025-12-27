@@ -7,9 +7,9 @@ use App\Entity\User;
 use App\Repository\RefreshTokenRepository;
 use App\Setup\Application\InitialAdminManager;
 use App\Shared\Security\PasswordStrengthChecker;
+use App\Shared\Security\UserPasswordUpdater;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
 use SymfonyCasts\Bundle\ResetPassword\ResetPasswordHelperInterface;
 
@@ -18,7 +18,7 @@ final readonly class ResetPassword
     public function __construct(
         private ResetPasswordHelperInterface $resetPasswordHelper,
         private RefreshTokenRepository $refreshTokenRepository,
-        private UserPasswordHasherInterface $passwordHasher,
+        private UserPasswordUpdater $passwordUpdater,
         private EntityManagerInterface $entityManager,
         private InitialAdminManager $initialAdminManager,
         private PasswordStrengthChecker $passwordStrengthChecker,
@@ -60,8 +60,7 @@ final readonly class ResetPassword
             throw new PasswordResetException('INVALID_USER', 400);
         }
 
-        $user->setPassword($this->passwordHasher->hashPassword($user, $passwordValue));
-        $user->eraseCredentials();
+        $this->passwordUpdater->apply($user, $passwordValue);
         $this->entityManager->flush();
 
         $this->resetPasswordHelper->removeResetRequest($tokenValue);

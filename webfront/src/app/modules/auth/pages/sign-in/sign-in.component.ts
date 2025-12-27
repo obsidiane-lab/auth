@@ -1,6 +1,6 @@
 import { NgClass, NgIf } from '@angular/common';
 import { Component, effect } from '@angular/core';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -11,6 +11,7 @@ import { resolveRedirectTarget, isInternalPath } from '../../../../core/utils/re
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { AlreadyAuthenticatedComponent } from '../../components/already-authenticated/already-authenticated.component';
 import { HttpErrorResponse } from '@angular/common/http';
+import { SignInFormType, type SignInFormControls } from '../../forms/sign-in.form';
 
 @Component({
   selector: 'app-sign-in',
@@ -29,7 +30,7 @@ import { HttpErrorResponse } from '@angular/common/http';
   ],
 })
 export class SignInComponent {
-  form: FormGroup;
+  form: FormGroup<SignInFormControls>;
   submitted = false;
   passwordTextType = false;
   isSubmitting = false;
@@ -45,16 +46,13 @@ export class SignInComponent {
   private readonly queryParamMap = toSignal(this._route.queryParamMap, { initialValue: this._route.snapshot.queryParamMap });
 
   constructor(
-    private readonly _formBuilder: FormBuilder,
     private readonly _router: Router,
     private readonly _route: ActivatedRoute,
     private readonly authService: AuthService,
     private readonly configService: FrontendConfigService,
+    private readonly signInForm: SignInFormType,
   ) {
-    this.form = this._formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required],
-    });
+    this.form = this.signInForm.createForm(null);
 
     effect(() => {
       const queryParams = this.queryParamMap();
@@ -97,11 +95,11 @@ export class SignInComponent {
     this.status.successMessage = '';
     this.status.infoMessage = '';
     this.flashMessage = '';
-    const { email, password } = this.form.value;
-
     if (this.form.invalid) {
       return;
     }
+
+    const { email, password } = this.signInForm.toCreatePayload(this.form);
 
     this.isSubmitting = true;
     try {

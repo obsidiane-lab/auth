@@ -11,16 +11,15 @@ use App\Auth\Infrastructure\Security\EmailVerifier;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final readonly class RegisterUser
 {
     public function __construct(
         private RegisterUserInputValidator $inputValidator,
-        private UserPasswordHasherInterface $passwordHasher,
         private EntityManagerInterface      $entityManager,
         private MailerGateway               $mailer,
         private EmailVerifier               $emailVerifier,
+        private UserFactory                 $userFactory,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
         private string                      $welcomeTemplateId = 'welcome',
     ) {
@@ -34,13 +33,7 @@ final readonly class RegisterUser
         $this->inputValidator->validate($input);
         $plainPassword = (string) ($input->plainPassword ?? '');
 
-        $user = new User();
-        $normalizedEmail = is_string($input->email) ? mb_strtolower(trim($input->email)) : '';
-        $user->setEmail($normalizedEmail);
-        $user->setPassword($this->passwordHasher->hashPassword($user, $plainPassword));
-        $user->eraseCredentials();
-        $user->setRoles([]);
-        $user->setEmailVerified(false);
+        $user = $this->userFactory->create((string) ($input->email ?? ''), $plainPassword);
 
         $this->entityManager->persist($user);
 

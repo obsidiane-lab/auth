@@ -1,6 +1,6 @@
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { Component, DestroyRef, effect } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
@@ -8,11 +8,10 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { estimatePasswordStrength } from '../../../../core/utils/password-strength.util';
-import { matchControlValidator, passwordStrengthValidator } from '../../utils/password-validators.util';
 import { HttpErrorResponse } from '@angular/common/http';
 import { PASSWORD_RESET_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { configurePasswordForm } from '../../utils/password-form.util';
+import { NewPasswordFormType, type NewPasswordFormControls } from '../../forms/new-password.form';
 
 @Component({
   selector: 'app-new-password',
@@ -30,7 +29,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   ],
 })
 export class NewPasswordComponent {
-  form: FormGroup;
+  form: FormGroup<NewPasswordFormControls>;
   submitted = false;
   isSubmitting = false;
   passwordStrength = 0;
@@ -45,17 +44,14 @@ export class NewPasswordComponent {
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
-    private readonly formBuilder: FormBuilder,
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
+    private readonly newPasswordForm: NewPasswordFormType,
   ) {
-    this.form = this.formBuilder.group({
-      password: ['', Validators.required],
-      confirmPassword: ['', Validators.required],
-    });
+    this.form = this.newPasswordForm.createForm(null);
 
     effect(() => {
       const params = this.queryParamMap();
@@ -63,25 +59,9 @@ export class NewPasswordComponent {
       this.returnUrl = params.get('returnUrl');
     });
 
-    effect(() => {
-      const minScore = this.configService.config().passwordStrengthLevel;
-      const passwordControl = this.form.get('password');
-      const confirmControl = this.form.get('confirmPassword');
-
-      passwordControl?.setValidators([Validators.required, passwordStrengthValidator(minScore)]);
-      confirmControl?.setValidators([Validators.required, matchControlValidator('password')]);
-      passwordControl?.updateValueAndValidity({ emitEvent: false });
-      confirmControl?.updateValueAndValidity({ emitEvent: false });
+    configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
+      this.passwordStrength = strength;
     });
-
-    this.form
-      .get('password')
-      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        const passwordValue = typeof value === 'string' ? value : '';
-        this.passwordStrength = estimatePasswordStrength(passwordValue);
-        this.form.get('confirmPassword')?.updateValueAndValidity({ emitEvent: false });
-      });
   }
 
   get f() {
@@ -110,7 +90,7 @@ export class NewPasswordComponent {
       return;
     }
 
-    const { password } = this.form.value;
+    const { password } = this.newPasswordForm.toCreatePayload(this.form);
 
     this.isSubmitting = true;
 

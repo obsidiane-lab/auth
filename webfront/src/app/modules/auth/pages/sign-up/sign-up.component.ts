@@ -1,6 +1,6 @@
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { Component, DestroyRef, effect } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
@@ -8,13 +8,12 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { estimatePasswordStrength } from '../../../../core/utils/password-strength.util';
 import { resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
-import { matchControlValidator, passwordStrengthValidator } from '../../utils/password-validators.util';
 import { applyFieldErrors, REGISTER_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
 import { HttpErrorResponse } from '@angular/common/http';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { configurePasswordForm } from '../../utils/password-form.util';
 import { AlreadyAuthenticatedComponent } from '../../components/already-authenticated/already-authenticated.component';
+import { SignUpFormType, type SignUpFormControls } from '../../forms/sign-up.form';
 
 @Component({
   selector: 'app-sign-up',
@@ -33,7 +32,7 @@ import { AlreadyAuthenticatedComponent } from '../../components/already-authenti
   ],
 })
 export class SignUpComponent {
-  form: FormGroup;
+  form: FormGroup<SignUpFormControls>;
   submitted = false;
   isSubmitting = false;
   returnUrl: string | null = null;
@@ -48,18 +47,14 @@ export class SignUpComponent {
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
-    private readonly formBuilder: FormBuilder,
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
+    private readonly signUpForm: SignUpFormType,
   ) {
-    this.form = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required],
-      confirmPassword: ['', Validators.required],
-    });
+    this.form = this.signUpForm.createForm(null);
 
     effect(() => {
       const queryParams = this.queryParamMap();
@@ -78,25 +73,9 @@ export class SignUpComponent {
       }
     });
 
-    effect(() => {
-      const minScore = this.configService.config().passwordStrengthLevel;
-      const passwordControl = this.form.get('password');
-      const confirmControl = this.form.get('confirmPassword');
-
-      passwordControl?.setValidators([Validators.required, passwordStrengthValidator(minScore)]);
-      confirmControl?.setValidators([Validators.required, matchControlValidator('password')]);
-      passwordControl?.updateValueAndValidity({ emitEvent: false });
-      confirmControl?.updateValueAndValidity({ emitEvent: false });
+    configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
+      this.passwordStrength = strength;
     });
-
-    this.form
-      .get('password')
-      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        const passwordValue = typeof value === 'string' ? value : '';
-        this.passwordStrength = estimatePasswordStrength(passwordValue);
-        this.form.get('confirmPassword')?.updateValueAndValidity({ emitEvent: false });
-      });
   }
 
   get f() {
@@ -117,7 +96,7 @@ export class SignUpComponent {
       return;
     }
 
-    const { email, password } = this.form.value;
+    const { email, password } = this.signUpForm.toCreatePayload(this.form);
 
     this.isSubmitting = true;
     try {

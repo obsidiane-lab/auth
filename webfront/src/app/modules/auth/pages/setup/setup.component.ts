@@ -1,6 +1,6 @@
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { Component, DestroyRef, effect } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -8,11 +8,10 @@ import { SetupService } from '../../../../core/services/setup.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { estimatePasswordStrength } from '../../../../core/utils/password-strength.util';
-import { matchControlValidator, passwordStrengthValidator } from '../../utils/password-validators.util';
 import { applyFieldErrors, INITIAL_ADMIN_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
 import { HttpErrorResponse } from '@angular/common/http';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { configurePasswordForm } from '../../utils/password-form.util';
+import { SetupFormType, type SetupFormControls } from '../../forms/setup.form';
 
 @Component({
   selector: 'app-setup',
@@ -21,7 +20,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
   imports: [ReactiveFormsModule, ButtonComponent, NgIf, NgClass, NgFor, AngularSvgIconModule, FormStatusMessageComponent],
 })
 export class SetupComponent {
-  form: FormGroup;
+  form: FormGroup<SetupFormControls>;
   submitted = false;
   isSubmitting = false;
   returnUrl: string | null = null;
@@ -36,18 +35,14 @@ export class SetupComponent {
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
-    private readonly formBuilder: FormBuilder,
     private readonly setupService: SetupService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
+    private readonly setupForm: SetupFormType,
   ) {
-    this.form = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
-      password: ['', Validators.required],
-      confirmPassword: ['', Validators.required],
-    });
+    this.form = this.setupForm.createForm(null);
 
     effect(() => {
       this.returnUrl = this.queryParamMap().get('returnUrl');
@@ -56,25 +51,11 @@ export class SetupComponent {
     effect(() => {
       const config = this.configService.config();
       this.brandingName = config.brandingName;
-
-      const minScore = config.passwordStrengthLevel;
-      const passwordControl = this.form.get('password');
-      const confirmControl = this.form.get('confirmPassword');
-
-      passwordControl?.setValidators([Validators.required, passwordStrengthValidator(minScore)]);
-      confirmControl?.setValidators([Validators.required, matchControlValidator('password')]);
-      passwordControl?.updateValueAndValidity({ emitEvent: false });
-      confirmControl?.updateValueAndValidity({ emitEvent: false });
     });
 
-    this.form
-      .get('password')
-      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((value) => {
-        const passwordValue = typeof value === 'string' ? value : '';
-        this.passwordStrength = estimatePasswordStrength(passwordValue);
-        this.form.get('confirmPassword')?.updateValueAndValidity({ emitEvent: false });
-      });
+    configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
+      this.passwordStrength = strength;
+    });
   }
 
   get f() {
@@ -95,7 +76,7 @@ export class SetupComponent {
       return;
     }
 
-    const { email, password } = this.form.value;
+    const { email, password } = this.setupForm.toCreatePayload(this.form);
 
     this.isSubmitting = true;
 

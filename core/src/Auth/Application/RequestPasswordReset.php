@@ -9,6 +9,7 @@ use App\Shared\Mail\MailDispatchException;
 use App\Shared\Mail\MailerGateway;
 use App\Repository\UserRepository;
 use App\Setup\Application\InitialAdminManager;
+use App\Shared\Utils\EmailNormalizer;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use SymfonyCasts\Bundle\ResetPassword\Exception\ResetPasswordExceptionInterface;
@@ -22,6 +23,7 @@ final readonly class RequestPasswordReset
         private MailerGateway $mailer,
         private FrontendUrlBuilder $frontendUrlBuilder,
         private InitialAdminManager $initialAdminManager,
+        private EmailNormalizer $emailNormalizer,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_RESET_PASSWORD)%')]
         private string $resetPasswordTemplateId = 'resetpass',
         private LoggerInterface $logger,
@@ -37,7 +39,7 @@ final readonly class RequestPasswordReset
             throw new PasswordResetException('INITIAL_ADMIN_REQUIRED', 409);
         }
 
-        $normalizedEmail = trim(mb_strtolower((string) $email));
+        $normalizedEmail = $this->emailNormalizer->normalize($email);
         if ($normalizedEmail === '') {
             return;
         }
