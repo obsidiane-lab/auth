@@ -182,18 +182,18 @@ await client.auth.logout();
 
 // Inscription (CSRF requis)
 const registration: RegisterResponse = await client.auth.register({
-  email: 'user@example.com',
+  email: 'userexample.com',
   password: 'Secret123!',
 });
 
 // Demande de reset (CSRF requis)
-const forgot: PasswordForgotResponse = await client.auth.requestPasswordReset('user@example.com');
+const forgot: PasswordForgotResponse = await client.auth.requestPasswordReset('userexample.com');
 
 // Reset password (CSRF requis)
 await client.auth.resetPassword('<reset-token>', 'NewSecret123!');
 
 // Invitation (admin, CSRF requis)
-const inviteStatus: InviteStatusResponse = await client.auth.inviteUser('invitee@example.com');
+const inviteStatus: InviteStatusResponse = await client.auth.inviteUser('inviteeexample.com');
 
 // Compléter une invitation (public, CSRF requis)
 const completed: CompleteInviteResponse = await client.auth.completeInvite('token', 'Secret123!');
@@ -207,7 +207,7 @@ Endpoint :
 
 ```ts
 const input: InitialAdminInput = {
-  email: 'admin@example.com',
+  email: 'adminexample.com',
   password: 'Secret123!',
 };
 
@@ -228,7 +228,7 @@ Endpoints Api Platform :
 Le backend expose les ressources utilisateur au format **JSON-LD** (API Platform) :
 
 - une collection JSON-LD typée `Collection<UserRead>` ;
-- des items JSON-LD portant leurs métadonnées via `Item` (`@id`, `@type`, `@context`).
+- des items JSON-LD portant leurs métadonnées via `Item` (`id`, `type`, `context`).
 
 ```ts
 import type { Collection, UserRead } from '@obsidiane/auth-sdk';
@@ -237,7 +237,7 @@ import type { Collection, UserRead } from '@obsidiane/auth-sdk';
 const users: Collection<UserRead> = await client.users.list();
 
 // Accès aux métadonnées JSON-LD de la collection
-console.log(users['@id'], users.totalItems, users.view);
+console.log(users['id'], users.totalItems, users.view);
 
 // Détail des items JSON-LD
 const first: UserRead | undefined = users.member[0];
@@ -384,7 +384,7 @@ async function scheduleRefresh(client: AuthClient, exp: number) {
   }, delaySeconds * 1000);
 }
 
-const { exp } = await client.auth.login('user@example.com', 'Secret123!');
+const { exp } = await client.auth.login('userexample.com', 'Secret123!');
 scheduleRefresh(client, exp);
 ```
 

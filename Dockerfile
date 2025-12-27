@@ -42,10 +42,10 @@ RUN install-php-extensions pdo_mysql
 ###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
-COPY --link obsidiane/frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
-COPY --link --chmod=755 obsidiane/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY --link obsidiane/caddy/Caddyfile /etc/frankenphp/Caddyfile
-COPY --link obsidiane/caddy/webfront.prod.caddy /etc/frankenphp/webfront.caddy
+COPY --link @obsidiane/frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
+COPY --link --chmod=755 @obsidiane/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY --link @obsidiane/caddy/Caddyfile /etc/frankenphp/Caddyfile
+COPY --link @obsidiane/caddy/webfront.prod.caddy /etc/frankenphp/webfront.caddy
 
 ENTRYPOINT ["docker-entrypoint"]
 
@@ -66,7 +66,7 @@ RUN set -eux; \
 		xdebug \
 	;
 
-COPY --link obsidiane/frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
+COPY --link @obsidiane/frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
 
 CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
 
@@ -77,7 +77,7 @@ ENV APP_ENV=prod
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-COPY --link obsidiane/frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+COPY --link @obsidiane/frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 
 # prevent the reinstallation of vendors at every changes in the source code
 COPY --link core/composer.* core/symfony.* ./

@@ -131,7 +131,7 @@ curl -i \
   -c cookiejar.txt \
   -H 'Content-Type: application/json' \
   -H "csrf-token: $LOGIN_CSRF" \
-  -d '{"email":"user@example.com","password":"Secret123!"}' \
+  -d '{"email":"userexample.com","password":"Secret123!"}' \
   http://localhost:8000/api/auth/login
 
 # Profil courant
@@ -223,7 +223,7 @@ APP_DEFAULT_URI=https://${AUTH_HOST}
 
 APP_SECRET=change-me
 JWT_SECRET=change-me-too
-DATABASE_URL="mysql://app:!ChangeMe!@database:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
+DATABASE_URL="mysql://app:!ChangeMe!database:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
 
 JWT_ISSUER=https://${AUTH_HOST}
 JWT_AUDIENCE=core-api
@@ -291,7 +291,7 @@ Un bridge Angular peut être généré depuis la spec OpenAPI (API Platform) via
 make bridge
 ```
 
-La documentation d’usage et les bonnes pratiques frontend sont dans `docs/meridiane.md`.
+La documentation d’usage et les bonnes pratiques frontend sont dans `@obsidiane/docs/meridiane.md`.
 
 ---
 

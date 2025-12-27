@@ -88,7 +88,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 ## 5. Infra
 
-- Caddyfile unique dans `obsidiane/caddy/Caddyfile`, avec un snippet monté en `webfront.caddy` (dev/prod).
+- Caddyfile unique dans `@obsidiane/caddy/Caddyfile`, avec un snippet monté en `webfront.caddy` (dev/prod).
 - `compose.yaml` orchestre `core`, `webfront`, `database` (le core est l’entrypoint).
 
 ---

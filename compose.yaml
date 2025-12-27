@@ -38,9 +38,9 @@ services:
       API_DOCS_ENABLED: "1"
     volumes:
       - ./core:/app
-      - ./obsidiane/caddy/Caddyfile:/etc/frankenphp/Caddyfile:ro
-      - ./obsidiane/caddy/webfront.dev.caddy:/etc/frankenphp/webfront.caddy:ro
-      - ./obsidiane/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
+      - ./@obsidiane/caddy/Caddyfile:/etc/frankenphp/Caddyfile:ro
+      - ./@obsidiane/caddy/webfront.dev.caddy:/etc/frankenphp/webfront.caddy:ro
+      - ./@obsidiane/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
     depends_on:
       - database
       - webfront

@@ -27,27 +27,27 @@ DIST_DIR ?= dist
 bridge: bridge-openapi bridge-build bridge-install
 
 bridge-openapi:
-	@echo "🔄 Fetch OpenAPI spec from $(OPENAPI_URL)"
-	@curl --retry 10 --retry-delay 2 --retry-connrefused \
+	echo "🔄 Fetch OpenAPI spec from $(OPENAPI_URL)"
+	curl --retry 10 --retry-delay 2 --retry-connrefused \
 		--fail-with-body \
 		--write-out "\n→ HTTP_CODE=%{http_code}\n" \
 		"$(OPENAPI_URL)" \
 		-o "$(OPENAPI_SPEC)"
 
 bridge-build:
-	@echo "🏗️  Build $(NPM_PACKAGE_NAME) ($(APP_VERSION))"
-	@npx -y @obsidiane/meridiane@$(MERIDIANE_VERSION) build "$(NPM_PACKAGE_NAME)" \
+	echo "🏗️  Build $(NPM_PACKAGE_NAME) ($(APP_VERSION))"
+	npx -y @obsidiane/meridiane@$(MERIDIANE_VERSION) build "$(NPM_PACKAGE_NAME)" \
 		--version "$(APP_VERSION)" \
 		--spec "$(OPENAPI_SPEC)" \
 		$(MERIDIANE_FORMATS_ARG) \
 		$(MERIDIANE_PRESET_ARG)
 
 bridge-install:
-	@test -d "$(DIST_DIR)/$(LIB_NAME)" || { echo "Missing $(DIST_DIR)/$(LIB_NAME). Run 'make bridge-build' first."; exit 1; }
-	@echo "📦 Copy to $(FRONTEND_BRIDGE_DIR)"
-	@rm -rf "$(FRONTEND_BRIDGE_DIR)"
-	@mkdir -p "$(FRONTEND_BRIDGE_DIR)"
-	@cp -R "$(DIST_DIR)/$(LIB_NAME)/." "$(FRONTEND_BRIDGE_DIR)/"
+	test -d "$(DIST_DIR)/$(LIB_NAME)" || { echo "Missing $(DIST_DIR)/$(LIB_NAME). Run 'make bridge-build' first."; exit 1; }
+	echo "📦 Copy to $(FRONTEND_BRIDGE_DIR)"
+	rm -rf "$(FRONTEND_BRIDGE_DIR)"
+	mkdir -p "$(FRONTEND_BRIDGE_DIR)"
+	cp -R "$(DIST_DIR)/$(LIB_NAME)/." "$(FRONTEND_BRIDGE_DIR)/"
 
 bridge-clean:
-	@rm -rf "$(DIST_DIR)/$(LIB_NAME)" "$(OPENAPI_SPEC)" "$(FRONTEND_BRIDGE_DIR)"
+	rm -rf "$(DIST_DIR)/$(LIB_NAME)" "$(OPENAPI_SPEC)" "$(FRONTEND_BRIDGE_DIR)"
