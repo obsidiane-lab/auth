@@ -9,7 +9,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 - Exposer un backend **API-only** sous `/api` (plus de UI Twig/Vue).
 - Front Angular unique (dossier `/webfront`) qui sert `/login`, `/register`, `/reset-password`, `/reset-password/confirm`, `/verify-email`, `/invite/complete`, `/setup`.
 - Sessions supprimées: tout est stateless + cookies HttpOnly (JWT access + refresh).
-- CSRF stateless obligatoire via header `csrf-token` + contrôle Origin/Referer.
+- CSRF stateless obligatoire via cookie + header `csrf-token` (Same Origin).
 
 ---
 
@@ -41,7 +41,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 - `src/Auth/Application` : `RegisterUser`, `InviteUser`, `CompleteInvitation`, `RequestPasswordReset`, `ResetPassword`.
 - `src/Auth/Infrastructure/Security` : `TokenCookieFactory`, `EmailVerifier`, `UserChecker`, `JsonLoginFailureHandler`.
 - `src/Shared/Frontend/FrontendUrlBuilder.php` : construit les liens front (verify, reset, invite).
-- `src/Shared/Security` : `CsrfRequestValidator`, `PasswordStrengthChecker`.
+- `src/Shared/Security` : `PasswordStrengthChecker`.
 - `src/Shared/Response` : `ApiResponseFactory`, `UserPayloadFactory`.
 - `src/Setup/Application` : `InitialAdminManager`.
 - `src/Shared/Mail` : `MailerGateway`.
@@ -55,7 +55,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 ## 3. Parcours fonctionnels (API + Angular)
 
 ### 3.1 Login
-- Angular `/login` -> `POST /api/auth/login` (header `csrf-token`).
+- Angular `/login` -> `POST /api/auth/login` (cookie + header `csrf-token`).
 - Cookies: `__Secure-at` (access) + `__Host-rt` (refresh).
 
 ### 3.2 Register
@@ -82,7 +82,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 ## 4. Sécurité
 
 - JWT Lexik + Gesdinet refresh tokens.
-- CSRF stateless: header `csrf-token` + Origin/Referer allowlist (`ALLOWED_ORIGINS`).
+- CSRF stateless: cookie + header `csrf-token`, validation Same Origin.
 - Rate limiting: `login_throttling`.
 - Cookies: `__Secure-at` (SameSite lax, domaine partagé) + `__Host-rt` (SameSite strict, host-only).
 

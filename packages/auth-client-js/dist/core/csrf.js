@@ -12,6 +12,24 @@ export const defaultCsrfTokenGenerator = () => {
     return `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
 };
 /**
+ * Persist the stateless CSRF cookie for double-submit protection.
+ * The cookie name follows the Symfony stateless CSRF convention: <cookieName>_<token>=<cookieName>.
+ */
+export const persistCsrfCookie = (token, cookieName = 'csrf-token') => {
+    var _a;
+    if (typeof document === 'undefined') {
+        return;
+    }
+    const isSecure = typeof window !== 'undefined' && ((_a = window.location) === null || _a === void 0 ? void 0 : _a.protocol) === 'https:';
+    const prefix = isSecure ? '__Host-' : '';
+    const name = `${prefix}${cookieName}_${token}`;
+    const attributes = ['Path=/', 'SameSite=Strict'];
+    if (isSecure) {
+        attributes.push('Secure');
+    }
+    document.cookie = `${name}=${cookieName}; ${attributes.join('; ')}`;
+};
+/**
  * Resolve which CSRF token should be used for a request.
  * - `true`  => generate a fresh token
  * - string  => use the provided value

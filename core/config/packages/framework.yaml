@@ -7,7 +7,19 @@ framework:
         providers:
 
     csrf_protection:
-        enabled: false
+        stateless_token_ids:
+            - authenticate
+            - logout
+            - register
+            - invite_user
+            - invite_complete
+            - password_forgot
+            - password_reset
+            - initial_admin
+            - user_roles
+            - api_write
+        cookie_name: csrf-token
+        check_header: true
 
     session:
         enabled: false

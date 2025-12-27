@@ -1,6 +1,11 @@
 import { buildRequestHeaders } from './headers';
 import { decodeJsonResponse } from './response';
-import { defaultCsrfTokenGenerator, type CsrfTokenGenerator } from './csrf';
+import {
+  defaultCsrfTokenGenerator,
+  persistCsrfCookie,
+  resolveCsrfTokenValue,
+  type CsrfTokenGenerator,
+} from './csrf';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 
@@ -73,6 +78,11 @@ export class InternalHttpClient {
   async request<T>(method: HttpMethod, path: string, options: RequestOptions = {}): Promise<T> {
     const url = this.baseUrl + path;
 
+    const csrfToken = resolveCsrfTokenValue(options.csrf, this.csrfTokenGenerator);
+    if (csrfToken) {
+      persistCsrfCookie(csrfToken, this.csrfHeaderName);
+    }
+
     const headers = buildRequestHeaders(
       {
         defaultHeaders: this.defaultHeaders,
@@ -81,7 +91,7 @@ export class InternalHttpClient {
       },
       {
         requestHeaders: options.headers,
-        csrf: options.csrf,
+        csrf: csrfToken ?? options.csrf,
       },
     );
 

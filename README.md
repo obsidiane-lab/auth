@@ -32,7 +32,7 @@ protection **CSRF stateless** (Symfony).
 - Deux usages possibles :
   - UI Angular : `/login`, `/register`, `/reset-password`, `/reset-password/confirm`, `/verify-email`, `/invite/complete`, `/setup`.
   - API JSON : `/api/auth/...` pour front SPA, mobile, backends.
-- Sécurité intégrée : CSRF stateless (`csrf-token`), vérification d’email, rate limiting, redirections allowlistées.
+- Sécurité intégrée : CSRF stateless (cookie + header `csrf-token`), vérification d’email, rate limiting, redirections allowlistées.
 - Au premier démarrage, si aucun user n’existe, tout redirige vers `/setup` pour créer l’admin.
 - Interface et emails uniquement **en français**.
 
@@ -55,7 +55,7 @@ protection **CSRF stateless** (Symfony).
 - **Cookies & tokens**
   - `__Secure-at` : access token JWT (HttpOnly).
   - `__Host-rt` : refresh token opaque, single-use (HttpOnly).
-  - CSRF stateless : token aléatoire côté client dans l’en-tête `csrf-token` pour chaque requête sensible.
+  - CSRF stateless : token aléatoire côté client (cookie + header `csrf-token`) pour chaque requête sensible.
 
 ---
 
@@ -69,7 +69,7 @@ protection **CSRF stateless** (Symfony).
   - Stocké en base + cookie HttpOnly `__Host-rt` (host-only, single-use).
 
 - **CSRF stateless**
-  - Token aléatoire dans `csrf-token` + contrôle `Origin`/`Referer`.
+  - Double-submit cookie + header `csrf-token` et validation Same Origin.
 
 - **Vérification d’email**
   - L’inscription envoie un lien vers `/verify-email?...` (front), qui appelle `/api/auth/verify-email`.
@@ -127,11 +127,13 @@ php bin/console doctrine:migrations:migrate
 ```bash
 # Générer un token CSRF stateless côté client
 LOGIN_CSRF=$(php -r 'echo bin2hex(random_bytes(16));')
+CSRF_COOKIE="csrf-token_${LOGIN_CSRF}=csrf-token"
 
 # Login
 curl -i \
   -c cookiejar.txt \
   -H 'Content-Type: application/json' \
+  -H "Cookie: $CSRF_COOKIE" \
   -H "csrf-token: $LOGIN_CSRF" \
   -d '{"email":"userexample.com","password":"Secret123!"}' \
   http://localhost:8000/api/auth/login
@@ -172,12 +174,10 @@ Les payloads détaillés, codes de réponse et schémas sont disponibles dans `h
 Tous les endpoints sensibles (login, register, reset, logout, setup, invitation) utilisent une protection **CSRF stateless** :
 
 - Aucun token CSRF n’est stocké côté serveur.
-- Le client génère un token aléatoire par requête et le met dans l’en-tête `csrf-token`.
-- Le backend contrôle également l’origine (`Origin` ou `Referer`) via `ALLOWED_ORIGINS`.
-
-Pour les SPA sur un autre domaine (ex. `app.example.com` → `auth.example.com`) :
-
-- la combinaison `csrf-token` + CORS (`ALLOWED_ORIGINS`) suffit, sans cookie CSRF ni endpoint dédié.
+- Le client génère un token aléatoire par requête, le met dans l’en-tête `csrf-token`
+  **et** crée un cookie `csrf-token_<token>=csrf-token`.
+- Le backend valide Same Origin (Origin/Referer) + double-submit cookie/header.
+- Cela implique d’utiliser un reverse-proxy pour servir `/api` et le front sous le même domaine.
 
 ---
 
@@ -192,7 +192,7 @@ Pour les SPA sur un autre domaine (ex. `app.example.com` → `auth.example.com`)
 
 ### CSRF
 
-Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token`. Reportez-vous à la section [CSRF stateless](#csrf-stateless) pour le protocole détaillé et un exemple de génération côté client.
+Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token` **et** le cookie associé. Reportez-vous à la section [CSRF stateless](#csrf-stateless) pour le protocole détaillé et un exemple de génération côté client.
 
 ### Refresh silencieux
 
@@ -279,7 +279,7 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
 - Le script est interactif : il te demande la base URL, les emails/mots de passe à utiliser pour l’admin, l’utilisateur d’inscription et l’utilisateur invité.
 - À chaque étape nécessitant une action sur l’email (clic sur `/verify-email?...`, `/reset-password/confirm?token=...`, `/invite/complete?...`), il affiche un message du type :
   - `Attente de confirmation d’email… Ouvrez Maildev/Notifuse et cliquez sur le lien`, puis attend `ENTER`.
-- Il utilise la même mécanique CSRF stateless que le reste du projet (`csrf-token` + cookies).
+- Il utilise la même mécanique CSRF stateless que le reste du projet (cookie + header `csrf-token`).
 
 ### Client JS – `@obsidiane/auth-sdk`
 

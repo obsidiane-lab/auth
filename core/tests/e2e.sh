@@ -78,11 +78,24 @@ generate_csrf() {
   php -r 'echo bin2hex(random_bytes(16));'
 }
 
+build_csrf_cookie() {
+  local token="$1"
+  local prefix=""
+
+  if [[ "${BASE_URL}" == https://* ]]; then
+    prefix="__Host-"
+  fi
+
+  printf '%s%s_%s=%s' "${prefix}" "csrf-token" "${token}" "csrf-token"
+}
+
 step_initial_admin() {
   info "Ensuring initial admin exists..."
   csrf=$(generate_csrf)
+  csrf_cookie=$(build_csrf_cookie "${csrf}")
   body_file="$(mktemp)"
   http_code=$(curl -s -o "${body_file}" -w '%{http_code}' \
+    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
@@ -103,8 +116,10 @@ step_initial_admin() {
 step_login_admin() {
   info "Logging in as admin: ${ADMIN_EMAIL}"
   csrf=$(generate_csrf)
+  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
     -c "${ADMIN_COOKIES}" \
+    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
@@ -125,8 +140,10 @@ step_refresh_admin() {
 step_logout_admin() {
   info "Logging out admin"
   csrf=$(generate_csrf)
+  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
+    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
@@ -136,7 +153,9 @@ step_logout_admin() {
 step_register_user() {
   info "Registering user: ${REGISTER_EMAIL}"
   csrf=$(generate_csrf)
+  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
+    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
@@ -151,7 +170,9 @@ step_register_user() {
 step_password_reset_flow() {
   info "Requesting password reset for: ${REGISTER_EMAIL}"
   csrf=$(generate_csrf)
+  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
+    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
@@ -208,9 +229,11 @@ PY
   fi
 
   csrf=$(generate_csrf)
+  csrf_cookie=$(build_csrf_cookie "${csrf}")
   info "POST /api/users/${user_id}/roles with ROLE_ADMIN"
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
+    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \
@@ -228,8 +251,10 @@ step_invite_user() {
   step_login_admin
 
   csrf=$(generate_csrf)
+  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
+    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -H "csrf-token: ${csrf}" \

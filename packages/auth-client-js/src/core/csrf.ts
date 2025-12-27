@@ -1,4 +1,5 @@
 export type CsrfTokenGenerator = () => string;
+export type CsrfCookieWriter = (token: string, cookieName?: string) => void;
 
 /**
  * Default CSRF token generator used in browsers.
@@ -13,6 +14,27 @@ export const defaultCsrfTokenGenerator: CsrfTokenGenerator = () => {
   }
 
   return `${Math.random().toString(36).slice(2)}${Date.now().toString(36)}`;
+};
+
+/**
+ * Persist the stateless CSRF cookie for double-submit protection.
+ * The cookie name follows the Symfony stateless CSRF convention: <cookieName>_<token>=<cookieName>.
+ */
+export const persistCsrfCookie: CsrfCookieWriter = (token, cookieName = 'csrf-token') => {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  const isSecure = typeof window !== 'undefined' && window.location?.protocol === 'https:';
+  const prefix = isSecure ? '__Host-' : '';
+  const name = `${prefix}${cookieName}_${token}`;
+  const attributes = ['Path=/', 'SameSite=Strict'];
+
+  if (isSecure) {
+    attributes.push('Secure');
+  }
+
+  document.cookie = `${name}=${cookieName}; ${attributes.join('; ')}`;
 };
 
 /**
@@ -35,4 +57,3 @@ export const resolveCsrfTokenValue = (
 
   return undefined;
 };
-

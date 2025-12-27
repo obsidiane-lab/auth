@@ -1,6 +1,6 @@
 import { buildRequestHeaders } from './headers';
 import { decodeJsonResponse } from './response';
-import { defaultCsrfTokenGenerator } from './csrf';
+import { defaultCsrfTokenGenerator, persistCsrfCookie, resolveCsrfTokenValue, } from './csrf';
 /**
  * Low-level HTTP client used by the SDK.
  * Delegates CSRF generation, header construction and response decoding
@@ -30,13 +30,17 @@ export class InternalHttpClient {
     }
     async request(method, path, options = {}) {
         const url = this.baseUrl + path;
+        const csrfToken = resolveCsrfTokenValue(options.csrf, this.csrfTokenGenerator);
+        if (csrfToken) {
+            persistCsrfCookie(csrfToken, this.csrfHeaderName);
+        }
         const headers = buildRequestHeaders({
             defaultHeaders: this.defaultHeaders,
             csrfHeaderName: this.csrfHeaderName,
             csrfTokenGenerator: this.csrfTokenGenerator,
         }, {
             requestHeaders: options.headers,
-            csrf: options.csrf,
+            csrf: csrfToken !== null && csrfToken !== void 0 ? csrfToken : options.csrf,
         });
         let body;
         if (options.json !== undefined) {

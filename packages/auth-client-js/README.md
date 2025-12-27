@@ -3,7 +3,7 @@
 SDK JavaScript/TypeScript pour consommer l’API Obsidiane Auth depuis un navigateur :
 
 - gère automatiquement les **cookies** (`__Secure-at`, `__Host-rt`) via `fetch` + `credentials: 'include'` ;
-- génère et envoie un **token CSRF stateless** dans l’en‑tête `csrf-token` pour les endpoints sensibles ;
+- génère un **token CSRF stateless** par requête et le transmet en **cookie + en‑tête** `csrf-token` pour les endpoints sensibles ;
 - expose des **sous‑clients dédiés** (`auth`, `users`, `invites`, `setup`) avec une méthode par endpoint ;
 - fournit des **types TypeScript** et une gestion d’erreurs structurée (`ApiError`).
 
@@ -59,7 +59,8 @@ ou via un script dans le `package.json` racine :
 - Aucun token CSRF n’est généré par le backend.
 - Le SDK doit :
   - générer un jeton aléatoire **par requête sensible** ;
-  - l’envoyer dans l’en‑tête `csrf-token`.
+  - l’envoyer dans l’en‑tête `csrf-token` ;
+  - poser le cookie `csrf-token_<token>=csrf-token` (double-submit).
 - Ce comportement est intégré dans le client HTTP :
   - `csrf: true` dans les options de requête → génération automatique d’un token ;
   - `csrf: 'valeur'` → utilisation d’un token fourni ;
