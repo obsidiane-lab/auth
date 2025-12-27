@@ -1,5 +1,5 @@
 import { NgIf } from '@angular/common';
-import { Component, OnInit, effect } from '@angular/core';
+import { Component, effect } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -11,16 +11,14 @@ import { toSignal } from '@angular/core/rxjs-interop';
   styleUrls: ['./verify-email.component.css'],
   imports: [NgIf, RouterLink, ButtonComponent],
 })
-export class VerifyEmailComponent implements OnInit {
+export class VerifyEmailComponent {
   status: 'loading' | 'success' | 'error' = 'loading';
   message = 'Vérification en cours...';
   returnUrl: string | null = null;
   private readonly queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });
   private lastSignature: string | null = null;
 
-  constructor(private readonly route: ActivatedRoute, private readonly authService: AuthService) {}
-
-  ngOnInit(): void {
+  constructor(private readonly route: ActivatedRoute, private readonly authService: AuthService) {
     effect(() => {
       const params = this.queryParams() as {
         id?: string;

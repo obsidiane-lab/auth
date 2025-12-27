@@ -1,5 +1,5 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit, effect } from '@angular/core';
+import { Component, effect } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
@@ -13,8 +13,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
   styleUrls: ['./sign-in.component.css'],
   imports: [FormsModule, ReactiveFormsModule, RouterLink, AngularSvgIconModule, NgIf, ButtonComponent, NgClass],
 })
-export class SignInComponent implements OnInit {
-  form!: FormGroup;
+export class SignInComponent {
+  form: FormGroup;
   submitted = false;
   passwordTextType!: boolean;
   isSubmitting = false;
@@ -28,9 +28,7 @@ export class SignInComponent implements OnInit {
     private readonly _router: Router,
     private readonly _route: ActivatedRoute,
     private readonly authService: AuthService,
-  ) {}
-
-  ngOnInit(): void {
+  ) {
     this.form = this._formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],

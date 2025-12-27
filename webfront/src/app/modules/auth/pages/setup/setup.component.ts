@@ -1,5 +1,5 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit, effect } from '@angular/core';
+import { Component, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -12,8 +12,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
   styleUrls: ['./setup.component.css'],
   imports: [ReactiveFormsModule, ButtonComponent, NgIf, NgClass],
 })
-export class SetupComponent implements OnInit {
-  form!: FormGroup;
+export class SetupComponent {
+  form: FormGroup;
   submitted = false;
   isSubmitting = false;
   errorMessage = '';
@@ -25,9 +25,7 @@ export class SetupComponent implements OnInit {
     private readonly setupService: SetupService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
-  ) {}
-
-  ngOnInit(): void {
+  ) {
     this.form = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
       password: ['', Validators.required],

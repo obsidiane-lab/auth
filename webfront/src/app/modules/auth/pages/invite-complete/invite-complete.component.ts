@@ -1,5 +1,5 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit, effect } from '@angular/core';
+import { Component, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -12,8 +12,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
   styleUrls: ['./invite-complete.component.css'],
   imports: [ReactiveFormsModule, ButtonComponent, NgIf, NgClass],
 })
-export class InviteCompleteComponent implements OnInit {
-  form!: FormGroup;
+export class InviteCompleteComponent {
+  form: FormGroup;
   submitted = false;
   isSubmitting = false;
   errorMessage = '';
@@ -27,9 +27,7 @@ export class InviteCompleteComponent implements OnInit {
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
-  ) {}
-
-  ngOnInit(): void {
+  ) {
     this.form = this.formBuilder.group({
       password: ['', Validators.required],
       confirmPassword: ['', Validators.required],
