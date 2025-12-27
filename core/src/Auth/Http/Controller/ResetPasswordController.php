@@ -8,10 +8,12 @@ use App\Auth\Domain\Exception\PasswordResetException;
 use App\Auth\Http\Dto\PasswordForgotInput;
 use App\Auth\Http\Dto\PasswordResetInput;
 use App\Shared\Response\ApiResponseFactory;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
+#[AsController]
 final class ResetPasswordController extends AbstractController
 {
     public function __construct(

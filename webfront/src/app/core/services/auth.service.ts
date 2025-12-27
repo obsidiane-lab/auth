@@ -54,4 +54,8 @@ export class AuthService {
   async verifyEmail(params: { id: string; token: string; expires: string; _hash: string }): Promise<void> {
     await firstValueFrom(this.authRepository.verifyEmail$(params));
   }
+
+  async invitePreview(token: string): Promise<{ email?: string | null; accepted?: boolean; expired?: boolean }> {
+    return firstValueFrom(this.authRepository.invitePreview$(token));
+  }
 }

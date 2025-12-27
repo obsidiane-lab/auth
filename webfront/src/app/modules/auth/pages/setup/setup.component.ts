@@ -1,23 +1,38 @@
-import { NgClass, NgIf } from '@angular/common';
-import { Component, effect } from '@angular/core';
+import { NgClass, NgFor, NgIf } from '@angular/common';
+import { Component, DestroyRef, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { SetupService } from '../../../../core/services/setup.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
+import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
+import { estimatePasswordStrength } from '../../../../core/utils/password-strength.util';
+import { matchControlValidator, passwordStrengthValidator } from '../../utils/password-validators.util';
+import { applyFieldErrors, INITIAL_ADMIN_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
+import { HttpErrorResponse } from '@angular/common/http';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-setup',
   templateUrl: './setup.component.html',
   styleUrls: ['./setup.component.css'],
-  imports: [ReactiveFormsModule, ButtonComponent, NgIf, NgClass],
+  imports: [ReactiveFormsModule, ButtonComponent, NgIf, NgClass, NgFor, AngularSvgIconModule, FormStatusMessageComponent],
 })
 export class SetupComponent {
   form: FormGroup;
   submitted = false;
   isSubmitting = false;
-  errorMessage = '';
   returnUrl: string | null = null;
+  passwordStrength = 0;
+  passwordVisible = false;
+  brandingName = '';
+  apiFieldErrors: Partial<Record<'email' | 'password' | 'confirmPassword', string>> = {};
+  status = {
+    errorMessage: '',
+    successMessage: '',
+  };
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
@@ -25,6 +40,8 @@ export class SetupComponent {
     private readonly setupService: SetupService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
+    private readonly configService: FrontendConfigService,
+    private readonly destroyRef: DestroyRef,
   ) {
     this.form = this.formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -35,39 +52,89 @@ export class SetupComponent {
     effect(() => {
       this.returnUrl = this.queryParamMap().get('returnUrl');
     });
+
+    effect(() => {
+      const config = this.configService.config();
+      this.brandingName = config.brandingName;
+
+      const minScore = config.passwordStrengthLevel;
+      const passwordControl = this.form.get('password');
+      const confirmControl = this.form.get('confirmPassword');
+
+      passwordControl?.setValidators([Validators.required, passwordStrengthValidator(minScore)]);
+      confirmControl?.setValidators([Validators.required, matchControlValidator('password')]);
+      passwordControl?.updateValueAndValidity({ emitEvent: false });
+      confirmControl?.updateValueAndValidity({ emitEvent: false });
+    });
+
+    this.form
+      .get('password')
+      ?.valueChanges.pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((value) => {
+        const passwordValue = typeof value === 'string' ? value : '';
+        this.passwordStrength = estimatePasswordStrength(passwordValue);
+        this.form.get('confirmPassword')?.updateValueAndValidity({ emitEvent: false });
+      });
   }
 
   get f() {
     return this.form.controls;
   }
 
+  togglePasswordVisibility(): void {
+    this.passwordVisible = !this.passwordVisible;
+  }
+
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessage = '';
+    this.status.errorMessage = '';
+    this.status.successMessage = '';
+    this.apiFieldErrors = {};
 
     if (this.form.invalid) {
       return;
     }
 
-    const { email, password, confirmPassword } = this.form.value;
-    if (password !== confirmPassword) {
-      this.errorMessage = 'Les mots de passe ne correspondent pas.';
-      return;
-    }
+    const { email, password } = this.form.value;
 
     this.isSubmitting = true;
 
     try {
       await this.setupService.createInitialAdmin(email, password);
-      const queryParams: { status?: string; returnUrl?: string } = { status: 'setup' };
-      if (this.returnUrl) {
-        queryParams.returnUrl = this.returnUrl;
-      }
-      void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
-    } catch {
-      this.errorMessage = 'Impossible de créer l’administrateur.';
+      this.status.successMessage = 'Administrateur créé. Vous pouvez maintenant vous connecter.';
+      window.setTimeout(() => {
+        const queryParams: { status?: string; returnUrl?: string } = { status: 'setup' };
+        if (this.returnUrl) {
+          queryParams.returnUrl = this.returnUrl;
+        }
+        void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
+      }, 500);
+    } catch (error) {
+      this.handleError(error);
     } finally {
       this.isSubmitting = false;
     }
+  }
+
+  private handleError(error: unknown): void {
+    if (error instanceof HttpErrorResponse) {
+      const payload = (error.error ?? null) as { error?: string; message?: string; details?: Record<string, string> } | null;
+      const fieldApplied = applyFieldErrors(
+        payload,
+        INITIAL_ADMIN_ERROR_MESSAGES,
+        { email: 'email', plainPassword: 'password', password: 'password' },
+        (field, message) => {
+          this.apiFieldErrors[field as 'email' | 'password' | 'confirmPassword'] = message;
+        },
+        'email',
+      );
+      if (!fieldApplied) {
+        this.status.errorMessage =
+          resolveApiErrorMessage(payload, INITIAL_ADMIN_ERROR_MESSAGES) ?? INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN'];
+      }
+      return;
+    }
+
+    this.status.errorMessage = INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN'];
   }
 }

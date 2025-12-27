@@ -69,4 +69,12 @@ export class AuthRepository {
       query: params,
     });
   }
+
+  invitePreview$(token: string): Observable<{ email?: string | null; accepted?: boolean; expired?: boolean }> {
+    return this.bridge.request$<{ email?: string | null; accepted?: boolean; expired?: boolean }>({
+      method: 'GET',
+      url: '/auth/invite/preview',
+      query: { token },
+    });
+  }
 }

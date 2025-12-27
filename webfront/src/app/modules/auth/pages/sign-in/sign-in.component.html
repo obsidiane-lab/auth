@@ -1,109 +1,111 @@
-<!-- login form -->
-<form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
-  <div class="text-center">
-    <h2 class="text-foreground mb-1 text-3xl font-semibold">Hello Again <span class="text-primary">!</span></h2>
-    <p class="text-muted-foreground text-sm">Enter your credential to access your account.</p>
-  </div>
-
-  <div class="space-y-3 text-left">
-    <div class="form__group">
-      <div class="relative">
-        <input
-          type="text"
-          id="email"
-          [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
-          class="peer block"
-          placeholder=" "
-          formControlName="email" />
-        <label
-          for="email"
-          [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }"
-          class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
-          Email address
-        </label>
+<app-already-authenticated [redirectTarget]="redirectTarget">
+  <form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
+    <div class="space-y-4">
+      <div *ngIf="flashMessage" class="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
+        <div class="flex items-start justify-between gap-4">
+          <span>{{ flashMessage }}</span>
+          <button
+            type="button"
+            class="text-emerald-700 transition hover:text-emerald-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+            aria-label="Close"
+            (click)="flashMessage = ''"
+          >
+            &times;
+          </button>
+        </div>
       </div>
-      <div *ngIf="submitted && f['email'].errors" class="is__invalid-error">
-        <div *ngIf="f['email'].errors['required']">Required field</div>
-        <div *ngIf="f['email'].errors['email']">Email must be an email address valid</div>
+
+      <div class="text-center">
+        <h2 class="text-foreground mb-1 text-3xl font-semibold">
+          Ravi de vous revoir <span class="text-primary">!</span>
+        </h2>
+        <p class="text-muted-foreground text-sm">Entrez vos identifiants pour accéder à votre compte.</p>
       </div>
     </div>
 
-    <div class="form__group">
-      <div class="relative">
-        <input
-          [type]="passwordTextType ? 'text' : 'password'"
-          id="password"
-          [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
-          class="peer block"
-          placeholder=" "
-          formControlName="password" />
-        <label
-          for="password"
-          [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }"
-          class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
-          Password
-        </label>
-        <span
-          class="text-muted-foreground absolute top-2 cursor-pointer ltr:right-3 rtl:left-3"
-          (click)="togglePasswordTextType()">
-          <svg-icon
-            [src]="
-              !passwordTextType
-                ? 'assets/icons/heroicons/outline/eye-off.svg'
-                : 'assets/icons/heroicons/outline/eye.svg'
-            "
-            [svgClass]="'h-5 w-5'">
-          </svg-icon>
-        </span>
+    <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
+    <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
+    <app-form-status-message *ngIf="status.infoMessage" kind="info" [message]="status.infoMessage"></app-form-status-message>
+
+    <div class="space-y-3 text-left">
+      <div class="form__group">
+        <div class="form__field">
+          <input
+            id="login-email"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
+            class="form__input peer"
+            placeholder=" "
+            formControlName="email"
+            [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
+          />
+          <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="login-email">
+            Adresse email
+          </label>
+        </div>
+        <p *ngIf="submitted && f['email'].errors" class="is__invalid-error">
+          <span *ngIf="f['email'].errors['required']">Identifiants requis.</span>
+          <span *ngIf="f['email'].errors['email']">Requête invalide.</span>
+        </p>
       </div>
-      <div *ngIf="submitted && f['password'].errors" class="is__invalid-error">
-        <div *ngIf="f['password'].errors['required']">Required field</div>
+
+      <div class="form__group">
+        <div class="form__field">
+          <input
+            id="login-password"
+            [type]="passwordTextType ? 'text' : 'password'"
+            autocomplete="current-password"
+            class="form__input peer pr-12"
+            placeholder=" "
+            formControlName="password"
+            [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
+          />
+          <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="login-password">
+            Mot de passe
+          </label>
+          <button type="button" class="form__toggle" aria-label="Afficher ou masquer le mot de passe" [attr.aria-pressed]="passwordTextType" (click)="togglePasswordTextType()">
+            <svg-icon
+              [src]="!passwordTextType ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
+              [svgClass]="'h-5 w-5'"
+            ></svg-icon>
+          </button>
+        </div>
+        <p *ngIf="submitted && f['password'].errors" class="is__invalid-error">Identifiants requis.</p>
       </div>
     </div>
-  </div>
 
-  <div class="mb-2 flex items-center justify-between space-x-3">
-    <div class="flex items-center">
-      <input id="remember-me" name="remember-me" type="checkbox" />
-      <label for="remember-me" class="text-muted-foreground ml-2 block text-sm"> Remember me </label>
+    <div class="mb-2 flex items-center justify-end">
+      <app-button
+        routerLink="/reset-password"
+        [queryParams]="returnUrl ? { returnUrl } : null"
+        impact="none"
+        tone="primary"
+        shape="rounded"
+        size="small"
+      >
+        Mot de passe oublié ?
+      </app-button>
     </div>
 
-    <app-button
-      routerLink="/reset-password"
-      [queryParams]="returnUrl ? { returnUrl } : null"
-      impact="none"
-      tone="primary"
-      shape="rounded"
-      size="small">
-      Forgot your password?
-    </app-button>
-  </div>
+    <div>
+      <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting">
+        Se connecter
+      </app-button>
+    </div>
 
-  <div *ngIf="successMessage" class="text-green-600 text-sm">
-    {{ successMessage }}
-  </div>
-  <div *ngIf="errorMessage" class="text-destructive text-sm">
-    {{ errorMessage }}
-  </div>
-
-  <!-- Submit Button -->
-  <div>
-    <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting">
-      Sign in
-    </app-button>
-  </div>
-
-  <!-- Sign-up -->
-  <div class="text-muted-foreground flex items-center text-sm">
-    Not a Member yet?
-    <app-button
-      routerLink="/register"
-      [queryParams]="returnUrl ? { returnUrl } : null"
-      impact="none"
-      tone="primary"
-      shape="rounded"
-      size="small">
-      Sign up
-    </app-button>
-  </div>
-</form>
+    <div *ngIf="canRegister" class="text-muted-foreground flex items-center text-sm">
+      Pas encore membre ?
+      <app-button
+        routerLink="/register"
+        [queryParams]="returnUrl ? { returnUrl } : null"
+        impact="none"
+        tone="primary"
+        shape="rounded"
+        size="small"
+      >
+        Inscrivez-vous
+      </app-button>
+    </div>
+  </form>
+</app-already-authenticated>

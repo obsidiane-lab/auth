@@ -6,21 +6,42 @@ import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
+import { resolveRedirectTarget, isInternalPath } from '../../../../core/utils/redirect-policy.util';
+import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
+import { AlreadyAuthenticatedComponent } from '../../components/already-authenticated/already-authenticated.component';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-sign-in',
   templateUrl: './sign-in.component.html',
   styleUrls: ['./sign-in.component.css'],
-  imports: [FormsModule, ReactiveFormsModule, RouterLink, AngularSvgIconModule, NgIf, ButtonComponent, NgClass],
+  imports: [
+    FormsModule,
+    ReactiveFormsModule,
+    RouterLink,
+    AngularSvgIconModule,
+    NgIf,
+    ButtonComponent,
+    NgClass,
+    FormStatusMessageComponent,
+    AlreadyAuthenticatedComponent,
+  ],
 })
 export class SignInComponent {
   form: FormGroup;
   submitted = false;
-  passwordTextType!: boolean;
+  passwordTextType = false;
   isSubmitting = false;
-  errorMessage = '';
-  successMessage = '';
   returnUrl: string | null = null;
+  redirectTarget: string | null = null;
+  canRegister = true;
+  flashMessage = '';
+  status = {
+    errorMessage: '',
+    successMessage: '',
+    infoMessage: '',
+  };
   private readonly queryParamMap = toSignal(this._route.queryParamMap, { initialValue: this._route.snapshot.queryParamMap });
 
   constructor(
@@ -28,6 +49,7 @@ export class SignInComponent {
     private readonly _router: Router,
     private readonly _route: ActivatedRoute,
     private readonly authService: AuthService,
+    private readonly configService: FrontendConfigService,
   ) {
     this.form = this._formBuilder.group({
       email: ['', [Validators.required, Validators.email]],
@@ -40,8 +62,24 @@ export class SignInComponent {
       if (email && !this.form.get('email')?.value) {
         this.form.patchValue({ email });
       }
+
       this.returnUrl = this.normalizeReturnUrl(queryParams.get('returnUrl'));
-      this.successMessage = this.getStatusMessage(queryParams.get('status'));
+
+      const config = this.configService.config();
+      this.canRegister = config.registrationEnabled;
+
+      const redirectUri = queryParams.get('redirect_uri');
+      this.redirectTarget = resolveRedirectTarget(
+        redirectUri,
+        config.frontendRedirectAllowlist,
+        config.frontendDefaultRedirect,
+      );
+
+      if (!this.redirectTarget && this.returnUrl) {
+        this.redirectTarget = this.returnUrl;
+      }
+
+      this.flashMessage = this.getStatusMessage(queryParams.get('status'));
     });
   }
 
@@ -55,8 +93,10 @@ export class SignInComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessage = '';
-    this.successMessage = '';
+    this.status.errorMessage = '';
+    this.status.successMessage = '';
+    this.status.infoMessage = '';
+    this.flashMessage = '';
     const { email, password } = this.form.value;
 
     if (this.form.invalid) {
@@ -66,13 +106,25 @@ export class SignInComponent {
     this.isSubmitting = true;
     try {
       await this.authService.login(email, password);
-      if (this.returnUrl) {
-        void this._router.navigateByUrl(this.returnUrl, { replaceUrl: true });
-        return;
-      }
-      void this._router.navigate(['/login'], { queryParams: { status: 'logged-in' }, replaceUrl: true });
-    } catch {
-      this.errorMessage = 'Identifiants invalides ou accès refusé.';
+      this.status.successMessage = 'Authentification réussie. Redirection en cours...';
+      window.setTimeout(() => {
+        this.status.infoMessage = 'Redirection...';
+      }, 350);
+
+      window.setTimeout(() => {
+        if (this.redirectTarget) {
+          if (isInternalPath(this.redirectTarget)) {
+            void this._router.navigateByUrl(this.redirectTarget, { replaceUrl: true });
+          } else if (typeof window !== 'undefined') {
+            window.location.assign(this.redirectTarget);
+          }
+          return;
+        }
+
+        void this._router.navigate(['/login'], { queryParams: { status: 'logged-in' }, replaceUrl: true });
+      }, 1000);
+    } catch (error) {
+      this.status.errorMessage = this.resolveErrorMessage(error);
     } finally {
       this.isSubmitting = false;
     }
@@ -107,5 +159,22 @@ export class SignInComponent {
       default:
         return '';
     }
+  }
+
+  private resolveErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      const payload = error.error as { message?: string } | null;
+      if (payload?.message) {
+        return payload.message;
+      }
+      if (error.status === 401) {
+        return 'Identifiants invalides.';
+      }
+      if (error.status === 429) {
+        return 'Trop de tentatives. Réessayez plus tard.';
+      }
+    }
+
+    return 'Impossible de vous connecter pour le moment.';
   }
 }

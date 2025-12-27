@@ -1,33 +1,32 @@
 import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { catchError, throwError } from 'rxjs';
+import { inject } from '@angular/core';
 import { environment } from '../../../environments/environment';
 import { normalizeApiBaseUrl, resolveApiBaseUrl } from '../api-base-url';
+import { FrontendConfigService } from '../services/frontend-config.service';
 
 const CSRF_RETRY = new HttpContextToken<boolean>(() => false);
 const CSRF_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
-const CSRF_COOKIE_NAME = 'csrf-token';
-
 function generateCsrfToken(): string {
   const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
   return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-function persistCsrfCookie(token: string): void {
+function persistCsrfCookie(cookieName: string, token: string): void {
   if (typeof document === 'undefined') {
     return;
   }
 
   const isSecure = typeof window !== 'undefined' && window.location?.protocol === 'https:';
-  const prefix = isSecure ? '__Host-' : '';
-  const cookieName = `${prefix}${CSRF_COOKIE_NAME}_${token}`;
+  const resolvedName = cookieName;
   const attributes = ['Path=/', 'SameSite=Strict'];
 
   if (isSecure) {
     attributes.push('Secure');
   }
 
-  document.cookie = `${cookieName}=${CSRF_COOKIE_NAME}; ${attributes.join('; ')}`;
+  document.cookie = `${resolvedName}=${token}; ${attributes.join('; ')}`;
 }
 
 const rawApiBaseUrl = normalizeApiBaseUrl(environment.apiBaseUrl);
@@ -53,6 +52,11 @@ function shouldAttachCsrf(url: string, method: string): boolean {
 }
 
 export const csrfInterceptor: HttpInterceptorFn = (req, next) => {
+  const configService = inject(FrontendConfigService);
+  const config = configService.config();
+  const csrfCookieName = config.csrfCookieName || 'csrf-token';
+  const csrfHeaderName = config.csrfHeaderName || 'csrf-token';
+
   if (!isApiRequest(req.url)) {
     return next(req);
   }
@@ -60,11 +64,11 @@ export const csrfInterceptor: HttpInterceptorFn = (req, next) => {
   const needsCsrf = shouldAttachCsrf(req.url, req.method);
   const csrfToken = needsCsrf ? generateCsrfToken() : undefined;
   if (csrfToken) {
-    persistCsrfCookie(csrfToken);
+    persistCsrfCookie(csrfCookieName, csrfToken);
   }
   const baseRequest = req.clone({
     withCredentials: true,
-    ...(csrfToken ? { setHeaders: { 'csrf-token': csrfToken } } : {}),
+    ...(csrfToken ? { setHeaders: { [csrfHeaderName]: csrfToken } } : {}),
   });
 
   return next(baseRequest).pipe(
@@ -74,9 +78,9 @@ export const csrfInterceptor: HttpInterceptorFn = (req, next) => {
       }
 
       const retryToken = generateCsrfToken();
-      persistCsrfCookie(retryToken);
+      persistCsrfCookie(csrfCookieName, retryToken);
       const retryRequest = baseRequest.clone({
-        setHeaders: { 'csrf-token': retryToken },
+        setHeaders: { [csrfHeaderName]: retryToken },
         context: baseRequest.context.set(CSRF_RETRY, true),
       });
 

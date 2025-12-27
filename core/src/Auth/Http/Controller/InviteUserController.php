@@ -8,11 +8,13 @@ use App\Auth\Http\Dto\InviteUserInput;
 use App\Shared\Mail\MailDispatchException;
 use App\Shared\Response\ApiResponseFactory;
 use App\Setup\Application\InitialAdminManager;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
+#[AsController]
 #[IsGranted('ROLE_ADMIN')]
 final class InviteUserController extends AbstractController
 {

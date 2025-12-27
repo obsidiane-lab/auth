@@ -20,18 +20,6 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    App\Auth\Http\Controller\:
-        resource: '../src/Auth/Http/Controller/'
-        tags: ['controller.service_arguments']
-
-    App\Setup\Http\Controller\:
-        resource: '../src/Setup/Http/Controller/'
-        tags: ['controller.service_arguments']
-
-    App\User\Http\Controller\:
-        resource: '../src/User/Http/Controller/'
-        tags: ['controller.service_arguments']
-
     App\Repository\RefreshTokenRepository:
         factory: ['@doctrine.orm.entity_manager', getRepository]
         arguments:

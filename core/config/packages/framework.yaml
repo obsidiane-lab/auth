@@ -18,8 +18,8 @@ framework:
             - initial_admin
             - user_roles
             - api_write
-        cookie_name: csrf-token
-        check_header: true
+        cookie_name: '%env(string:CSRF_COOKIE_NAME)%'
+        check_header: '%env(bool:CSRF_CHECK_HEADER)%'
 
     session:
         enabled: false

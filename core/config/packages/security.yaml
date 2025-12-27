@@ -34,8 +34,10 @@ security:
         - { path: ^/api/auth/(register|logout)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/auth/password/(forgot|reset)$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/auth/invite/complete$, roles: PUBLIC_ACCESS, methods: [ POST ] }
+        - { path: ^/api/auth/invite/preview$, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/api/setup/admin$, roles: PUBLIC_ACCESS, methods: [ POST ] }
         - { path: ^/api/auth/verify-email$, roles: PUBLIC_ACCESS, methods: [ GET ] }
+        - { path: ^/api/config$, roles: PUBLIC_ACCESS, methods: [ GET ] }
         - { path: ^/api/docs, roles: PUBLIC_ACCESS, methods: [ GET ] }
 
         # Admin-only API endpoints

@@ -10,10 +10,10 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\Security\Csrf\CsrfToken;
 use Symfony\Component\Security\Csrf\CsrfTokenManagerInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
 {
-    private const HEADER_NAME = 'csrf-token';
     private const FALLBACK_TOKEN_ID = 'api_write';
 
     /**
@@ -51,6 +51,8 @@ final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
     public function __construct(
         private CsrfTokenManagerInterface $csrfTokenManager,
         private ApiResponseFactory $responses,
+        #[Autowire('%env(string:CSRF_COOKIE_NAME)%')]
+        private string $csrfHeaderName,
     ) {
     }
 
@@ -85,7 +87,7 @@ final class CsrfProtectedRoutesSubscriber implements EventSubscriberInterface
         }
 
         $tokenId = $this->resolveTokenId($request->attributes->get('_route'), $path);
-        $tokenValue = $request->headers->get(self::HEADER_NAME);
+        $tokenValue = $request->headers->get($this->csrfHeaderName);
 
         if (is_string($tokenValue) && $tokenValue !== '') {
             $csrfToken = new CsrfToken($tokenId, $tokenValue);

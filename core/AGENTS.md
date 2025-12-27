@@ -22,6 +22,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 | `src/Auth/Http/Controller/RegisterController.php` | `POST /api/auth/register` (inscription JSON). |
 | `src/Auth/Http/Controller/InviteUserController.php` | `POST /api/auth/invite` (admin). |
 | `src/Auth/Http/Controller/AcceptInvitationController.php` | `POST /api/auth/invite/complete` (finalisation invitation). |
+| `src/Auth/Http/Controller/InvitePreviewController.php` | `GET /api/auth/invite/preview` (prévisualisation invitation). |
 | `src/Auth/Http/Controller/MeController.php` | `GET /api/auth/me`. |
 | `src/Auth/Http/Controller/LogoutController.php` | `POST /api/auth/logout`. |
 | `src/Auth/Http/Controller/VerifyEmailController.php` | `GET /api/auth/verify-email` (lien signé). |
@@ -34,6 +35,8 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 - `src/ApiResource/Auth.php` expose register/invite/logout/me + password (forgot/reset).
 - `src/ApiResource/Setup.php` expose `/api/setup/admin`.
+- `src/ApiResource/FrontendConfig.php` expose `/api/config` (flags + UI config).
+- `src/ApiResource/InvitePreview.php` expose `/api/auth/invite/preview`.
 - `src/Auth/Http/OpenApi/AuthRoutesDecorator.php` documente login/refresh/verify/password/setup.
 
 ### 2.3 Domaine & services
@@ -72,6 +75,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 ### 3.5 Invitation
 - Admin `POST /api/auth/invite` -> email avec lien `/invite/complete?token=...`.
+- Angular lit `GET /api/auth/invite/preview?token=...` pour afficher l’email invité et l’état.
 - Angular `/invite/complete` -> `POST /api/auth/invite/complete`.
 
 ### 3.6 Setup initial admin
@@ -103,6 +107,14 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 | `PASSWORD_STRENGTH_LEVEL` | Politique de mot de passe. |
 | `BRANDING_NAME` | Nom branding (emails). |
 | `FRONTEND_BASE_URL` | Base URL utilisée pour les liens email. |
+| `FRONTEND_DEFAULT_REDIRECT` | Redirection par défaut après login (allowlist appliquée). |
+| `FRONTEND_REDIRECT_ALLOWLIST` | Origines autorisées pour `redirect_uri`. |
+| `CSRF_COOKIE_NAME` | Nom du cookie CSRF stateless. |
+| `CSRF_CHECK_HEADER` | Vérifie le header CSRF en plus du cookie. |
+| `FRONTEND_THEME_MODE` | Thème par défaut (dark/light). |
+| `FRONTEND_THEME_COLOR` | Couleur par défaut (base/red/...). |
+| `FRONTEND_THEME_DIRECTION` | Direction par défaut (ltr/rtl). |
+| `FRONTEND_THEME_COLORS` | Liste des couleurs disponibles. |
 | `API_DOCS_ENABLED` | Active `/api/docs` (dev uniquement). |
 
 ---

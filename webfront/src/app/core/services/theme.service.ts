@@ -1,17 +1,31 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, effect, signal } from '@angular/core';
 import { Theme } from '../models/theme.model';
-import { effect } from '@angular/core';
+import { FrontendConfigService } from './frontend-config.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class ThemeService {
   public theme = signal<Theme>({ mode: 'dark', color: 'base', direction: 'ltr' });
+  private hasStoredTheme = false;
 
-  constructor() {
+  constructor(private readonly configService: FrontendConfigService) {
     this.loadTheme();
     effect(() => {
       this.setConfig();
+    });
+
+    effect(() => {
+      if (this.hasStoredTheme) {
+        return;
+      }
+
+      const config = this.configService.config();
+      this.theme.set({
+        mode: config.themeMode,
+        color: config.themeColor,
+        direction: config.themeDirection,
+      });
     });
   }
 
@@ -19,6 +33,7 @@ export class ThemeService {
     const theme = localStorage.getItem('theme');
     if (theme) {
       this.theme.set(JSON.parse(theme));
+      this.hasStoredTheme = true;
     }
   }
 

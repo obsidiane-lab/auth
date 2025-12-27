@@ -291,3 +291,45 @@ select {
 [type='radio'] {
   @apply h-4 w-4 rounded-sm border-border bg-background checked:border-primary checked:bg-primary indeterminate:border-primary indeterminate:bg-primary focus:ring-2 focus:ring-primary;
 }
+
+@layer components {
+  .form__group {
+    @apply space-y-1;
+  }
+
+  .form__field {
+    @apply relative;
+  }
+
+  .form__input {
+    @apply block w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder-transparent transition focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/60;
+  }
+
+  .form__select {
+    @apply w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/60;
+  }
+
+  .form__label {
+    @apply absolute left-4 top-2 z-10 origin-[0] -translate-y-4 scale-95 bg-background px-2 text-sm text-muted-foreground transition duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:text-primary;
+  }
+
+  .dark .form__label {
+    background-color: var(--background);
+  }
+
+  .form__toggle {
+    @apply absolute right-3 top-2 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60;
+  }
+
+  .form__toggle[aria-pressed='true'] {
+    @apply text-primary;
+  }
+
+  .is__invalid-input {
+    @apply border border-destructive focus:border-destructive focus:outline-hidden focus:ring-transparent;
+  }
+
+  .is__invalid-error {
+    @apply px-1 pt-1 text-xs text-destructive;
+  }
+}

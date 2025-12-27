@@ -9,11 +9,13 @@ use App\Shared\Config\FeatureFlags;
 use App\Shared\Response\ApiResponseFactory;
 use App\Shared\Response\UserPayloadFactory;
 use App\Setup\Application\InitialAdminManager;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
+#[AsController]
 final class RegisterController extends AbstractController
 {
     public function __construct(

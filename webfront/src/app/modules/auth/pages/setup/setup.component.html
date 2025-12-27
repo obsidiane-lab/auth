@@ -1,73 +1,109 @@
 <form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
   <div class="text-center">
-    <h2 class="text-foreground mb-1 text-3xl font-semibold">Configuration initiale</h2>
-    <p class="text-muted-foreground text-sm">Créez le premier compte administrateur.</p>
+    <h2 class="text-foreground mb-1 text-3xl font-semibold">Créer le premier administrateur</h2>
+    <p class="text-muted-foreground text-sm">
+      Aucun compte n’est encore présent. Créez l’administrateur initial de <strong>{{ brandingName }}</strong>.
+    </p>
   </div>
+
+  <app-form-status-message kind="error" [message]="status.errorMessage"></app-form-status-message>
+  <app-form-status-message kind="success" [message]="status.successMessage"></app-form-status-message>
 
   <div class="space-y-3 text-left">
-    <div class="relative">
-      <input
-        type="text"
-        id="email"
-        class="peer block"
-        placeholder=" "
-        formControlName="email"
-        [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }" />
-      <label
-        for="email"
-        class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
-        Email address
-      </label>
-    </div>
-    <div *ngIf="submitted && f['email'].errors" class="is__invalid-error">
-      <div *ngIf="f['email'].errors['required']">Required field</div>
-      <div *ngIf="f['email'].errors['email']">Email must be an email address valid</div>
-    </div>
-
-    <div class="relative">
-      <input
-        type="password"
-        id="password"
-        class="peer block"
-        placeholder=" "
-        formControlName="password"
-        [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }" />
-      <label
-        for="password"
-        class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
-        Password
-      </label>
-    </div>
-    <div *ngIf="submitted && f['password'].errors" class="is__invalid-error">
-      <div *ngIf="f['password'].errors['required']">Required field</div>
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="setup-email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
+          class="form__input peer"
+          placeholder=" "
+          formControlName="email"
+          [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="setup-email">
+          Adresse email
+        </label>
+      </div>
+      <p *ngIf="apiFieldErrors.email || (submitted && f['email'].errors)" class="is__invalid-error">
+        <span *ngIf="apiFieldErrors.email">{{ apiFieldErrors.email }}</span>
+        <span *ngIf="!apiFieldErrors.email">Adresse email invalide.</span>
+      </p>
     </div>
 
-    <div class="relative">
-      <input
-        type="password"
-        id="confirm-password"
-        class="peer block"
-        placeholder=" "
-        formControlName="confirmPassword"
-        [ngClass]="{ 'is__invalid-input': submitted && f['confirmPassword'].errors }" />
-      <label
-        for="confirm-password"
-        class="bg-background text-muted-foreground peer-focus:text-primary absolute top-2 z-10 origin-[0] -translate-y-4 scale-95 transform px-2 text-sm duration-300 peer-placeholder-shown:top-1/2 peer-placeholder-shown:-translate-y-1/2 peer-placeholder-shown:scale-100 peer-focus:top-2 peer-focus:-translate-y-4 peer-focus:scale-95 peer-focus:px-2 ltr:left-1 rtl:right-1">
-        Confirm Password
-      </label>
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="setup-password"
+          [type]="passwordVisible ? 'text' : 'password'"
+          autocomplete="new-password"
+          class="form__input peer pr-12"
+          placeholder=" "
+          formControlName="password"
+          [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="setup-password">
+          Mot de passe
+        </label>
+        <button
+          type="button"
+          class="form__toggle"
+          aria-label="Afficher ou masquer le mot de passe"
+          [attr.aria-pressed]="passwordVisible"
+          (click)="togglePasswordVisibility()"
+        >
+          <svg-icon
+            [src]="!passwordVisible ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
+            [svgClass]="'h-5 w-5'"
+          ></svg-icon>
+        </button>
+      </div>
+      <p *ngIf="apiFieldErrors.password || (submitted && f['password'].errors)" class="is__invalid-error">
+        <span *ngIf="apiFieldErrors.password">{{ apiFieldErrors.password }}</span>
+        <span *ngIf="!apiFieldErrors.password && f['password'].errors?.['weakPassword']">Mot de passe trop faible.</span>
+        <span *ngIf="!apiFieldErrors.password && f['password'].errors?.['required']">Identifiants requis.</span>
+      </p>
+      <div class="grid grid-cols-4 gap-2">
+        <span
+          *ngFor="let index of [1, 2, 3, 4]"
+          [ngClass]="passwordStrength >= index ? 'bg-primary' : 'bg-muted'"
+          class="h-1 rounded-xs transition"
+        ></span>
+      </div>
+      <p class="text-muted-foreground text-xs">
+        Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.
+      </p>
     </div>
-    <div *ngIf="submitted && f['confirmPassword'].errors" class="is__invalid-error">
-      <div *ngIf="f['confirmPassword'].errors['required']">Required field</div>
-    </div>
-  </div>
 
-  <div *ngIf="errorMessage" class="text-destructive text-sm">
-    {{ errorMessage }}
+    <div class="form__group">
+      <div class="form__field">
+        <input
+          id="setup-password-confirm"
+          type="password"
+          autocomplete="new-password"
+          class="form__input peer"
+          placeholder=" "
+          formControlName="confirmPassword"
+          [ngClass]="{ 'is__invalid-input': submitted && f['confirmPassword'].errors }"
+        />
+        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['confirmPassword'].errors }" for="setup-password-confirm">
+          Confirmez le mot de passe
+        </label>
+      </div>
+      <p *ngIf="apiFieldErrors.confirmPassword || (submitted && f['confirmPassword'].errors)" class="is__invalid-error">
+        <span *ngIf="apiFieldErrors.confirmPassword">{{ apiFieldErrors.confirmPassword }}</span>
+        <span *ngIf="!apiFieldErrors.confirmPassword && f['confirmPassword'].errors?.['mismatch']">
+          Les mots de passe ne correspondent pas.
+        </span>
+        <span *ngIf="!apiFieldErrors.confirmPassword && f['confirmPassword'].errors?.['required']">Identifiants requis.</span>
+      </p>
+    </div>
   </div>
 
   <div>
     <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting">
-      Créer le compte
+      Créer l’administrateur
     </app-button>
   </div>
 </form>

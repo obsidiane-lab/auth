@@ -4,11 +4,13 @@ namespace App\Auth\Http\Controller;
 
 use App\Entity\User;
 use App\Shared\Response\UserPayloadFactory;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
+#[AsController]
 final class MeController extends AbstractController
 {
     public function __construct(

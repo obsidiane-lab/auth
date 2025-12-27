@@ -5,6 +5,7 @@ import { TranslateService, type TranslationObject } from '@ngx-translate/core';
 import frTranslations from '../assets/i18n/fr.json';
 import enTranslations from '../assets/i18n/en.json';
 import { ThemeService } from './core/services/theme.service';
+import { FrontendConfigService } from './core/services/frontend-config.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -12,13 +13,17 @@ import { ThemeService } from './core/services/theme.service';
   imports: [RouterOutlet, NgxSonnerToaster],
 })
 export class AppComponent {
-  title = 'Angular Tailwind';
-
-  constructor(public themeService: ThemeService, private readonly translate: TranslateService) {
+  constructor(
+    public themeService: ThemeService,
+    private readonly translate: TranslateService,
+    private readonly configService: FrontendConfigService,
+  ) {
     this.translate.addLangs(['fr', 'en']);
     this.translate.setTranslation('fr', frTranslations as TranslationObject, true);
     this.translate.setTranslation('en', enTranslations as TranslationObject, true);
     this.translate.setDefaultLang('fr');
     this.translate.use('fr');
+
+    void this.configService.loadOnce();
   }
 }

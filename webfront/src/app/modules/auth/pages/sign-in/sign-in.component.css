@@ -1,9 +1,1 @@
-@reference "../../../../../styles.css";
-
-.is__invalid-input {
-  @apply border border-destructive focus:border-destructive focus:outline-hidden focus:ring-transparent;
-}
-
-.is__invalid-error {
-  @apply px-1 pt-1 text-xs text-destructive;
-}
+/* styles moved to global form helpers in src/styles.css */

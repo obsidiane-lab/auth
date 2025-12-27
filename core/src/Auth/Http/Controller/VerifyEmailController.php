@@ -5,6 +5,7 @@ namespace App\Auth\Http\Controller;
 use App\Repository\UserRepository;
 use App\Shared\Response\ApiResponseFactory;
 use App\Auth\Infrastructure\Security\EmailVerifier;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -12,6 +13,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
 
+#[AsController]
 #[Route('/api/auth/verify-email', name: 'api_auth_verify_email', methods: ['GET'])]
 final class VerifyEmailController extends AbstractController
 {

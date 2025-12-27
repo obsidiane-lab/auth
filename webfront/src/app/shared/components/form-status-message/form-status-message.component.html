@@ -1,0 +1,8 @@
+<div *ngIf="resolvedMessage" [class]="containerClass" [attr.role]="role">
+  <p class="font-medium">
+    {{ resolvedMessage }}
+  </p>
+  <p *ngIf="resolvedDescription" class="mt-1 text-xs" [class]="descriptionClass">
+    {{ resolvedDescription }}
+  </p>
+</div>

@@ -7,10 +7,12 @@ use App\Auth\Application\CompleteInvitation;
 use App\Auth\Http\Dto\InviteCompleteInput;
 use App\Shared\Response\ApiResponseFactory;
 use App\Shared\Response\UserPayloadFactory;
+use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
+#[AsController]
 final class AcceptInvitationController extends AbstractController
 {
     public function __construct(
