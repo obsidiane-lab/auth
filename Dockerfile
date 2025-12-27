@@ -44,7 +44,8 @@ RUN install-php-extensions pdo_mysql
 
 COPY --link obsidiane/frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
 COPY --link --chmod=755 obsidiane/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY --link obsidiane/caddy/Caddyfile.prod /etc/frankenphp/Caddyfile
+COPY --link obsidiane/caddy/Caddyfile /etc/frankenphp/Caddyfile
+COPY --link obsidiane/caddy/webfront.prod.caddy /etc/frankenphp/webfront.caddy
 
 ENTRYPOINT ["docker-entrypoint"]
 

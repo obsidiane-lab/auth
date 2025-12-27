@@ -64,7 +64,7 @@ Backend (`/core`):
 - VerifyEmailController redirige vers `/login`.
 - `routes.yaml` declare des routes hors API (`/reset-password`, `/verify-email`).
 - `security.yaml` contient un firewall `auth_pages`.
-- Caddyfile dans `obsidiane/caddy/Caddyfile.dev`.
+- Caddyfile dans `obsidiane/caddy/Caddyfile` + snippet `webfront.caddy`.
 
 Frontend (`/webfront`):
 - Angular template non branche a l API.

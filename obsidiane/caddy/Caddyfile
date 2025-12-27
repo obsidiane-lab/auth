@@ -10,6 +10,10 @@
 
 {$CADDY_EXTRA_CONFIG}
 
+(webfront) {
+	import webfront.caddy
+}
+
 :80 {
 	log {
 		{$CADDY_SERVER_LOG_OPTIONS}
@@ -21,7 +25,6 @@
 	}
 
 	encode zstd gzip
-
 	vulcain
 
 	{$CADDY_SERVER_EXTRA_DIRECTIVES}
@@ -32,9 +35,7 @@
 		not path /api/* /bundles/* /.well-known/mercure*
 	}
 	handle @frontend {
-		root * /app/public/app
-		try_files {path} /index.html
-		file_server
+		import webfront
 	}
 
 	handle {
