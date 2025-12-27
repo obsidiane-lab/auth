@@ -81,6 +81,8 @@ protection **CSRF stateless** (Symfony).
 
 Par défaut, `docker compose` expose une entrée unique sur `http://localhost:8000` (Caddy dans le core).
 `/api` est routé vers Symfony, le reste vers le webfront (Angular via `ng serve`).
+Le routing Caddy est dans `@obsidiane/caddy/Caddyfile` et le bloc frontend est injecté via `webfront.caddy`
+(`@obsidiane/caddy/webfront.dev.caddy` en dev, `@obsidiane/caddy/webfront.prod.caddy` en prod).
 
 La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8000/api/docs`.
 
@@ -207,6 +209,14 @@ Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/log
 * Pour un usage local, crée un `.env.local` ou charge `.env.dev` (APP_ENV=dev, CORS localhost, cookies non Secure, DB `database:3306`, mot de passe niveau 1).
 * `docker compose` lit automatiquement `.env` ; toute variable peut être surchargée par l’environnement du runtime/compose.
 * L’entrypoint génère `APP_SECRET` et `JWT_SECRET` si absents, mais ces valeurs tournent à chaque redémarrage : renseigne-les pour un déploiement réel.
+
+### Compose prod local
+
+Pour un run prod-like local (front statique inclus dans l’image) :
+
+```bash
+docker compose -f compose.prod.yaml up -d --build
+```
 
 ### Variables d’environnement importantes
 
