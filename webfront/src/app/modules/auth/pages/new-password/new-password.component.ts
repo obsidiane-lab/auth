@@ -1,10 +1,11 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
-import { AuthApiService } from '../../../../core/services/auth-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-new-password',
@@ -20,10 +21,11 @@ export class NewPasswordComponent implements OnInit {
   successMessage = '';
   private resetToken = '';
   returnUrl: string | null = null;
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly authApi: AuthApiService,
+    private readonly authService: AuthService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
   ) {}
@@ -34,7 +36,8 @@ export class NewPasswordComponent implements OnInit {
       confirmPassword: ['', Validators.required],
     });
 
-    this.route.queryParamMap.subscribe((params) => {
+    effect(() => {
+      const params = this.queryParamMap();
       this.resetToken = params.get('token') ?? '';
       this.returnUrl = params.get('returnUrl');
     });
@@ -44,7 +47,7 @@ export class NewPasswordComponent implements OnInit {
     return this.form.controls;
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     this.submitted = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -66,22 +69,18 @@ export class NewPasswordComponent implements OnInit {
 
     this.isSubmitting = true;
 
-    this.authApi.resetPassword(this.resetToken, password).subscribe({
-      next: () => {
-        this.successMessage = 'Mot de passe mis à jour. Vous pouvez vous connecter.';
-        const queryParams: { status?: string; returnUrl?: string } = { status: 'reset' };
-        if (this.returnUrl) {
-          queryParams.returnUrl = this.returnUrl;
-        }
-        this.router.navigate(['/login'], { queryParams, replaceUrl: true });
-      },
-      error: () => {
-        this.errorMessage = 'Impossible de mettre à jour le mot de passe.';
-        this.isSubmitting = false;
-      },
-      complete: () => {
-        this.isSubmitting = false;
-      },
-    });
+    try {
+      await this.authService.resetPassword(this.resetToken, password);
+      this.successMessage = 'Mot de passe mis à jour. Vous pouvez vous connecter.';
+      const queryParams: { status?: string; returnUrl?: string } = { status: 'reset' };
+      if (this.returnUrl) {
+        queryParams.returnUrl = this.returnUrl;
+      }
+      void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
+    } catch {
+      this.errorMessage = 'Impossible de mettre à jour le mot de passe.';
+    } finally {
+      this.isSubmitting = false;
+    }
   }
 }

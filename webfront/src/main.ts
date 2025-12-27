@@ -1,16 +1,8 @@
-import { enableProdMode, importProvidersFrom } from '@angular/core';
-
-import { BrowserModule, bootstrapApplication } from '@angular/platform-browser';
-import { provideAnimations } from '@angular/platform-browser/animations';
-import { AppRoutingModule } from './app/app-routing.module';
+import { enableProdMode } from '@angular/core';
+import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
+import { appConfig } from './app/app.config';
 import { environment } from './environments/environment';
-import { provideZonelessChangeDetection } from '@angular/core';
-import { provideTranslateService } from '@ngx-translate/core';
-import { csrfInterceptor } from './app/core/interceptor/csrf.interceptor';
-import { AngularSvgIconModule } from 'angular-svg-icon';
-import { provideBridge } from 'bridge';
-import { resolveApiBaseUrl } from './app/core/api-base-url';
 
 if (environment.production) {
   enableProdMode();
@@ -20,20 +12,7 @@ if (environment.production) {
   }
 }
 
-bootstrapApplication(AppComponent, {
-  providers: [
-    provideTranslateService({
-      defaultLanguage: 'fr',
-    }),
-    importProvidersFrom(BrowserModule, AppRoutingModule, AngularSvgIconModule.forRoot()),
-    provideAnimations(),
-    provideZonelessChangeDetection(),
-    provideBridge({
-      baseUrl: resolveApiBaseUrl(environment.apiBaseUrl),
-      extraInterceptors: [csrfInterceptor],
-    }),
-  ],
-}).catch((err) => console.error(err));
+bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));
 
 function selfXSSWarning() {
   setTimeout(() => {

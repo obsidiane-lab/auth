@@ -54,6 +54,13 @@ interface BridgeOptions {
     mercure?: BridgeMercureOptions;
     /** Default HTTP behaviour (headers, timeout, retries). */
     defaults?: BridgeDefaults;
+    /**
+     * De-duplicates in-flight HTTP requests.
+     *
+     * - `true` (default): single-flight for safe methods (`GET/HEAD/OPTIONS`)
+     * - `false`: disabled (each call triggers a new request)
+     */
+    singleFlight?: boolean;
     /** Enables debug logging via the debug interceptor and console logger. */
     debug?: boolean;
     /** Extra `HttpInterceptorFn` applied after bridge interceptors. */
@@ -276,31 +283,38 @@ interface Auth extends Item {
 }
 
 interface AuthInviteCompleteInputInviteComplete extends Item {
-    confirmPassword?: string | null;
-    password?: string | null;
-    token?: string | null;
+    token: string | null;
+    password: string | null;
+    confirmPassword: string | null;
 }
 
 interface AuthInviteUserInputInviteSend extends Item {
-    email?: string | null;
+    email: string | null;
+}
+
+interface AuthLdJson extends Item {
+    tokenId?: string | null;
 }
 
 interface AuthRegisterUserInputUserRegister extends Item {
-    email?: string | null;
-    password?: string | null;
+    email: string | null;
+    password: string | null;
 }
 
-interface UserUserRead extends Item {
-    email?: string | null;
-    emailVerified?: boolean | null;
-    lastLoginAt?: string | null;
-    roles?: string[] | null;
+interface InviteUserInviteRead extends Item {
 }
 
 interface UserUserUpdate extends Item {
-    email?: string | null;
+    email: string;
     plainPassword?: string | null;
 }
 
+interface UserUserRead extends Item {
+    email: string;
+    roles?: string[];
+    emailVerified?: boolean;
+    lastLoginAt?: string | null;
+}
+
 export { BridgeFacade, FacadeFactory, ResourceFacade, joinUrl, provideBridge, resolveUrl };
-export type { AnyQuery, Auth, AuthInviteCompleteInputInviteComplete, AuthInviteUserInputInviteSend, AuthRegisterUserInputUserRegister, BridgeAuth, BridgeDefaults, BridgeLogger, BridgeMercureOptions, BridgeOptions, Collection, FacadeConfig, HttpCallOptions, HttpMethod, HttpRequestConfig, Iri, IriRequired, IriTemplate, IriTemplateMapping, Item, MercureTopicMode, Query, QueryParamValue, ResourceRepository, UserUserRead, UserUserUpdate, View };
+export type { AnyQuery, Auth, AuthInviteCompleteInputInviteComplete, AuthInviteUserInputInviteSend, AuthLdJson, AuthRegisterUserInputUserRegister, BridgeAuth, BridgeDefaults, BridgeLogger, BridgeMercureOptions, BridgeOptions, Collection, FacadeConfig, HttpCallOptions, HttpMethod, HttpRequestConfig, InviteUserInviteRead, Iri, IriRequired, IriTemplate, IriTemplateMapping, Item, MercureTopicMode, Query, QueryParamValue, ResourceRepository, UserUserRead, UserUserUpdate, View };

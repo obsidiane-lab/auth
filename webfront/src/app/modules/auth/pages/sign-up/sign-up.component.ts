@@ -1,10 +1,11 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
-import { AuthApiService } from '../../../../core/services/auth-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-sign-up',
@@ -18,10 +19,11 @@ export class SignUpComponent implements OnInit {
   isSubmitting = false;
   errorMessage = '';
   returnUrl: string | null = null;
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly authApi: AuthApiService,
+    private readonly authService: AuthService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
   ) {}
@@ -34,14 +36,16 @@ export class SignUpComponent implements OnInit {
       acceptTerms: [false, Validators.requiredTrue],
     });
 
-    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    effect(() => {
+      this.returnUrl = this.queryParamMap().get('returnUrl');
+    });
   }
 
   get f() {
     return this.form.controls;
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     this.submitted = true;
     this.errorMessage = '';
 
@@ -56,25 +60,20 @@ export class SignUpComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-
-    this.authApi.register(email, password).subscribe({
-      next: () => {
-        const queryParams: { status?: string; email?: string; returnUrl?: string } = {
-          status: 'registered',
-          email,
-        };
-        if (this.returnUrl) {
-          queryParams.returnUrl = this.returnUrl;
-        }
-        this.router.navigate(['/login'], { queryParams, replaceUrl: true });
-      },
-      error: () => {
-        this.errorMessage = 'Inscription impossible. Vérifiez les informations.';
-        this.isSubmitting = false;
-      },
-      complete: () => {
-        this.isSubmitting = false;
-      },
-    });
+    try {
+      await this.authService.register(email, password);
+      const queryParams: { status?: string; email?: string; returnUrl?: string } = {
+        status: 'registered',
+        email,
+      };
+      if (this.returnUrl) {
+        queryParams.returnUrl = this.returnUrl;
+      }
+      void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
+    } catch {
+      this.errorMessage = 'Inscription impossible. Vérifiez les informations.';
+    } finally {
+      this.isSubmitting = false;
+    }
   }
 }

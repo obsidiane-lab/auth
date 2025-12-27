@@ -1,10 +1,11 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect } from '@angular/core';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
-import { AuthApiService } from '../../../../core/services/auth-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-sign-in',
@@ -20,12 +21,13 @@ export class SignInComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   returnUrl: string | null = null;
+  private readonly queryParamMap = toSignal(this._route.queryParamMap, { initialValue: this._route.snapshot.queryParamMap });
 
   constructor(
     private readonly _formBuilder: FormBuilder,
     private readonly _router: Router,
     private readonly _route: ActivatedRoute,
-    private readonly authApi: AuthApiService,
+    private readonly authService: AuthService,
   ) {}
 
   ngOnInit(): void {
@@ -34,13 +36,15 @@ export class SignInComponent implements OnInit {
       password: ['', Validators.required],
     });
 
-    const queryParams = this._route.snapshot.queryParamMap;
-    const email = queryParams.get('email');
-    if (email) {
-      this.form.patchValue({ email });
-    }
-    this.returnUrl = this.normalizeReturnUrl(queryParams.get('returnUrl'));
-    this.successMessage = this.getStatusMessage(queryParams.get('status'));
+    effect(() => {
+      const queryParams = this.queryParamMap();
+      const email = queryParams.get('email');
+      if (email && !this.form.get('email')?.value) {
+        this.form.patchValue({ email });
+      }
+      this.returnUrl = this.normalizeReturnUrl(queryParams.get('returnUrl'));
+      this.successMessage = this.getStatusMessage(queryParams.get('status'));
+    });
   }
 
   get f() {
@@ -51,7 +55,7 @@ export class SignInComponent implements OnInit {
     this.passwordTextType = !this.passwordTextType;
   }
 
-  onSubmit() {
+  async onSubmit(): Promise<void> {
     this.submitted = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -62,23 +66,18 @@ export class SignInComponent implements OnInit {
     }
 
     this.isSubmitting = true;
-
-    this.authApi.login(email, password).subscribe({
-      next: () => {
-        if (this.returnUrl) {
-          this._router.navigateByUrl(this.returnUrl, { replaceUrl: true });
-          return;
-        }
-        this._router.navigate(['/login'], { queryParams: { status: 'logged-in' }, replaceUrl: true });
-      },
-      error: () => {
-        this.errorMessage = 'Identifiants invalides ou accès refusé.';
-        this.isSubmitting = false;
-      },
-      complete: () => {
-        this.isSubmitting = false;
-      },
-    });
+    try {
+      await this.authService.login(email, password);
+      if (this.returnUrl) {
+        void this._router.navigateByUrl(this.returnUrl, { replaceUrl: true });
+        return;
+      }
+      void this._router.navigate(['/login'], { queryParams: { status: 'logged-in' }, replaceUrl: true });
+    } catch {
+      this.errorMessage = 'Identifiants invalides ou accès refusé.';
+    } finally {
+      this.isSubmitting = false;
+    }
   }
 
   private normalizeReturnUrl(value: string | null): string | null {

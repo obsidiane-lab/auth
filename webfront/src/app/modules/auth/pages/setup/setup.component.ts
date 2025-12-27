@@ -1,9 +1,10 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
-import { AuthApiService } from '../../../../core/services/auth-api.service';
+import { SetupService } from '../../../../core/services/setup.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-setup',
@@ -17,10 +18,11 @@ export class SetupComponent implements OnInit {
   isSubmitting = false;
   errorMessage = '';
   returnUrl: string | null = null;
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly authApi: AuthApiService,
+    private readonly setupService: SetupService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
   ) {}
@@ -32,14 +34,16 @@ export class SetupComponent implements OnInit {
       confirmPassword: ['', Validators.required],
     });
 
-    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    effect(() => {
+      this.returnUrl = this.queryParamMap().get('returnUrl');
+    });
   }
 
   get f() {
     return this.form.controls;
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     this.submitted = true;
     this.errorMessage = '';
 
@@ -55,21 +59,17 @@ export class SetupComponent implements OnInit {
 
     this.isSubmitting = true;
 
-    this.authApi.setupInitialAdmin(email, password).subscribe({
-      next: () => {
-        const queryParams: { status?: string; returnUrl?: string } = { status: 'setup' };
-        if (this.returnUrl) {
-          queryParams.returnUrl = this.returnUrl;
-        }
-        this.router.navigate(['/login'], { queryParams, replaceUrl: true });
-      },
-      error: () => {
-        this.errorMessage = 'Impossible de créer l’administrateur.';
-        this.isSubmitting = false;
-      },
-      complete: () => {
-        this.isSubmitting = false;
-      },
-    });
+    try {
+      await this.setupService.createInitialAdmin(email, password);
+      const queryParams: { status?: string; returnUrl?: string } = { status: 'setup' };
+      if (this.returnUrl) {
+        queryParams.returnUrl = this.returnUrl;
+      }
+      void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
+    } catch {
+      this.errorMessage = 'Impossible de créer l’administrateur.';
+    } finally {
+      this.isSubmitting = false;
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
-import { catchError, switchMap, throwError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { normalizeApiBaseUrl, resolveApiBaseUrl } from '../api-base-url';
 

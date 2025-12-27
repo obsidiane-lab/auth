@@ -1,9 +1,10 @@
 import { NgClass, NgIf } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
-import { AuthApiService } from '../../../../core/services/auth-api.service';
+import { AuthService } from '../../../../core/services/auth.service';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-forgot-password',
@@ -18,10 +19,11 @@ export class ForgotPasswordComponent implements OnInit {
   errorMessage = '';
   successMessage = '';
   returnUrl: string | null = null;
+  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
     private readonly formBuilder: FormBuilder,
-    private readonly authApi: AuthApiService,
+    private readonly authService: AuthService,
     private readonly route: ActivatedRoute,
   ) {}
 
@@ -30,14 +32,16 @@ export class ForgotPasswordComponent implements OnInit {
       email: ['', [Validators.required, Validators.email]],
     });
 
-    this.returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    effect(() => {
+      this.returnUrl = this.queryParamMap().get('returnUrl');
+    });
   }
 
   get f() {
     return this.form.controls;
   }
 
-  onSubmit(): void {
+  async onSubmit(): Promise<void> {
     this.submitted = true;
     this.errorMessage = '';
     this.successMessage = '';
@@ -49,17 +53,13 @@ export class ForgotPasswordComponent implements OnInit {
     const { email } = this.form.value;
     this.isSubmitting = true;
 
-    this.authApi.forgotPassword(email).subscribe({
-      next: () => {
-        this.successMessage = 'Si un compte existe, un email de réinitialisation a été envoyé.';
-      },
-      error: () => {
-        this.errorMessage = 'Impossible de traiter la demande pour le moment.';
-        this.isSubmitting = false;
-      },
-      complete: () => {
-        this.isSubmitting = false;
-      },
-    });
+    try {
+      await this.authService.forgotPassword(email);
+      this.successMessage = 'Si un compte existe, un email de réinitialisation a été envoyé.';
+    } catch {
+      this.errorMessage = 'Impossible de traiter la demande pour le moment.';
+    } finally {
+      this.isSubmitting = false;
+    }
   }
 }

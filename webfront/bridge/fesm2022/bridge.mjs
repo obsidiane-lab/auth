@@ -2,7 +2,7 @@ import * as i0 from '@angular/core';
 import { InjectionToken, inject, makeEnvironmentProviders, PLATFORM_ID, Inject, Optional, Injectable, EnvironmentInjector, runInInjectionContext } from '@angular/core';
 import * as i1 from '@angular/common/http';
 import { HttpResponse, provideHttpClient, withFetch, withInterceptors, HttpParams, HttpClient } from '@angular/common/http';
-import { timeout, retry, timer, tap, catchError, throwError, finalize, from, switchMap, ReplaySubject, Subject, BehaviorSubject, fromEvent, defer, EMPTY, of, map as map$1, filter as filter$1, share as share$1 } from 'rxjs';
+import { timeout, retry, timer, tap, catchError, throwError, finalize, shareReplay, from, switchMap, ReplaySubject, Subject, BehaviorSubject, fromEvent, defer, EMPTY, of, map as map$1, filter as filter$1, share as share$1 } from 'rxjs';
 import { auditTime, concatMap, takeUntil, map, filter, finalize as finalize$1, share } from 'rxjs/operators';
 import { isPlatformBrowser } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -117,9 +117,50 @@ const bridgeDebugInterceptor = (req, next) => {
     }));
 };
 
+const DEFAULT_MODE = 'safe';
+const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+function createSingleFlightInterceptor(mode = DEFAULT_MODE) {
+    const inflight = new Map();
+    return (req, next) => {
+        if (mode === 'off') {
+            return next(req);
+        }
+        const method = req.method.toUpperCase();
+        if (!SAFE_METHODS.has(method)) {
+            return next(req);
+        }
+        if (req.reportProgress === true) {
+            return next(req);
+        }
+        const key = computeKey(req);
+        const existing = inflight.get(key);
+        if (existing) {
+            return existing;
+        }
+        const shared$ = next(req).pipe(finalize(() => inflight.delete(key)), shareReplay({ bufferSize: 1, refCount: true }));
+        inflight.set(key, shared$);
+        return shared$;
+    };
+}
+function computeKey(req) {
+    const auth = req.headers.get('Authorization') ?? '';
+    const accept = req.headers.get('Accept') ?? '';
+    const contentType = req.headers.get('Content-Type') ?? '';
+    const creds = req.withCredentials ? '1' : '0';
+    return [
+        req.method.toUpperCase(),
+        req.urlWithParams,
+        `rt=${req.responseType}`,
+        `wc=${creds}`,
+        `a=${auth}`,
+        `acc=${accept}`,
+        `ct=${contentType}`,
+    ].join('::');
+}
+
 /** Registers the bridge HTTP client, interceptors, Mercure realtime adapter and configuration tokens. */
 function provideBridge(opts) {
-    const { baseUrl, auth, mercure, defaults, debug = false, extraInterceptors = [], } = opts;
+    const { baseUrl, auth, mercure, defaults, singleFlight = true, debug = false, extraInterceptors = [], } = opts;
     if (!baseUrl) {
         throw new Error("provideBridge(): missing 'baseUrl'");
     }
@@ -132,6 +173,7 @@ function provideBridge(opts) {
         contentTypeInterceptor,
         bridgeDefaultsInterceptor,
         ...createAuthInterceptors(auth),
+        ...(singleFlight ? [createSingleFlightInterceptor('safe')] : [createSingleFlightInterceptor('off')]),
         ...(debug ? [bridgeDebugInterceptor] : []),
         ...extraInterceptors,
     ];
@@ -638,6 +680,22 @@ function assign(target, key, value) {
     }
 }
 
+function buildHttpRequestOptions(req, { withCredentialsDefault }) {
+    const { query, body, headers, responseType, withCredentials, options = {} } = req;
+    const mergedOptions = { ...options };
+    if (headers)
+        mergedOptions['headers'] = headers;
+    if (query)
+        mergedOptions['params'] = toHttpParams(query);
+    if (body !== undefined)
+        mergedOptions['body'] = body;
+    mergedOptions['responseType'] = (responseType ?? mergedOptions['responseType'] ?? 'json');
+    mergedOptions['withCredentials'] =
+        withCredentials ?? mergedOptions['withCredentials'] ?? withCredentialsDefault;
+    mergedOptions['observe'] = 'body';
+    return mergedOptions;
+}
+
 function joinUrl(base, path) {
     const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base;
     const normalizedPath = path.startsWith('/') ? path : `/${path}`;
@@ -706,18 +764,9 @@ class ApiPlatformRestRepository {
     }
     request$(req) {
         // Low-level escape hatch for non-standard endpoints (custom controllers, uploads, etc.).
-        const { method, url, query, body, headers, responseType, withCredentials, options = {}, } = req;
+        const { method, url } = req;
         const targetUrl = this.resolveUrl(url ?? this.resourcePath);
-        const mergedOptions = { ...options };
-        mergedOptions['responseType'] = (responseType ?? mergedOptions['responseType'] ?? 'json');
-        mergedOptions['withCredentials'] = withCredentials ?? mergedOptions['withCredentials'] ?? this.withCredentialsDefault;
-        if (headers)
-            mergedOptions['headers'] = headers;
-        if (query)
-            mergedOptions['params'] = toHttpParams(query);
-        if (body !== undefined)
-            mergedOptions['body'] = body;
-        mergedOptions['observe'] = 'body';
+        const mergedOptions = buildHttpRequestOptions(req, { withCredentialsDefault: this.withCredentialsDefault });
         return this.http.request(method, targetUrl, mergedOptions);
     }
     resolveUrl(path) {
@@ -869,19 +918,9 @@ class BridgeFacade {
         });
     }
     request$(req) {
-        const { method, url, query, body, headers, responseType, withCredentials, options = {} } = req;
+        const { method, url } = req;
         const targetUrl = this.resolveUrl(url);
-        const mergedOptions = { ...options };
-        if (headers)
-            mergedOptions['headers'] = headers;
-        if (query)
-            mergedOptions['params'] = toHttpParams(query);
-        if (body !== undefined)
-            mergedOptions['body'] = body;
-        mergedOptions['responseType'] = (responseType ?? mergedOptions['responseType'] ?? 'json');
-        mergedOptions['withCredentials'] =
-            withCredentials ?? mergedOptions['withCredentials'] ?? this.withCredentialsDefault;
-        mergedOptions['observe'] = 'body';
+        const mergedOptions = buildHttpRequestOptions(req, { withCredentialsDefault: this.withCredentialsDefault });
         return this.http.request(method, targetUrl, mergedOptions);
     }
     // ──────────────── SSE / Mercure ────────────────

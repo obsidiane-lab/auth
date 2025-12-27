@@ -3,7 +3,7 @@ SHELL := /bin/bash
 OPENAPI_URL ?= http://localhost:8000/api/docs.json
 OPENAPI_SPEC ?= openapi.json
 
-MERIDIANE_VERSION ?= 1.0.*
+MERIDIANE_VERSION ?= 2.*.*
 MERIDIANE_FORMATS ?= application/ld+json
 MERIDIANE_MAJOR := $(firstword $(subst ., ,$(MERIDIANE_VERSION)))
 MERIDIANE_PRESET_ARG :=
