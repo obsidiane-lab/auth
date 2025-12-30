@@ -14,17 +14,17 @@ ifeq ($(MERIDIANE_MAJOR),1)
 else
   MERIDIANE_FORMATS_ARG := --formats "$(MERIDIANE_FORMATS)"
 endif
-LIB_NAME ?= bridge
-NPM_PACKAGE_NAME ?= bridge
+NPM_PACKAGE_NAME ?= @suretiq/bridge
+LIB_NAME ?= $(notdir $(NPM_PACKAGE_NAME))
 APP_VERSION ?= 0.0.0-dev
 
 FRONTEND_DIR ?= webfront
 FRONTEND_BRIDGE_DIR ?= $(FRONTEND_DIR)/bridge
 DIST_DIR ?= dist
 
-.PHONY: bridge bridge-openapi bridge-build bridge-install bridge-clean
+.PHONY: bridge bridge-openapi bridge-generate bridge-clean
 
-bridge: bridge-openapi bridge-build bridge-install
+bridge: bridge-openapi bridge-generate
 
 bridge-openapi:
 	echo "🔄 Fetch OpenAPI spec from $(OPENAPI_URL)"
@@ -34,20 +34,16 @@ bridge-openapi:
 		"$(OPENAPI_URL)" \
 		-o "$(OPENAPI_SPEC)"
 
-bridge-build:
-	echo "🏗️  Build $(NPM_PACKAGE_NAME) ($(APP_VERSION))"
-	npx -y @obsidiane/meridiane@$(MERIDIANE_VERSION) build "$(NPM_PACKAGE_NAME)" \
-		--version "$(APP_VERSION)" \
-		--spec "$(OPENAPI_SPEC)" \
-		$(MERIDIANE_FORMATS_ARG) \
-		$(MERIDIANE_PRESET_ARG)
-
-bridge-install:
-	test -d "$(DIST_DIR)/$(LIB_NAME)" || { echo "Missing $(DIST_DIR)/$(LIB_NAME). Run 'make bridge-build' first."; exit 1; }
-	echo "📦 Copy to $(FRONTEND_BRIDGE_DIR)"
+bridge-generate:
+	echo "🧩 Generate $(NPM_PACKAGE_NAME) ($(APP_VERSION))"
 	rm -rf "$(FRONTEND_BRIDGE_DIR)"
 	mkdir -p "$(FRONTEND_BRIDGE_DIR)"
-	cp -R "$(DIST_DIR)/$(LIB_NAME)/." "$(FRONTEND_BRIDGE_DIR)/"
+	npx -y @obsidiane/meridiane@$(MERIDIANE_VERSION) generate "$(NPM_PACKAGE_NAME)" \
+		--version "$(APP_VERSION)" \
+		--spec "$(OPENAPI_SPEC)" \
+		--out "$(FRONTEND_BRIDGE_DIR)" \
+		$(MERIDIANE_FORMATS_ARG) \
+		$(MERIDIANE_PRESET_ARG)
 
 bridge-clean:
 	rm -rf "$(DIST_DIR)/$(LIB_NAME)" "$(OPENAPI_SPEC)" "$(FRONTEND_BRIDGE_DIR)"
