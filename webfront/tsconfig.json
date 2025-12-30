@@ -4,7 +4,7 @@
 		"compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "bridge": ["bridge"]
+      "bridge": ["bridge/src/public-api"]
     },
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,

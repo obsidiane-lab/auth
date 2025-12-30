@@ -1,4 +1,4 @@
-# bridge
+# @suretiq/bridge
 
 Bridge Angular (runtime + models TypeScript) pour une API Platform (Hydra/JSON-LD), avec support Mercure/SSE optionnel.
 
@@ -10,7 +10,7 @@ Le package expose une API Angular volontairement minimaliste :
 ## Installation
 
 ```bash
-npm i bridge
+npm i @suretiq/bridge
 ```
 
 Le bridge est conçu pour être installé dans une application Angular. Les dépendances Angular et RxJS sont des `peerDependencies`.
@@ -29,7 +29,7 @@ Configurez le bridge au démarrage de l’application avec `provideBridge()` (re
 ```ts
 // app.config.ts (ou main.ts)
 import {ApplicationConfig} from '@angular/core';
-import {provideBridge} from 'bridge';
+import {provideBridge} from '@suretiq/bridge';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -45,7 +45,7 @@ export const appConfig: ApplicationConfig = {
 
 ```ts
 import {NgModule} from '@angular/core';
-import {provideBridge} from 'bridge';
+import {provideBridge} from '@suretiq/bridge';
 
 @NgModule({
   providers: [
@@ -77,7 +77,7 @@ Le comportement `withCredentials` par défaut est déduit de `mercure.init` :
 Vous pouvez aussi surcharger au cas par cas via `opts.withCredentials` sur les appels HTTP.
 
 ```ts
-import {provideBridge} from 'bridge';
+import {provideBridge} from '@suretiq/bridge';
 
 provideBridge({
   baseUrl: 'https://api.example.com',
@@ -97,7 +97,7 @@ provideBridge({
 - ou un `HttpInterceptorFn` custom.
 
 ```ts
-import {provideBridge} from 'bridge';
+import {provideBridge} from '@suretiq/bridge';
 
 provideBridge({
   baseUrl: 'https://api.example.com',
@@ -108,7 +108,7 @@ provideBridge({
 ### Defaults (headers / timeout / retries)
 
 ```ts
-import {provideBridge} from 'bridge';
+import {provideBridge} from '@suretiq/bridge';
 
 provideBridge({
   baseUrl: 'https://api.example.com',
@@ -123,7 +123,7 @@ provideBridge({
 ### Debug
 
 ```ts
-import {provideBridge} from 'bridge';
+import {provideBridge} from '@suretiq/bridge';
 
 provideBridge({baseUrl: 'https://api.example.com', debug: true});
 ```
@@ -134,7 +134,7 @@ provideBridge({baseUrl: 'https://api.example.com', debug: true});
 
 ```ts
 import {inject} from '@angular/core';
-import {FacadeFactory, ResourceFacade, Item} from 'bridge';
+import {FacadeFactory, ResourceFacade, Item} from '@suretiq/bridge';
 
 type Book = Item & {title?: string};
 
@@ -163,7 +163,7 @@ this.books.delete$(book['@id']!);
 
 ```ts
 import {inject} from '@angular/core';
-import {BridgeFacade} from 'bridge';
+import {BridgeFacade} from '@suretiq/bridge';
 
 export class HealthService {
   private readonly bridge = inject(BridgeFacade);
@@ -214,8 +214,8 @@ Note SSR : la connexion SSE ne s’ouvre que dans le navigateur.
 Les models générés (si présents) sont exportés au même niveau que le runtime :
 
 ```ts
-import type {Item} from 'bridge';
-// import type {Book} from 'bridge';
+import type {Item} from '@suretiq/bridge';
+// import type {Book} from '@suretiq/bridge';
 ```
 
 En JSON-LD (`application/ld+json`), l’IRI est typiquement dans `model['@id']`.
