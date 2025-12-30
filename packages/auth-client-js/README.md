@@ -1,460 +1,234 @@
-# @obsidiane/auth-sdk – SDK JS navigateur pour Obsidiane Auth
+# @obsidiane/auth-client-js
 
-SDK JavaScript/TypeScript pour consommer l’API Obsidiane Auth depuis un navigateur :
+Obsidiane Auth API Client for Angular/TypeScript.
 
-- gère automatiquement les **cookies** (`__Secure-at`, `__Host-rt`) via `fetch` + `credentials: 'include'` ;
-- génère un **token CSRF stateless** par requête et le transmet en **cookie + en‑tête** `csrf-token` pour les endpoints sensibles ;
-- expose des **sous‑clients dédiés** (`auth`, `users`, `invites`, `setup`) avec une méthode par endpoint ;
-- fournit des **types TypeScript** et une gestion d’erreurs structurée (`ApiError`).
+A lightweight SDK for interacting with the Obsidiane Auth service, featuring:
+- **Bridge from Meridiane**: Auto-generated HTTP client, facades, and TypeScript models from OpenAPI spec
+- **CSRF Protection**: Stateless token generation and persistence with Angular HttpClient interceptor
+- **Zero runtime dependencies**: Uses native browser APIs and Angular's built-in HTTP client
 
-Ce SDK est conçu pour être utilisé **côté navigateur uniquement** (pas de Node côté serveur).
-
----
-
-## 1. Installation
+## Installation
 
 ```bash
-npm install @obsidiane/auth-sdk
-# ou
-yarn add @obsidiane/auth-sdk
+npm install @obsidiane/auth-client-js
 ```
 
-Le package est publié en **ESM** et inclut les définitions TypeScript (`.d.ts`).
+## Quick Start
 
-### Build (depuis le dépôt monorepo)
+### 1. Setup in your Angular app
 
-Depuis la racine du projet `auth` :
+```typescript
+// app.config.ts
+import { provideBridge } from '@obsidiane/auth-client-js';
+import { CsrfInterceptor } from '@obsidiane/auth-client-js/csrf';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
-```bash
-cd packages/auth-client-js
-npm install        # si nécessaire
-npm run build      # génère dist/*
+export const appConfig: ApplicationConfig = {
+  providers: [
+    // Provide the Meridiane bridge (HTTP client + facades)
+    provideBridge({
+      baseUrl: 'http://localhost:9000',
+    }),
+
+    // Add CSRF interceptor to all HTTP requests
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: CsrfInterceptor,
+      multi: true,
+    },
+  ],
+};
 ```
 
-ou via un script dans le `package.json` racine :
+### 2. Use in your services
 
-```json
-{
-  "scripts": {
-    "auth-sdk:build": "npm --prefix packages/auth-client-js run build"
+```typescript
+import { Injectable, inject } from '@angular/core';
+import { FacadeFactory } from '@obsidiane/auth-client-js';
+import type { UserUserRead } from '@obsidiane/auth-client-js';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private readonly factory = inject(FacadeFactory);
+  private readonly users = this.factory.create<UserUserRead>({
+    url: '/api/users',
+  });
+
+  getUsers() {
+    return this.users.getCollection$();
+  }
+
+  getUser(id: string) {
+    return this.users.get$(id);
   }
 }
 ```
 
----
+## API Reference
 
-## 2. Concepts clés
+### Bridge Exports (from Meridiane)
 
-### 2.1 Cookies & sessions JWT
+The bridge provides:
 
-- L’API Auth émet deux cookies :
-  - `__Secure-at` : access token (JWT), SameSite `Lax`, partagé ;
-  - `__Host-rt` : refresh token (Gesdinet), SameSite `Strict`, host-only.
-- Le SDK **ne manipule pas directement** ces tokens :
-  - ils restent dans les cookies HTTP Only ;
-  - les appels se font toujours avec `credentials: 'include'`.
+#### **FacadeFactory**
+Create resource facades for CRUD operations:
 
-### 2.2 CSRF stateless
-
-- Aucun token CSRF n’est généré par le backend.
-- Le SDK doit :
-  - générer un jeton aléatoire **par requête sensible** ;
-  - l’envoyer dans l’en‑tête `csrf-token` ;
-  - poser le cookie `csrf-token_<token>=csrf-token` (double-submit).
-- Ce comportement est intégré dans le client HTTP :
-  - `csrf: true` dans les options de requête → génération automatique d’un token ;
-  - `csrf: 'valeur'` → utilisation d’un token fourni ;
-  - `csrf: false/undefined` → aucun header CSRF.
-
-### 2.3 Base URL & CORS
-
-- `baseUrl` doit pointer vers la racine d’Obsidiane Auth, par ex. :
-  - `https://auth.example.com`
-  - `http://localhost:8001`
-- Côté navigateur, pensez à :
-  - autoriser l’origine dans `ALLOWED_ORIGINS` côté backend ;
-  - toujours activer `credentials: 'include'` (géré par le SDK).
-
----
-
-## 3. AuthClient – configuration de base
-
-Le point d’entrée du SDK est la classe `AuthClient`.
-
-```ts
-import { AuthClient } from '@obsidiane/auth-sdk';
-
-const auth = new AuthClient({
-  baseUrl: 'https://auth.example.com',
+```typescript
+const facade = factory.create<MyResource>({
+  url: '/api/resources',
 });
+
+// Collection operations
+facade.getCollection$({ page: 1, itemsPerPage: 20 })
+
+// Item operations
+facade.get$(id)
+facade.post$(item)
+facade.patch$(id, partialItem)
+facade.delete$(id)
 ```
 
-### 3.1 Options disponibles
+#### **BridgeFacade**
+Low-level HTTP client for custom endpoints:
 
-```ts
-type AuthClientOptions = {
-  baseUrl: string;                     // requis
-  defaultHeaders?: HeadersInit;        // en-têtes appliqués à toutes les requêtes
-  credentials?: RequestCredentials;    // 'include' (défaut), 'same-origin', 'omit'
-  csrfHeaderName?: string;             // 'csrf-token' par défaut
-  csrfTokenGenerator?: () => string;   // pour surcharger la génération CSRF
-  fetchImpl?: typeof fetch;            // pour tests ou environnements custom
-};
+```typescript
+const bridge = inject(BridgeFacade);
+
+// Custom GET
+bridge.get$<MyResponse>('/api/custom-endpoint')
+
+// Custom POST
+bridge.post$<MyResponse>('/api/custom-endpoint', { payload })
 ```
 
-- `baseUrl` : URL du service d’authentification.
-- `defaultHeaders` : ex. `{'X-App': 'my-frontend'}`.
-- `credentials` : par défaut `'include'` pour envoyer/recevoir les cookies JWT.
-- `csrfHeaderName` : à ne changer que si le backend n’utilise pas `csrf-token`.
-- `csrfTokenGenerator` : permet d’imposer votre propre stratégie de génération.
-- `fetchImpl` : utile pour :
-  - mocker `fetch` dans des tests ;
-  - injecter une version instrumentée de `fetch`.
+#### **Models**
+TypeScript types for all API resources:
 
----
-
-## 4. Sous-clients & endpoints
-
-`AuthClient` expose plusieurs sous‑clients pour regrouper les endpoints par domaine.
-
-```ts
-const client = new AuthClient({ baseUrl: 'https://auth.example.com' });
-
-client.auth;    // endpoints /api/auth/*
-client.users;   // endpoints /api/users*
-client.invites; // endpoints /api/invite_users*
-client.setup;   // endpoint /api/setup/admin
-```
-
-Les types suivants sont exportés pour typer vos appels :
-
-```ts
+```typescript
 import type {
-  // Auth
-  User,
-  UserRead,
-  LoginResponse,
-  MeResponse,
-  RegisterInput,
-  RegisterResponse,
-  RefreshResponse,
-  PasswordForgotResponse,
-  InviteStatusResponse,
-  CompleteInviteResponse,
-  InitialAdminInput,
-  InitialAdminResponse,
-  // JSON-LD
-  Item,
-  Collection,
-  // Resources API Platform
-  InviteUserRead,
-} from '@obsidiane/auth-sdk';
+  UserUserRead,
+  Auth,
+  InviteUserInviteRead,
+  // ... all other models
+} from '@obsidiane/auth-client-js';
 ```
 
-### 4.1 Auth – `client.auth`
+### CSRF Utilities
 
-Endpoints principaux :
+Import directly from the package:
 
-- `POST /api/auth/login`
-- `GET /api/auth/me`
-- `POST /api/auth/refresh`
-- `POST /api/auth/register`
-- `POST /api/auth/logout`
-- `POST /api/auth/password/forgot`
-- `POST /api/auth/password/reset`
-- `POST /api/auth/invite`
-- `POST /api/auth/invite/complete`
+```typescript
+import {
+  generateCsrfToken,
+  getCsrfTokenFromCookie,
+  persistCsrfCookie,
+  getOrGenerateCsrfToken,
+  clearCsrfCookie,
+} from '@obsidiane/auth-client-js/csrf';
 
-Méthodes exposées :
+// Generate a new token
+const token = generateCsrfToken();
 
-```ts
-// Profil courant
-const me: MeResponse = await client.auth.me();
+// Get existing token or generate new one
+const token = getOrGenerateCsrfToken();
 
-// Login (CSRF requis)
-const { user, exp }: LoginResponse = await client.auth.login(email, password);
-// user.lastLoginAt contient la date ISO de dernière connexion (mise à jour à chaque login)
+// Retrieve from cookie
+const token = getCsrfTokenFromCookie();
 
-// Refresh silencieux (CSRF non requis, mais possible)
-const refresh: RefreshResponse = await client.auth.refresh();
+// Store in cookie
+persistCsrfCookie(token);
 
-// Logout (CSRF requis)
-await client.auth.logout();
-
-// Inscription (CSRF requis)
-const registration: RegisterResponse = await client.auth.register({
-  email: 'userexample.com',
-  password: 'Secret123!',
-});
-
-// Demande de reset (CSRF requis)
-const forgot: PasswordForgotResponse = await client.auth.requestPasswordReset('userexample.com');
-
-// Reset password (CSRF requis)
-await client.auth.resetPassword('<reset-token>', 'NewSecret123!');
-
-// Invitation (admin, CSRF requis)
-const inviteStatus: InviteStatusResponse = await client.auth.inviteUser('inviteeexample.com');
-
-// Compléter une invitation (public, CSRF requis)
-const completed: CompleteInviteResponse = await client.auth.completeInvite('token', 'Secret123!');
+// Clear from cookie
+clearCsrfCookie();
 ```
 
-### 4.2 Setup initial – `client.setup`
+## How It Works
 
-Endpoint :
+### Bridge Layer (Meridiane)
 
-- `POST /api/setup/admin`
+The bridge is auto-generated from the OpenAPI spec (`/api/docs.json`) using Meridiane. It includes:
 
-```ts
-const input: InitialAdminInput = {
-  email: 'adminexample.com',
-  password: 'Secret123!',
-};
+- **HTTP Client**: Optimized fetch wrapper with automatic retries and deduplication
+- **Facades**: Resource-based API for common CRUD operations
+- **Models**: TypeScript interfaces for all API request/response types
+- **Interceptors**: Built-in handling for headers, errors, and single-flight requests
 
-const created: InitialAdminResponse = await client.setup.createInitialAdmin(input);
+### CSRF Layer
+
+On top of the bridge, we add a thin CSRF layer:
+
+1. **Token Generation**: Uses `crypto.getRandomValues()` (with fallback)
+2. **Token Persistence**: Stores in secure cookie (`__Host-csrf-token_*`)
+3. **Automatic Injection**: Angular HttpClient interceptor adds token to POST/PUT/PATCH/DELETE requests
+4. **Double-Submit Pattern**: Token sent both as header and cookie
+
+## Development
+
+### Regenerate from OpenAPI
+
+The bridge is regenerated from the backend OpenAPI spec:
+
+```bash
+# From project root
+make sdk-npm
+
+# Or manually
+npx meridiane generate "@obsidiane/auth-client-js" \
+  --spec http://localhost:9000/api/docs.json \
+  --formats "application/ld+json"
 ```
 
-Ce flux n’est disponible que tant qu’aucun utilisateur n’existe dans la base.
+### Build
 
-### 4.3 Users – `client.users`
-
-Endpoints Api Platform :
-
-- `GET /api/users`
-- `GET /api/users/{id}`
-- `DELETE /api/users/{id}`
-- `POST /api/users/{id}/roles` (admin, CSRF stateless)
-
-Le backend expose les ressources utilisateur au format **JSON-LD** (API Platform) :
-
-- une collection JSON-LD typée `Collection<UserRead>` ;
-- des items JSON-LD portant leurs métadonnées via `Item` (`id`, `type`, `context`).
-
-```ts
-import type { Collection, UserRead } from '@obsidiane/auth-sdk';
-
-// Liste d’utilisateurs (admin uniquement)
-const users: Collection<UserRead> = await client.users.list();
-
-// Accès aux métadonnées JSON-LD de la collection
-console.log(users['id'], users.totalItems, users.view);
-
-// Détail des items JSON-LD
-const first: UserRead | undefined = users.member[0];
-
-// Détail d’un utilisateur seul
-const user: UserRead = await client.users.get(1);
-
-// Mise à jour des rôles (admin + CSRF stateless automatique)
-const updated = await client.users.updateRoles(1, { roles: ['ROLE_ADMIN'] });
-console.log(updated.user.roles);
-
-// Suppression via l’ID numérique
-await client.users.delete(42);
+```bash
+npm run build
+# Output: ./dist/
 ```
 
-### 4.4 Invites – `client.invites`
+### Publish
 
-Endpoints Api Platform :
-
-- `GET /api/invite_users`
-- `GET /api/invite_users/{id}`
-
-Les invitations admin exposées par API Platform sont également renvoyées en JSON-LD.
-
-```ts
-import type { Collection, InviteUserRead } from '@obsidiane/auth-sdk';
-
-// Collection JSON-LD d’invitations
-const invites: Collection<InviteUserRead> = await client.invites.list();
-
-// Accès aux items
-const firstInvite: InviteUserRead | undefined = invites.member[0];
-
-// Lecture d’une invitation spécifique
-const invite: InviteUserRead = await client.invites.get('some-id');
+```bash
+npm publish
 ```
 
----
+## Migration from Old SDK
 
-## 5. Gestion des erreurs
+The old SDK (`packages/auth-client-js.backup/`) had 758 lines of custom HTTP client code. This new version:
 
-Toutes les erreurs HTTP (codes 4xx/5xx) sont mappées sur une exception `ApiError` :
+- **Removes**: Custom HTTP client, request builders, response decoders
+- **Keeps**: CSRF protection logic
+- **Adds**: Meridiane bridge for consistency with the main app
 
-```ts
-import { ApiError } from '@obsidiane/auth-sdk';
+The API remains similar but cleaner:
 
-try {
-  await client.auth.register({ email, password });
-} catch (error) {
-  if (error instanceof ApiError) {
-    console.error('Status HTTP :', error.status);
-    console.error('Code métier :', error.errorCode);
-    console.error('Détails :', error.details);
-    console.error('Payload brut :', error.payload);
-  } else {
-    console.error('Erreur inattendue :', error);
-  }
-}
+```typescript
+// Old way (custom client)
+import { AuthClient } from '@obsidiane/auth-client-js';
+const client = new AuthClient({ baseUrl: 'http://localhost:9000' });
+client.auth.login(email, password);
+
+// New way (Meridiane bridge + CSRF)
+import { BridgeFacade } from '@obsidiane/auth-client-js';
+const bridge = inject(BridgeFacade);
+bridge.post$('/api/auth/login', { email, password });
 ```
 
-`ApiError` reflète la structure d’erreur du backend :
+## Architecture
 
-- `status` : code HTTP ;
-- `errorCode` : champ `error` du payload (`EMAIL_ALREADY_USED`, `INVALID_REGISTRATION`, etc.) ;
-- `details` : champ `details` lorsque présent ;
-- `payload` : payload complet retourné par l’API.
-
-Un alias `AuthSdkError` est également exporté pour des usages plus génériques.
-
----
-
-## 6. Intégration front – exemples
-
-### 6.1 Vanilla JS / TS
-
-```ts
-import { AuthClient } from '@obsidiane/auth-sdk';
-
-const client = new AuthClient({
-  baseUrl: 'https://auth.example.com',
-});
-
-async function handleLogin(email: string, password: string) {
-  const { user } = await client.auth.login(email, password);
-  console.log('Connecté en tant que', user.email);
-}
+```
+@obsidiane/auth-client-js
+├── Bridge (Meridiane-generated)
+│   ├── HTTP client (fetch wrapper)
+│   ├── Facades (FacadeFactory, BridgeFacade)
+│   ├── Models (TypeScript interfaces)
+│   └── Interceptors
+│
+└── CSRF Layer (manual)
+    ├── Token generation
+    ├── Cookie persistence
+    └── Angular HttpClient interceptor
 ```
 
-### 6.2 React (hook simple)
+## License
 
-```ts
-import { useState, useEffect } from 'react';
-import { AuthClient, ApiError, type MeResponse } from '@obsidiane/auth-sdk';
-
-const client = new AuthClient({ baseUrl: 'https://auth.example.com' });
-
-export function useCurrentUser() {
-  const [data, setData] = useState<MeResponse | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<ApiError | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    client.auth
-      .me()
-      .then((res) => {
-        if (!cancelled) {
-          setData(res);
-        }
-      })
-      .catch((err) => {
-        if (!cancelled && err instanceof ApiError && err.status === 401) {
-          setData(null);
-        } else if (!cancelled) {
-          setError(err);
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  return { data, loading, error };
-}
-```
-
-### 6.3 Refresh silencieux
-
-```ts
-async function scheduleRefresh(client: AuthClient, exp: number) {
-  const now = Date.now() / 1000;
-  const delaySeconds = Math.max(exp - now - 30, 10); // rafraîchit 30s avant l’expiration
-
-  setTimeout(async () => {
-    const { exp: newExp } = await client.auth.refresh();
-    await scheduleRefresh(client, newExp);
-  }, delaySeconds * 1000);
-}
-
-const { exp } = await client.auth.login('userexample.com', 'Secret123!');
-scheduleRefresh(client, exp);
-```
-
----
-
-## 7. Utilisation avancée
-
-### 7.1 Générer un token CSRF compatible
-
-Dans la plupart des cas, vous n’avez pas besoin d’appeler cela directement (les méthodes du SDK s’en chargent). Pour des appels HTTP personnalisés, vous pouvez générer un token compatible :
-
-```ts
-import { AuthClient } from '@obsidiane/auth-sdk';
-
-const client = new AuthClient({ baseUrl: 'https://auth.example.com' });
-const csrf = client.generateCsrfToken();
-
-await fetch('https://auth.example.com/api/custom/endpoint', {
-  method: 'POST',
-  credentials: 'include',
-  headers: {
-    'Content-Type': 'application/json',
-    'csrf-token': csrf,
-  },
-  body: JSON.stringify({ foo: 'bar' }),
-});
-```
-
-### 7.2 Surcharger `fetch`
-
-Pour instrumenter toutes les requêtes du SDK (logs, tracing, mocking) :
-
-```ts
-const instrumentedFetch: typeof fetch = async (input, init) => {
-  const start = performance.now();
-  const response = await fetch(input, init);
-  const duration = performance.now() - start;
-
-  console.debug('Auth SDK request', { input, status: response.status, duration });
-
-  return response;
-};
-
-const client = new AuthClient({
-  baseUrl: 'https://auth.example.com',
-  fetchImpl: instrumentedFetch,
-});
-```
-
-### 7.3 Surcharger la génération CSRF
-
-```ts
-const client = new AuthClient({
-  baseUrl: 'https://auth.example.com',
-  csrfTokenGenerator: () => myCustomRandomHex(32),
-});
-```
-
----
-
-## 8. Bonnes pratiques de sécurité côté front
-
-- **Ne stockez jamais** les JWT dans `localStorage` ou `sessionStorage` :
-  - laissez le backend gérer les cookies `HttpOnly` ;
-  - utilisez toujours `credentials: 'include'` (géré par le SDK).
-- Générer un **token CSRF par requête** sensible (le SDK le fait pour toutes ses méthodes).
-- Garder `baseUrl` cohérent avec la politique CORS (`ALLOWED_ORIGINS`) du backend.
-- En production :
-  - servir le frontend en HTTPS ;
-  - s’assurer que les cookies `Secure` sont bien activés.
-
-Pour le détail fonctionnel des endpoints (payloads, codes d’erreurs métier, flows complets), reportez‑vous au `README.md` du projet principal Obsidiane Auth. Ce SDK en est un simple wrapper typé, respectant les mêmes conventions (CSRF stateless, JWT + refresh, allowlist de redirection). 
+MIT

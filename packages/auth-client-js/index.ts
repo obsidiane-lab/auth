@@ -6,4 +6,5 @@
  * - Facades (resource-based API)
  * - Models (auto-generated types from OpenAPI)
  */
+
 export * from './src/public-api';
