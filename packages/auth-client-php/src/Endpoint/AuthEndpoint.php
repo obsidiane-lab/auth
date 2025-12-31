@@ -6,7 +6,7 @@ use Obsidiane\AuthBundle\Auth\Types;
 use Obsidiane\AuthBundle\Http\HttpClient;
 
 /**
- * Regroupe les endpoints /api/auth/* (login, me, logout, register, password, invite).
+ * Regroupe les endpoints /api/auth/* (login, me, logout, register, password, invite, verify-email, preview).
  * L'interface est alignée sur le SDK JS.
  */
 final class AuthEndpoint
@@ -20,6 +20,8 @@ final class AuthEndpoint
     private const PATH_AUTH_PASSWORD_RESET = '/api/auth/password/reset';
     private const PATH_AUTH_INVITE = '/api/auth/invite';
     private const PATH_AUTH_INVITE_COMPLETE = '/api/auth/invite/complete';
+    private const PATH_AUTH_INVITE_PREVIEW = '/api/auth/invite/preview';
+    private const PATH_AUTH_VERIFY_EMAIL = '/api/auth/verify-email';
 
     private const CSRF_HEADER = 'csrf-token';
 
@@ -166,6 +168,37 @@ final class AuthEndpoint
     }
 
     /**
+     * GET /api/auth/invite/preview
+     *
+     * @return array<string,mixed>
+     */
+    public function invitePreview(string $token): array
+    {
+        $path = $this->buildQueryPath(self::PATH_AUTH_INVITE_PREVIEW, [
+            'token' => $token,
+        ]);
+
+        return $this->http->requestJson('GET', $path);
+    }
+
+    /**
+     * GET /api/auth/verify-email
+     *
+     * @return array<string,mixed>
+     */
+    public function verifyEmail(int $id, string $token, int $expires, string $hash): array
+    {
+        $path = $this->buildQueryPath(self::PATH_AUTH_VERIFY_EMAIL, [
+            'id' => $id,
+            'token' => $token,
+            'expires' => $expires,
+            '_hash' => $hash,
+        ]);
+
+        return $this->http->requestJson('GET', $path);
+    }
+
+    /**
      * @return array<string,string>
      */
     private function buildRequiredCsrfHeaders(): array
@@ -183,5 +216,22 @@ final class AuthEndpoint
         }
 
         return [self::CSRF_HEADER => $csrf];
+    }
+
+    /**
+     * @param array<string,int|string> $query
+     */
+    private function buildQueryPath(string $path, array $query): string
+    {
+        if ($query === []) {
+            return $path;
+        }
+
+        $queryString = http_build_query($query, '', '&', PHP_QUERY_RFC3986);
+        if ($queryString === '') {
+            return $path;
+        }
+
+        return $path.'?'.$queryString;
     }
 }

@@ -3,6 +3,7 @@
 namespace Obsidiane\AuthBundle;
 
 use Obsidiane\AuthBundle\Endpoint\AuthEndpoint;
+use Obsidiane\AuthBundle\Endpoint\FrontendConfigEndpoint;
 use Obsidiane\AuthBundle\Endpoint\InvitesEndpoint;
 use Obsidiane\AuthBundle\Endpoint\SetupEndpoint;
 use Obsidiane\AuthBundle\Endpoint\UsersEndpoint;
@@ -13,6 +14,7 @@ use Obsidiane\AuthBundle\Http\HttpClient;
  *
  * Alignement avec le SDK JS :
  * - $client->auth()    : endpoints /api/auth/*
+ * - $client->config()  : endpoint  /api/config
  * - $client->users()   : endpoints /api/users*
  * - $client->invites() : endpoints /api/invite_users*
  * - $client->setup()   : endpoint  /api/setup/admin
@@ -22,6 +24,8 @@ final class AuthClient
     private HttpClient $http;
 
     private AuthEndpoint $auth;
+
+    private FrontendConfigEndpoint $config;
 
     private UsersEndpoint $users;
 
@@ -40,6 +44,7 @@ final class AuthClient
     ) {
         $this->http = new HttpClient($baseUrl, $defaultHeaders, $timeoutMs, $origin);
         $this->auth = new AuthEndpoint($this->http);
+        $this->config = new FrontendConfigEndpoint($this->http);
         $this->users = new UsersEndpoint($this->http);
         $this->invites = new InvitesEndpoint($this->http);
         $this->setup = new SetupEndpoint($this->http);
@@ -48,6 +53,11 @@ final class AuthClient
     public function auth(): AuthEndpoint
     {
         return $this->auth;
+    }
+
+    public function config(): FrontendConfigEndpoint
+    {
+        return $this->config;
     }
 
     public function users(): UsersEndpoint
