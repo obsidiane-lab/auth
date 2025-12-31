@@ -38,8 +38,8 @@ jobs:
           cache: npm
 
       - name: Install dependencies
-        run: npm ci
+        run: cd webfront && npm ci
 
       - name: Build assets
-        run: npm run build
+        run: cd webfront && npm run build
 
