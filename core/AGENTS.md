@@ -9,7 +9,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 - Exposer un backend **API-only** sous `/api` (plus de UI Twig/Vue).
 - Front Angular unique (dossier `/webfront`) qui sert `/login`, `/register`, `/reset-password`, `/reset-password/confirm`, `/verify-email`, `/invite/complete`, `/setup`.
 - Sessions supprimées: tout est stateless + cookies HttpOnly (JWT access + refresh).
-- CSRF stateless obligatoire via cookie + header `csrf-token` (Same Origin).
+- Vérification Origin/Referer pour les requêtes sensibles (Same Origin).
 
 ---
 
@@ -28,7 +28,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 | `src/Auth/Http/Controller/VerifyEmailController.php` | `GET /api/auth/verify-email` (lien signé). |
 | `src/Auth/Http/Controller/ResetPasswordController.php` | `POST /api/auth/password/forgot` + `POST /api/auth/password/reset`. |
 | `src/Setup/Http/Controller/InitialAdminController.php` | `POST /api/setup/admin`. |
-| `json_login (Lexik)` | `POST /api/auth/login` (CSRF `authenticate`). |
+| `json_login (Lexik)` | `POST /api/auth/login`. |
 | `refresh_jwt (Gesdinet)` | `POST /api/auth/refresh` (cookie `__Host-rt`). |
 
 ### 2.2 ApiResource (API Platform)
@@ -58,11 +58,11 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 ## 3. Parcours fonctionnels (API + Angular)
 
 ### 3.1 Login
-- Angular `/login` -> `POST /api/auth/login` (cookie + header `csrf-token`).
+- Angular `/login` -> `POST /api/auth/login`.
 - Cookies: `__Secure-at` (access) + `__Host-rt` (refresh).
 
 ### 3.2 Register
-- Angular `/register` -> `POST /api/auth/register` (CSRF).
+- Angular `/register` -> `POST /api/auth/register`.
 - Email de bienvenue avec lien `/verify-email?...` (route Angular).
 
 ### 3.3 Verify email
@@ -86,7 +86,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 ## 4. Sécurité
 
 - JWT Lexik + Gesdinet refresh tokens.
-- CSRF stateless: cookie + header `csrf-token`, validation Same Origin.
+- Contrôle Origin/Referer (Same Origin).
 - Rate limiting: `login_throttling`.
 - Cookies: `__Secure-at` (SameSite lax, domaine partagé) + `__Host-rt` (SameSite strict, host-only).
 
@@ -109,8 +109,6 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 | `FRONTEND_BASE_URL` | Base URL utilisée pour les liens email. |
 | `FRONTEND_DEFAULT_REDIRECT` | Redirection par défaut après login (allowlist appliquée). |
 | `FRONTEND_REDIRECT_ALLOWLIST` | Origines autorisées pour `redirect_uri`. |
-| `CSRF_COOKIE_NAME` | Nom du cookie CSRF stateless. |
-| `CSRF_CHECK_HEADER` | Vérifie le header CSRF en plus du cookie. |
 | `FRONTEND_THEME_MODE` | Thème par défaut (dark/light). |
 | `FRONTEND_THEME_COLOR` | Couleur par défaut (base/red/...). |
 | `FRONTEND_THEME_DIRECTION` | Direction par défaut (ltr/rtl). |

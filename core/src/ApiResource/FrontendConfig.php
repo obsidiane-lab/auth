@@ -51,9 +51,4 @@ final class FrontendConfig
      */
     public array $themeColors = [];
 
-    public string $csrfCookieName = 'csrf-token';
-
-    public string $csrfHeaderName = 'csrf-token';
-
-    public bool $csrfCheckHeader = true;
 }

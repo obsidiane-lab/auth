@@ -33,7 +33,6 @@
         "symfony/rate-limiter": "7.3.*",
         "symfony/runtime": "7.3.*",
         "symfony/security-bundle": "7.3.*",
-        "symfony/security-csrf": "7.3.*",
         "symfony/serializer": "7.3.*",
         "symfony/translation": "7.3.*",
         "symfony/twig-bundle": "7.3.*",

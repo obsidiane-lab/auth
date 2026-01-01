@@ -75,11 +75,4 @@ final class AuthClient
         return $this->setup;
     }
 
-    /**
-     * Génère un token CSRF compatible avec les endpoints protégés.
-     */
-    public function generateCsrfToken(): string
-    {
-        return $this->http->generateCsrfToken();
-    }
 }

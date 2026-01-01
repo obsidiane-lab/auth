@@ -24,11 +24,7 @@ final class SetupEndpoint
     public function createInitialAdmin(array $input): array
     {
         return $this->http->requestJson('POST', self::PATH_SETUP_INITIAL_ADMIN, [
-            'headers' => [
-                'csrf-token' => $this->http->generateCsrfToken(),
-            ],
             'json' => $input,
         ]);
     }
 }
-

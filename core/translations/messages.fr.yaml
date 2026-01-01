@@ -5,9 +5,7 @@ common:
   error:
     session_expired: 'Session expirée, merci de réessayer.'
     unexpected: 'Un problème est survenu. Merci de réessayer.'
-    csrf_token_invalid: 'Jeton CSRF invalide. Rechargez la page et réessayez.'
     invalid_payload: 'Les données envoyées sont invalides.'
-    invalid_csrf_token_id: 'Identifiant CSRF invalide.'
     initial_admin_required: 'Créez d’abord l’administrateur initial.'
 
 auth:
@@ -39,11 +37,11 @@ auth:
       sessions: 'Gestion des sessions et rafraîchissement de jetons entièrement sécurisés.'
       sso: 'Accédez instantanément à vos projets grâce au SSO Obsidiane.'
       detail:
-        sessions: 'Authentification forte, cookies sécurisés et protection CSRF stateless à chaque requête.'
+        sessions: 'Authentification forte, cookies sécurisés et contrôle d’origine à chaque requête.'
         sso: 'Connexion unifiée à l’ensemble de vos applications internes sans perte de temps.'
     status:
       secure_label: 'Accès protégé'
-      secure_hint: 'Sessions JWT sécurisées, rotation de refresh et protection CSRF.'
+      secure_hint: 'Sessions JWT sécurisées, rotation de refresh et contrôle d’origine.'
       uptime: 'Disponibilité'
       sessions: 'Sessions'
     form:

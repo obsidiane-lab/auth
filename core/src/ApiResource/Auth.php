@@ -6,8 +6,6 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
-use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
-use ApiPlatform\OpenApi\Model\Parameter as OpenApiParameter;
 use App\Auth\Http\Dto\InviteCompleteInput;
 use App\Auth\Http\Dto\InviteUserInput;
 use App\Auth\Http\Dto\PasswordForgotInput;
@@ -28,18 +26,7 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/auth/register',
             status: Response::HTTP_CREATED,
             controller: RegisterController::class,
-            openapi: new OpenApiOperation(
-                parameters: [
-                    new OpenApiParameter(
-                        name: 'csrf-token',
-                        in: 'header',
-                        description: 'Jeton CSRF stateless',
-                        required: true,
-                        schema: ['type' => 'string']
-                    ),
-                ]
-            ),
-            description: 'Inscrit un nouvel utilisateur (CSRF `register`).',
+            description: 'Inscrit un nouvel utilisateur.',
             denormalizationContext: ['groups' => ['user:register']],
             input: RegisterUserInput::class,
             read: false,
@@ -52,18 +39,7 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/auth/invite',
             status: Response::HTTP_ACCEPTED,
             controller: InviteUserController::class,
-            openapi: new OpenApiOperation(
-                parameters: [
-                    new OpenApiParameter(
-                        name: 'csrf-token',
-                        in: 'header',
-                        description: 'Jeton CSRF stateless',
-                        required: true,
-                        schema: ['type' => 'string']
-                    ),
-                ]
-            ),
-            description: 'Invite un utilisateur (admin uniquement, CSRF `invite_user`).',
+            description: 'Invite un utilisateur (admin uniquement).',
             denormalizationContext: ['groups' => ['invite:send']],
             input: InviteUserInput::class,
             read: false,
@@ -76,17 +52,6 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/auth/invite/complete',
             status: Response::HTTP_CREATED,
             controller: AcceptInvitationController::class,
-            openapi: new OpenApiOperation(
-                parameters: [
-                    new OpenApiParameter(
-                        name: 'csrf-token',
-                        in: 'header',
-                        description: 'Jeton CSRF stateless',
-                        required: true,
-                        schema: ['type' => 'string']
-                    ),
-                ]
-            ),
             description: 'Complète une invitation (mot de passe + profil).',
             denormalizationContext: ['groups' => ['invite:complete']],
             input: InviteCompleteInput::class,
@@ -100,18 +65,7 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/auth/logout',
             status: Response::HTTP_NO_CONTENT,
             controller: LogoutController::class,
-            openapi: new OpenApiOperation(
-                parameters: [
-                    new OpenApiParameter(
-                        name: 'csrf-token',
-                        in: 'header',
-                        description: 'Jeton CSRF stateless',
-                        required: true,
-                        schema: ['type' => 'string']
-                    ),
-                ]
-            ),
-            description: 'Déconnecte l’utilisateur (CSRF `logout`).',
+            description: 'Déconnecte l’utilisateur.',
             read: false,
             deserialize: false,
             validate: false,
@@ -122,17 +76,6 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/auth/password/forgot',
             status: Response::HTTP_ACCEPTED,
             controller: ResetPasswordController::class . '::request',
-            openapi: new OpenApiOperation(
-                parameters: [
-                    new OpenApiParameter(
-                        name: 'csrf-token',
-                        in: 'header',
-                        description: 'Jeton CSRF stateless',
-                        required: true,
-                        schema: ['type' => 'string']
-                    ),
-                ]
-            ),
             description: 'Demande de réinitialisation du mot de passe.',
             denormalizationContext: ['groups' => ['password:forgot']],
             input: PasswordForgotInput::class,
@@ -146,17 +89,6 @@ use Symfony\Component\HttpFoundation\Response;
             uriTemplate: '/auth/password/reset',
             status: Response::HTTP_NO_CONTENT,
             controller: ResetPasswordController::class . '::reset',
-            openapi: new OpenApiOperation(
-                parameters: [
-                    new OpenApiParameter(
-                        name: 'csrf-token',
-                        in: 'header',
-                        description: 'Jeton CSRF stateless',
-                        required: true,
-                        schema: ['type' => 'string']
-                    ),
-                ]
-            ),
             description: 'Réinitialise le mot de passe via token.',
             denormalizationContext: ['groups' => ['password:reset']],
             input: PasswordResetInput::class,

@@ -23,7 +23,7 @@ final class Configuration implements ConfigurationInterface
                 ->end()
                 ->scalarNode('origin')
                     ->defaultNull()
-                    ->info('En-tête Origin à envoyer pour la validation CSRF stateless (doit matcher ALLOWED_ORIGINS)')
+                    ->info('En-tête Origin à envoyer pour la validation Origin/Referer (doit matcher ALLOWED_ORIGINS)')
                 ->end()
             ->end()
         ;

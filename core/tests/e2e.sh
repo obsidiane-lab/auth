@@ -11,7 +11,7 @@ set -euo pipefail
 # - admin role update on a user
 
 BASE_URL="${BASE_URL:-http://localhost:8001}"
-# Origin used for CSRF validation (defaults to BASE_URL).
+# Origin used for Origin/Referer validation (defaults to BASE_URL).
 ORIGIN="${ORIGIN:-$BASE_URL}"
 
 # Admin account used for tests
@@ -74,31 +74,12 @@ prompt_password() {
   fi
 }
 
-generate_csrf() {
-  php -r 'echo bin2hex(random_bytes(16));'
-}
-
-build_csrf_cookie() {
-  local token="$1"
-  local prefix=""
-
-  if [[ "${BASE_URL}" == https://* ]]; then
-    prefix="__Host-"
-  fi
-
-  printf '%s%s_%s=%s' "${prefix}" "csrf-token" "${token}" "csrf-token"
-}
-
 step_initial_admin() {
   info "Ensuring initial admin exists..."
-  csrf=$(generate_csrf)
-  csrf_cookie=$(build_csrf_cookie "${csrf}")
   body_file="$(mktemp)"
   http_code=$(curl -s -o "${body_file}" -w '%{http_code}' \
-    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
-    -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
     "${BASE_URL}/api/setup/admin")
 
@@ -115,14 +96,10 @@ step_initial_admin() {
 
 step_login_admin() {
   info "Logging in as admin: ${ADMIN_EMAIL}"
-  csrf=$(generate_csrf)
-  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
     -c "${ADMIN_COOKIES}" \
-    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
-    -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${ADMIN_EMAIL}\",\"password\":\"${ADMIN_PASSWORD}\"}" \
     "${BASE_URL}/api/auth/login"
 }
@@ -134,31 +111,23 @@ step_me_admin() {
 
 step_refresh_admin() {
   info "Refreshing admin token"
-  curl -s -i -b "${ADMIN_COOKIES}" -X POST "${BASE_URL}/api/auth/refresh"
+  curl -s -i -b "${ADMIN_COOKIES}" -H "Origin: ${ORIGIN}" -X POST "${BASE_URL}/api/auth/refresh"
 }
 
 step_logout_admin() {
   info "Logging out admin"
-  csrf=$(generate_csrf)
-  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
-    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
-    -H "csrf-token: ${csrf}" \
     -X POST "${BASE_URL}/api/auth/logout"
 }
 
 step_register_user() {
   info "Registering user: ${REGISTER_EMAIL}"
-  csrf=$(generate_csrf)
-  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
-    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
-    -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${REGISTER_EMAIL}\",\"password\":\"${REGISTER_PASSWORD}\"}" \
     "${BASE_URL}/api/auth/register"
 
@@ -169,13 +138,9 @@ step_register_user() {
 
 step_password_reset_flow() {
   info "Requesting password reset for: ${REGISTER_EMAIL}"
-  csrf=$(generate_csrf)
-  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
-    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
-    -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${REGISTER_EMAIL}\"}" \
     "${BASE_URL}/api/auth/password/forgot"
 
@@ -228,15 +193,11 @@ PY
     return 0
   fi
 
-  csrf=$(generate_csrf)
-  csrf_cookie=$(build_csrf_cookie "${csrf}")
   info "POST /api/users/${user_id}/roles with ROLE_ADMIN"
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
-    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
-    -H "csrf-token: ${csrf}" \
     -d '{"roles":["ROLE_ADMIN"]}' \
     "${BASE_URL}/api/users/${user_id}/roles"
 
@@ -250,14 +211,10 @@ step_invite_user() {
   info "Logging in as admin again (for invite)..."
   step_login_admin
 
-  csrf=$(generate_csrf)
-  csrf_cookie=$(build_csrf_cookie "${csrf}")
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
-    -b "${csrf_cookie}" \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
-    -H "csrf-token: ${csrf}" \
     -d "{\"email\":\"${INVITE_EMAIL}\"}" \
     "${BASE_URL}/api/auth/invite"
 

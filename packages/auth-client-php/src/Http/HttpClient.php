@@ -69,14 +69,6 @@ final class HttpClient
     }
 
     /**
-     * Génère un token CSRF stateless compatible avec CsrfRequestValidator.
-     */
-    public function generateCsrfToken(): string
-    {
-        return bin2hex(random_bytes(16));
-    }
-
-    /**
      * @param array<string,string> $requestHeaders
      *
      * @return array<string,string>
@@ -95,7 +87,7 @@ final class HttpClient
             $headers[$name] = (string) $value;
         }
 
-        // Pour la protection CSRF stateless, le backend vérifie Origin/Referer.
+        // Le backend vérifie Origin/Referer sur les requêtes sensibles.
         // On simule donc une origine navigateur basée sur baseUrl si aucune
         // entête Origin n'est déjà présente.
         if ($this->origin !== null && !isset($headers['Origin']) && !isset($headers['origin'])) {

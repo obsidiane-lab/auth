@@ -20,10 +20,6 @@ final readonly class FrontendConfigController
         private string $frontendDefaultRedirect,
         #[Autowire('%env(string:FRONTEND_REDIRECT_ALLOWLIST)%')]
         private string $frontendRedirectAllowlist,
-        #[Autowire('%env(string:CSRF_COOKIE_NAME)%')]
-        private string $csrfCookieName,
-        #[Autowire('%env(bool:CSRF_CHECK_HEADER)%')]
-        private bool $csrfCheckHeader,
         #[Autowire('%env(FRONTEND_THEME_MODE)%')]
         private string $themeMode,
         #[Autowire('%env(FRONTEND_THEME_COLOR)%')]
@@ -48,10 +44,6 @@ final readonly class FrontendConfigController
         $config->themeColor = $this->themeColor;
         $config->themeDirection = $this->themeDirection;
         $config->themeColors = $this->normalizeThemes($this->themeColors, $this->themeColor);
-        $config->csrfCookieName = $this->csrfCookieName;
-        $config->csrfHeaderName = $this->csrfCookieName;
-        $config->csrfCheckHeader = $this->csrfCheckHeader;
-
         return $config;
     }
 

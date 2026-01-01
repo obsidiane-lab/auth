@@ -1,11 +1,11 @@
 # Obsidiane Auth SDK for PHP
 
-Client PHP moderne pour l'API Obsidiane Auth. Intégration Symfony avec gestion automatique des cookies (JWT access/refresh) et protection CSRF stateless.
+Client PHP moderne pour l'API Obsidiane Auth. Intégration Symfony avec gestion automatique des cookies (JWT access/refresh) et validation Origin/Referer.
 
 ## Features
 
 ✅ **Gestion automatique des sessions** - Cookies HttpOnly sécurisés (access token + refresh token)
-✅ **Protection CSRF stateless** - Génération et injection automatique du token CSRF
+✅ **Validation Origin/Referer** - Envoi de l'en-tête Origin pour les requêtes sensibles
 ✅ **Type-safe** - PHP 8.2+ avec types stricts et PHPDoc complet
 ✅ **Bundle Symfony** - Intégration native avec injection de dépendances
 ✅ **API Platform ready** - Support complet JSON-LD et hydra:collection
@@ -36,7 +36,7 @@ return [
 ```yaml
 obsidiane_auth:
   base_url: '%env(OBSIDIANE_AUTH_BASE_URL)%'
-  # Optionnel : origine pour validation CORS/CSRF
+  # Optionnel : origine pour validation Origin/Referer
   origin: '%env(OBSIDIANE_AUTH_ORIGIN)%'
 ```
 
@@ -48,7 +48,7 @@ OBSIDIANE_AUTH_ORIGIN=https://app.example.com
 
 ## Architecture
 
-Le client utilise `HttpBrowser` (BrowserKit) avec `CookieJar` pour gérer automatiquement les cookies HttpOnly (`__Secure-at` pour l'access token, `__Host-rt` pour le refresh token). Le CSRF est généré côté client via `random_bytes(16)` et envoyé dans l'en-tête `csrf-token`.
+Le client utilise `HttpBrowser` (BrowserKit) avec `CookieJar` pour gérer automatiquement les cookies HttpOnly (`__Secure-at` pour l'access token, `__Host-rt` pour le refresh token). L'en-tête `Origin` est ajouté si configuré pour la validation Same Origin.
 
 ### Instanciation manuelle (hors Symfony)
 
@@ -99,7 +99,7 @@ class AuthController
         // $config = [
         //   'registrationEnabled' => true,
         //   'brandingName' => 'My App',
-        //   'csrfCookieName' => 'csrf-token',
+        //   'themeMode' => 'dark',
         //   ...
         // ]
 
@@ -120,7 +120,7 @@ Authentification et gestion des utilisateurs.
 |---------|----------|-------------|
 | `me()` | `GET /api/auth/me` | Utilisateur authentifié |
 | `login($email, $password)` | `POST /api/auth/login` | Connexion |
-| `refresh(?$csrf)` | `POST /api/auth/refresh` | Renouvellement token |
+| `refresh()` | `POST /api/auth/refresh` | Renouvellement token |
 | `logout()` | `POST /api/auth/logout` | Déconnexion |
 | `register($input)` | `POST /api/auth/register` | Inscription |
 | `requestPasswordReset($email)` | `POST /api/auth/password/forgot` | Demande reset password |
@@ -194,8 +194,7 @@ $config = $this->auth->config()->get();
 //   'brandingName' => 'My App',
 //   'themeMode' => 'dark',
 //   'themeColor' => 'base',
-//   'csrfCookieName' => 'csrf-token',
-//   'csrfHeaderName' => 'csrf-token',
+//   'themeMode' => 'dark',
 //   ...
 // ]
 ```
@@ -208,7 +207,7 @@ Gestion des utilisateurs (API Platform).
 |---------|----------|-------------|
 | `list()` | `GET /api/users` | Liste des utilisateurs |
 | `get($id)` | `GET /api/users/{id}` | Détail utilisateur |
-| `updateRoles($id, $roles, ?$csrf)` | `POST /api/users/{id}/roles` | Modifier rôles (admin) |
+| `updateRoles($id, $roles)` | `POST /api/users/{id}/roles` | Modifier rôles (admin) |
 | `delete($id)` | `DELETE /api/users/{id}` | Supprimer utilisateur |
 
 #### Exemples
@@ -297,7 +296,7 @@ try {
 | `WEAK_PASSWORD` | Mot de passe trop faible |
 | `INVALID_TOKEN` | Token invalide ou expiré |
 | `USER_NOT_FOUND` | Utilisateur introuvable |
-| `CSRF_INVALID` | Token CSRF invalide |
+| `ORIGIN_NOT_ALLOWED` | Origine non autorisée |
 
 ## Modèles & JSON-LD
 
@@ -321,21 +320,6 @@ if ($first !== null) {
     $type = $first->type();       // "User"
     $data = $first->data();       // ['email' => '...', 'roles' => [...]]
 }
-```
-
-## CSRF Token personnalisé
-
-Pour des requêtes HTTP personnalisées, générez un token CSRF :
-
-```php
-$csrf = $this->auth->generateCsrfToken();
-
-// Utilisez-le dans vos requêtes custom avec l'en-tête 'csrf-token'
-$response = $httpClient->request('POST', '/custom-endpoint', [
-    'headers' => [
-        'csrf-token' => $csrf,
-    ],
-]);
 ```
 
 ## Tests
@@ -379,7 +363,7 @@ class MyServiceTest extends TestCase
 ### v0.x
 
 - ✅ Support complet de l'API Obsidiane Auth
-- ✅ Gestion automatique cookies + CSRF
+- ✅ Gestion automatique cookies + Origin/Referer
 - ✅ Intégration Symfony Bundle
 - ✅ Support API Platform (JSON-LD)
 

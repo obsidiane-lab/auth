@@ -1,6 +1,6 @@
 {
     "name": "obsidiane/auth-sdk",
-    "description": "Symfony bundle fournissant un client Obsidiane Auth (cookies + CSRF stateless)",
+    "description": "Symfony bundle fournissant un client Obsidiane Auth (cookies + validation Origin/Referer)",
     "type": "symfony-bundle",
     "license": "MIT",
     "autoload": {

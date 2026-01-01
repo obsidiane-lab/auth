@@ -13,8 +13,6 @@ use Obsidiane\AuthBundle\Http\HttpClient;
 final class UsersEndpoint
 {
     private const PATH_USERS = '/api/users';
-    private const CSRF_HEADER = 'csrf-token';
-
     public function __construct(
         private readonly HttpClient $http,
     ) {
@@ -43,18 +41,15 @@ final class UsersEndpoint
     }
 
     /**
-     * POST /api/users/{id}/roles (CSRF requis, admin)
+     * POST /api/users/{id}/roles (admin)
      *
      * @param list<string> $roles
      *
      * @return array<string,mixed>
      */
-    public function updateRoles(int $id, array $roles, ?string $csrfToken = null): array
+    public function updateRoles(int $id, array $roles): array
     {
-        $csrf = $csrfToken && $csrfToken !== '' ? $csrfToken : $this->http->generateCsrfToken();
-
         return $this->http->requestJson('POST', self::PATH_USERS.'/'.$id.'/roles', [
-            'headers' => [self::CSRF_HEADER => $csrf],
             'json' => ['roles' => array_values(array_map(static fn ($role) => (string) $role, $roles))],
         ]);
     }

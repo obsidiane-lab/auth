@@ -13,9 +13,6 @@ const DEFAULT_CONFIG: FrontendConfig = {
   themeColor: 'base',
   themeDirection: 'ltr',
   themeColors: ['base', 'red', 'blue', 'orange', 'yellow', 'green', 'violet'],
-  csrfCookieName: 'csrf-token',
-  csrfHeaderName: 'csrf-token',
-  csrfCheckHeader: true,
 };
 
 @Injectable({ providedIn: 'root' })

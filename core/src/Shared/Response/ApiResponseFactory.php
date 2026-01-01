@@ -8,7 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class ApiResponseFactory
 {
     private const ERROR_MESSAGES = [
-        'CSRF_TOKEN_INVALID' => 'Jeton CSRF invalide. Merci de réessayer.',
+        'ORIGIN_NOT_ALLOWED' => 'Origine non autorisée. Merci de réessayer.',
         'INVALID_PAYLOAD' => 'Requête invalide.',
         'INVALID_CREDENTIALS' => 'Identifiants invalides.',
         'INVALID_EMAIL' => 'Adresse email invalide.',

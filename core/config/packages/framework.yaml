@@ -6,21 +6,6 @@ framework:
         default_path: '%kernel.project_dir%/translations'
         providers:
 
-    csrf_protection:
-        stateless_token_ids:
-            - authenticate
-            - logout
-            - register
-            - invite_user
-            - invite_complete
-            - password_forgot
-            - password_reset
-            - initial_admin
-            - user_roles
-            - api_write
-        cookie_name: '%env(string:CSRF_COOKIE_NAME)%'
-        check_header: '%env(bool:CSRF_CHECK_HEADER)%'
-
     session:
         enabled: false
 

@@ -24,13 +24,6 @@ final class AuthRoutesDecorator implements OpenApiFactoryInterface
         $openApi = ($this->inner)($context);
         $paths = $openApi->getPaths();
 
-        $csrfHeader = new Parameter(
-            name: 'csrf-token',
-            in: 'header',
-            required: true,
-            schema: ['type' => 'string']
-        );
-
         $loginRequestSchema = new Schema();
         $loginRequestSchema['type'] = 'object';
         $loginRequestSchema['properties'] = new ArrayObject([
@@ -89,10 +82,8 @@ final class AuthRoutesDecorator implements OpenApiFactoryInterface
                     ])
                 ),
                 '401' => new Response(description: 'Identifiants invalides.'),
-                '403' => new Response(description: 'CSRF invalide.'),
             ],
             summary: 'Authentifie un utilisateur et pose les cookies.',
-            parameters: [$csrfHeader],
             requestBody: new RequestBody(
                 description: 'Identifiants utilisateur',
                 content: new ArrayObject([
@@ -115,10 +106,8 @@ final class AuthRoutesDecorator implements OpenApiFactoryInterface
             tags: ['Mot de passe'],
             responses: [
                 '202' => new Response(description: 'Demande acceptée.'),
-                '403' => new Response(description: 'CSRF invalide.'),
             ],
             summary: 'Déclenche un email de réinitialisation.',
-            parameters: [$csrfHeader],
             requestBody: new RequestBody(
                 description: 'Demande de réinitialisation',
                 content: new ArrayObject([
@@ -143,10 +132,8 @@ final class AuthRoutesDecorator implements OpenApiFactoryInterface
             responses: [
                 '204' => new Response(description: 'Mot de passe mis à jour.'),
                 '400' => new Response(description: 'Token ou mot de passe invalide.'),
-                '403' => new Response(description: 'CSRF invalide.'),
             ],
             summary: 'Réinitialise le mot de passe via token.',
-            parameters: [$csrfHeader],
             requestBody: new RequestBody(
                 description: 'Réinitialisation de mot de passe',
                 content: new ArrayObject([
@@ -204,7 +191,6 @@ final class AuthRoutesDecorator implements OpenApiFactoryInterface
                 '409' => new Response(description: 'Administrateur déjà créé.'),
             ],
             summary: 'Crée le premier administrateur.',
-            parameters: [$csrfHeader],
             requestBody: new RequestBody(
                 description: 'Création administrateur initial',
                 content: new ArrayObject([

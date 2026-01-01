@@ -8,7 +8,4 @@ export interface FrontendConfig {
   themeColor: string;
   themeDirection: string;
   themeColors: string[];
-  csrfCookieName: string;
-  csrfHeaderName: string;
-  csrfCheckHeader: boolean;
 }

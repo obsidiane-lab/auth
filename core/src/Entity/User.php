@@ -37,7 +37,7 @@ use Symfony\Component\HttpFoundation\Response;
             requirements: ['id' => '\d+'],
             status: Response::HTTP_OK,
             controller: UpdateUserRolesController::class,
-            description: 'Met a jour les roles d\'un utilisateur (admin + CSRF).',
+            description: 'Met a jour les roles d\'un utilisateur (admin).',
             security: "is_granted('ROLE_ADMIN')",
             read: false,
             deserialize: false,

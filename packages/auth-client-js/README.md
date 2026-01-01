@@ -4,7 +4,6 @@ Obsidiane Auth API Client for Angular/TypeScript.
 
 A lightweight SDK for interacting with the Obsidiane Auth service, featuring:
 - **Bridge from Meridiane**: Auto-generated HTTP client, facades, and TypeScript models from OpenAPI spec
-- **CSRF Protection**: Stateless token generation and persistence with Angular HttpClient interceptor
 - **Zero runtime dependencies**: Uses native browser APIs and Angular's built-in HTTP client
 
 ## Installation
@@ -20,8 +19,6 @@ npm install @obsidiane/auth-client-js
 ```typescript
 // app.config.ts
 import { provideBridge } from '@obsidiane/auth-client-js';
-import { CsrfInterceptor } from '@obsidiane/auth-client-js/csrf';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,12 +27,6 @@ export const appConfig: ApplicationConfig = {
       baseUrl: 'http://localhost:9000',
     }),
 
-    // Add CSRF interceptor to all HTTP requests
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: CsrfInterceptor,
-      multi: true,
-    },
   ],
 };
 ```
@@ -113,35 +104,6 @@ import type {
 } from '@obsidiane/auth-client-js';
 ```
 
-### CSRF Utilities
-
-Import directly from the package:
-
-```typescript
-import {
-  generateCsrfToken,
-  getCsrfTokenFromCookie,
-  persistCsrfCookie,
-  getOrGenerateCsrfToken,
-  clearCsrfCookie,
-} from '@obsidiane/auth-client-js/csrf';
-
-// Generate a new token
-const token = generateCsrfToken();
-
-// Get existing token or generate new one
-const token = getOrGenerateCsrfToken();
-
-// Retrieve from cookie
-const token = getCsrfTokenFromCookie();
-
-// Store in cookie
-persistCsrfCookie(token);
-
-// Clear from cookie
-clearCsrfCookie();
-```
-
 ## How It Works
 
 ### Bridge Layer (Meridiane)
@@ -152,15 +114,6 @@ The bridge is auto-generated from the OpenAPI spec (`/api/docs.json`) using Meri
 - **Facades**: Resource-based API for common CRUD operations
 - **Models**: TypeScript interfaces for all API request/response types
 - **Interceptors**: Built-in handling for headers, errors, and single-flight requests
-
-### CSRF Layer
-
-On top of the bridge, we add a thin CSRF layer:
-
-1. **Token Generation**: Uses `crypto.getRandomValues()` (with fallback)
-2. **Token Persistence**: Stores in secure cookie (`__Host-csrf-token_*`)
-3. **Automatic Injection**: Angular HttpClient interceptor adds token to POST/PUT/PATCH/DELETE requests
-4. **Double-Submit Pattern**: Token sent both as header and cookie
 
 ## Development
 
@@ -196,7 +149,6 @@ npm publish
 The old SDK (`packages/auth-client-js.backup/`) had 758 lines of custom HTTP client code. This new version:
 
 - **Removes**: Custom HTTP client, request builders, response decoders
-- **Keeps**: CSRF protection logic
 - **Adds**: Meridiane bridge for consistency with the main app
 
 The API remains similar but cleaner:
@@ -207,7 +159,7 @@ import { AuthClient } from '@obsidiane/auth-client-js';
 const client = new AuthClient({ baseUrl: 'http://localhost:9000' });
 client.auth.login(email, password);
 
-// New way (Meridiane bridge + CSRF)
+// New way (Meridiane bridge)
 import { BridgeFacade } from '@obsidiane/auth-client-js';
 const bridge = inject(BridgeFacade);
 bridge.post$('/api/auth/login', { email, password });
@@ -222,11 +174,6 @@ bridge.post$('/api/auth/login', { email, password });
 │   ├── Facades (FacadeFactory, BridgeFacade)
 │   ├── Models (TypeScript interfaces)
 │   └── Interceptors
-│
-└── CSRF Layer (manual)
-    ├── Token generation
-    ├── Cookie persistence
-    └── Angular HttpClient interceptor
 ```
 
 ## License

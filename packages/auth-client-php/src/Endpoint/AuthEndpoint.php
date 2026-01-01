@@ -23,8 +23,6 @@ final class AuthEndpoint
     private const PATH_AUTH_INVITE_PREVIEW = '/api/auth/invite/preview';
     private const PATH_AUTH_VERIFY_EMAIL = '/api/auth/verify-email';
 
-    private const CSRF_HEADER = 'csrf-token';
-
     public function __construct(
         private readonly HttpClient $http,
     ) {
@@ -41,7 +39,7 @@ final class AuthEndpoint
     }
 
     /**
-     * POST /api/auth/login (CSRF requis)
+     * POST /api/auth/login
      *
      * @return array{
      *     user: array{
@@ -57,7 +55,6 @@ final class AuthEndpoint
     public function login(string $email, string $password): array
     {
         $payload = $this->http->requestJson('POST', self::PATH_AUTH_LOGIN, [
-            'headers' => $this->buildRequiredCsrfHeaders(),
             'json' => [
                 'email' => $email,
                 'password' => $password,
@@ -68,16 +65,13 @@ final class AuthEndpoint
     }
 
     /**
-     * POST /api/auth/refresh (CSRF facultatif)
+     * POST /api/auth/refresh
      *
      * @return array{exp: int}
      */
-    public function refresh(?string $csrf = null): array
+    public function refresh(): array
     {
-        $headers = $this->buildOptionalCsrfHeaders($csrf);
-
         $payload = $this->http->requestJson('POST', self::PATH_AUTH_REFRESH, [
-            'headers' => $headers,
         ]);
 
         return [
@@ -86,17 +80,16 @@ final class AuthEndpoint
     }
 
     /**
-     * POST /api/auth/logout (CSRF requis)
+     * POST /api/auth/logout
      */
     public function logout(): void
     {
         $this->http->requestJson('POST', self::PATH_AUTH_LOGOUT, [
-            'headers' => $this->buildRequiredCsrfHeaders(),
         ]);
     }
 
     /**
-     * POST /api/auth/register (CSRF requis)
+     * POST /api/auth/register
      *
      * @param array<string,mixed> $input
      *
@@ -105,31 +98,28 @@ final class AuthEndpoint
     public function register(array $input): array
     {
         return $this->http->requestJson('POST', self::PATH_AUTH_REGISTER, [
-            'headers' => $this->buildRequiredCsrfHeaders(),
             'json' => $input,
         ]);
     }
 
     /**
-     * POST /api/auth/password/forgot (CSRF requis)
+     * POST /api/auth/password/forgot
      *
      * @return array<string,mixed>
      */
     public function requestPasswordReset(string $email): array
     {
         return $this->http->requestJson('POST', self::PATH_AUTH_PASSWORD_FORGOT, [
-            'headers' => $this->buildRequiredCsrfHeaders(),
             'json' => ['email' => $email],
         ]);
     }
 
     /**
-     * POST /api/auth/password/reset (CSRF requis)
+     * POST /api/auth/password/reset
      */
     public function resetPassword(string $token, string $password): void
     {
         $this->http->requestJson('POST', self::PATH_AUTH_PASSWORD_RESET, [
-            'headers' => $this->buildRequiredCsrfHeaders(),
             'json' => [
                 'token' => $token,
                 'password' => $password,
@@ -138,27 +128,25 @@ final class AuthEndpoint
     }
 
     /**
-     * POST /api/auth/invite (CSRF requis, admin uniquement)
+     * POST /api/auth/invite (admin uniquement)
      *
      * @return array<string,mixed>
      */
     public function inviteUser(string $email): array
     {
         return $this->http->requestJson('POST', self::PATH_AUTH_INVITE, [
-            'headers' => $this->buildRequiredCsrfHeaders(),
             'json' => ['email' => $email],
         ]);
     }
 
     /**
-     * POST /api/auth/invite/complete (CSRF requis)
+     * POST /api/auth/invite/complete
      *
      * @return array<string,mixed>
      */
     public function completeInvite(string $token, string $password): array
     {
         return $this->http->requestJson('POST', self::PATH_AUTH_INVITE_COMPLETE, [
-            'headers' => $this->buildRequiredCsrfHeaders(),
             'json' => [
                 'token' => $token,
                 'password' => $password,
@@ -196,26 +184,6 @@ final class AuthEndpoint
         ]);
 
         return $this->http->requestJson('GET', $path);
-    }
-
-    /**
-     * @return array<string,string>
-     */
-    private function buildRequiredCsrfHeaders(): array
-    {
-        return [self::CSRF_HEADER => $this->http->generateCsrfToken()];
-    }
-
-    /**
-     * @return array<string,string>
-     */
-    private function buildOptionalCsrfHeaders(?string $csrf): array
-    {
-        if ($csrf === null || $csrf === '') {
-            return [];
-        }
-
-        return [self::CSRF_HEADER => $csrf];
     }
 
     /**
