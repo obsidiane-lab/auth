@@ -35,7 +35,14 @@ export class VerifyEmailComponent {
         return;
       }
 
-      const signature = [params.id, params.token, params.expires, params._hash].join('|');
+      const verificationParams = {
+        id: params.id,
+        token: params.token,
+        expires: params.expires,
+        _hash: params._hash,
+      };
+
+      const signature = [verificationParams.id, verificationParams.token, verificationParams.expires, verificationParams._hash].join('|');
       if (this.lastSignature === signature) {
         return;
       }
@@ -44,7 +51,7 @@ export class VerifyEmailComponent {
       this.status.set('loading');
       this.message.set('Vérification en cours...');
 
-      void this.verifyEmail(params);
+      void this.verifyEmail(verificationParams);
     });
   }
 

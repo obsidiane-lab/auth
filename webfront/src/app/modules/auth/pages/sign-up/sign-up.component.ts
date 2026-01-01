@@ -118,7 +118,7 @@ export class SignUpComponent {
       );
       if (!fieldApplied) {
         this.errorMessage.set(
-          resolveApiErrorMessage(payload, REGISTER_ERROR_MESSAGES) ?? REGISTER_ERROR_MESSAGES['UNKNOWN'];
+          resolveApiErrorMessage(payload, REGISTER_ERROR_MESSAGES) ?? REGISTER_ERROR_MESSAGES['UNKNOWN']
         );
       }
       return;

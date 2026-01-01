@@ -2,7 +2,7 @@
 
 ## Rôle de ce dossier
 Frontend Angular (ex : Angular 20) avec Tailwind.
-L’accès aux données est standardisé via un bridge (ex : `@suretiq/bridge` ou équivalent).
+L’accès aux données est standardisé via un bridge (ex : `@auth/bridge` ou équivalent).
 
 ## Architecture non négociable
 Utiliser : `store → repository → service → composant`
@@ -100,7 +100,7 @@ Utiliser : `store → repository → service → composant`
 - Si le contrat backend change : régénérer/mettre à jour le bridge puis corriger jusqu’à compilation verte.
 
 À compléter et maintenir exact :
-- Nom du package bridge : `@suretiq/bridge` (généré via `@obsidiane/meridiane`).
+- Nom du package bridge : `@auth/bridge` (généré via `@obsidiane/meridiane`).
 - Commande de génération : `make bridge` (mode `meridiane generate`, depuis la racine).
 - Chemin de sortie : `webfront/bridge`.
 
