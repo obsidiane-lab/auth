@@ -2,7 +2,7 @@
 
 namespace App\Auth\Application;
 
-use App\Auth\Domain\Exception\RegistrationException;
+use App\Shared\Http\Exception\InvalidRegistrationException;
 use App\Auth\Http\Dto\RegisterUserInput;
 use App\Shared\Security\PasswordStrengthChecker;
 use Symfony\Component\Validator\ConstraintViolationInterface;
@@ -17,7 +17,7 @@ final readonly class RegisterUserInputValidator
     }
 
     /**
-     * @throws RegistrationException
+     * @throws InvalidRegistrationException
      */
     public function validate(RegisterUserInput $input): void
     {
@@ -31,13 +31,13 @@ final readonly class RegisterUserInputValidator
                 $errors[$path] = $this->mapViolationToCode($path, $violation);
             }
 
-            throw new RegistrationException($errors);
+            throw new InvalidRegistrationException($errors);
         }
 
         $plainPassword = (string) ($input->plainPassword ?? '');
 
         if (!$this->passwordStrengthChecker->isStrongEnough($plainPassword)) {
-            throw new RegistrationException(['plainPassword' => 'INVALID_PASSWORD']);
+            throw new InvalidRegistrationException(['plainPassword' => 'INVALID_PASSWORD']);
         }
     }
 
@@ -46,7 +46,7 @@ final readonly class RegisterUserInputValidator
         return match ($path) {
             'email' => 'INVALID_EMAIL',
             'plainPassword' => 'INVALID_PASSWORD',
-            default => $violation->getMessage(),
+            default => 'INVALID_PAYLOAD',
         };
     }
 }

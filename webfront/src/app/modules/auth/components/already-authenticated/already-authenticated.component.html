@@ -1,6 +1,6 @@
 @if (sessionCheckError()) {
   <div class="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs text-destructive" role="alert">
-    {{ sessionCheckError() }}
+    {{ sessionCheckError() | translate }}
   </div>
 }
 
@@ -24,7 +24,7 @@
       </div>
 
       @if (logoutError()) {
-        <p class="text-xs text-destructive" role="alert">{{ logoutError() }}</p>
+        <p class="text-xs text-destructive" role="alert">{{ logoutError() | translate }}</p>
       }
 
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center">

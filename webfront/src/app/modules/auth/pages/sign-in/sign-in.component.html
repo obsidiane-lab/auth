@@ -8,7 +8,7 @@
     </div>
   </div>
 
-  <app-form-status-message kind="error" [message]="errorMessage()"></app-form-status-message>
+  <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
   <app-form-status-message kind="success" [message]="successMessage()"></app-form-status-message>
   @if (infoMessage()) {
     <app-form-status-message kind="info" [message]="infoMessage()"></app-form-status-message>

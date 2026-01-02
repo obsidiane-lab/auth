@@ -3,8 +3,10 @@
 namespace App\Auth\Http\Controller;
 
 use App\Repository\UserRepository;
-use App\Shared\Response\ApiResponseFactory;
 use App\Auth\Infrastructure\Security\EmailVerifier;
+use App\Shared\Http\Exception\InvalidRequestException;
+use App\Shared\Http\Exception\InvalidTokenException;
+use App\Shared\Http\Exception\UserNotFoundException;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -20,7 +22,6 @@ final class VerifyEmailController extends AbstractController
     public function __construct(
         private readonly EmailVerifier $emailVerifier,
         private readonly UserRepository $userRepository,
-        private readonly ApiResponseFactory $responses,
     ) {
     }
 
@@ -29,19 +30,19 @@ final class VerifyEmailController extends AbstractController
         $id = $request->query->get('id');
 
         if (!is_numeric($id)) {
-            return $this->responses->error('INVALID_REQUEST', Response::HTTP_BAD_REQUEST);
+            throw new InvalidRequestException();
         }
 
         $user = $this->userRepository->find((int) $id);
 
         if (!$user) {
-            return $this->responses->error('USER_NOT_FOUND', Response::HTTP_NOT_FOUND);
+            throw new UserNotFoundException();
         }
 
         try {
             $this->emailVerifier->handleEmailConfirmation($request, $user);
         } catch (VerifyEmailExceptionInterface) {
-            return $this->responses->error('INVALID_TOKEN', Response::HTTP_BAD_REQUEST);
+            throw new InvalidTokenException();
         }
 
         return new JsonResponse(['status' => 'OK'], Response::HTTP_OK);

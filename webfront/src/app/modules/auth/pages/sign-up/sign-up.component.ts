@@ -9,8 +9,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
 import { normalizeInternalPath } from '../../../../core/utils/redirect-policy.util';
-import { applyFieldErrors, REGISTER_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
-import { HttpErrorResponse } from '@angular/common/http';
+import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { SignUpFormType, type SignUpFormControls } from '../../forms/sign-up.form';
 
@@ -34,8 +33,7 @@ export class SignUpComponent {
   readonly returnUrl = signal<string | null>(null);
   readonly passwordStrength = signal(0);
   passwordVisible = false;
-  readonly apiFieldErrors = signal<Partial<Record<'email' | 'password' | 'confirmPassword', string>>>({});
-  readonly errorMessage = signal('');
+  readonly errorMessageKey = signal('');
   readonly successMessage = signal('');
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
@@ -46,6 +44,7 @@ export class SignUpComponent {
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
     private readonly signUpForm: SignUpFormType,
+    private readonly apiErrorService: ApiErrorService,
   ) {
     this.form = this.signUpForm.createForm(null);
 
@@ -69,9 +68,8 @@ export class SignUpComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessage.set('');
+    this.errorMessageKey.set('');
     this.successMessage.set('');
-    this.apiFieldErrors.set({});
 
     if (this.form.invalid) {
       return;
@@ -102,28 +100,6 @@ export class SignUpComponent {
   }
 
   private handleError(error: unknown): void {
-    if (error instanceof HttpErrorResponse) {
-      const payload = (error.error ?? null) as { error?: string; message?: string; details?: Record<string, string> } | null;
-      const fieldApplied = applyFieldErrors(
-        payload,
-        REGISTER_ERROR_MESSAGES,
-        { email: 'email', plainPassword: 'password' },
-        (field, message) => {
-          this.apiFieldErrors.update((current) => ({
-            ...current,
-            [field as 'email' | 'password' | 'confirmPassword']: message,
-          }));
-        },
-        'email',
-      );
-      if (!fieldApplied) {
-        this.errorMessage.set(
-          resolveApiErrorMessage(payload, REGISTER_ERROR_MESSAGES) ?? REGISTER_ERROR_MESSAGES['UNKNOWN']
-        );
-      }
-      return;
-    }
-
-    this.errorMessage.set(REGISTER_ERROR_MESSAGES['UNKNOWN']);
+    this.errorMessageKey.set(this.apiErrorService.handleError(error));
   }
 }

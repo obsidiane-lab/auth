@@ -2,10 +2,15 @@
 
 namespace App\Auth\Application;
 
-use App\Auth\Domain\Exception\PasswordResetException;
 use App\Entity\User;
 use App\Repository\RefreshTokenRepository;
 use App\Setup\Application\InitialAdminManager;
+use App\Shared\Http\Exception\EmptyPasswordException;
+use App\Shared\Http\Exception\InitialAdminRequiredException;
+use App\Shared\Http\Exception\InvalidPasswordException;
+use App\Shared\Http\Exception\InvalidRequestException;
+use App\Shared\Http\Exception\InvalidTokenException;
+use App\Shared\Http\Exception\InvalidUserException;
 use App\Shared\Security\PasswordStrengthChecker;
 use App\Shared\Security\UserPasswordUpdater;
 use Doctrine\ORM\EntityManagerInterface;
@@ -26,38 +31,35 @@ final readonly class ResetPassword
     ) {
     }
 
-    /**
-     * @throws PasswordResetException
-     */
     public function handle(?string $token, ?string $plainPassword): void
     {
         if ($this->initialAdminManager->needsBootstrap()) {
-            throw new PasswordResetException('INITIAL_ADMIN_REQUIRED', 409);
+            throw new InitialAdminRequiredException();
         }
 
         $tokenValue = (string) ($token ?? '');
         $passwordValue = (string) ($plainPassword ?? '');
 
         if ($tokenValue === '') {
-            throw new PasswordResetException('INVALID_REQUEST', 400);
+            throw new InvalidRequestException();
         }
 
         if ($passwordValue === '') {
-            throw new PasswordResetException('EMPTY_PASSWORD', 400);
+            throw new EmptyPasswordException();
         }
 
         if (!$this->passwordStrengthChecker->isStrongEnough($passwordValue)) {
-            throw new PasswordResetException('INVALID_PASSWORD', 400);
+            throw new InvalidPasswordException();
         }
 
         try {
             $user = $this->resetPasswordHelper->validateTokenAndFetchUser($tokenValue);
         } catch (ResetPasswordExceptionInterface $exception) {
-            throw new PasswordResetException('INVALID_TOKEN', 400, $exception);
+            throw new InvalidTokenException($exception);
         }
 
         if (!$user instanceof User) {
-            throw new PasswordResetException('INVALID_USER', 400);
+            throw new InvalidUserException();
         }
 
         $this->passwordUpdater->apply($user, $passwordValue);

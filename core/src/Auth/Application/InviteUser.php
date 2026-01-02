@@ -2,11 +2,11 @@
 
 namespace App\Auth\Application;
 
-use App\Auth\Domain\Exception\RegistrationException;
 use App\Entity\InviteUser as InviteUserEntity;
 use App\Entity\User;
 use App\Auth\Http\Dto\InviteUserInput;
 use App\Shared\Mail\MailDispatchException;
+use App\Shared\Http\Exception\EmailAlreadyUsedException;
 use App\Shared\Mail\MailerGateway;
 use App\Repository\InviteUserRepository;
 use App\Repository\UserRepository;
@@ -33,10 +33,6 @@ final readonly class InviteUser
     ) {
     }
 
-    /**
-     * @throws RegistrationException
-     * @throws MailDispatchException
-     */
     public function handle(InviteUserInput $input): InviteUserEntity
     {
         $this->inputValidator->validate($input);
@@ -45,7 +41,7 @@ final readonly class InviteUser
         $existingUser = $this->userRepository->findOneBy(['email' => $normalizedEmail]);
 
         if ($existingUser instanceof User && $existingUser->isEmailVerified()) {
-            throw new RegistrationException(['email' => 'EMAIL_ALREADY_USED']);
+            throw new EmailAlreadyUsedException();
         }
 
         $user = $existingUser ?? $this->userFactory->createWithRandomPassword($normalizedEmail);

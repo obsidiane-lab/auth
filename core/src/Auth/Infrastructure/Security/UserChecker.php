@@ -16,7 +16,7 @@ final class UserChecker implements UserCheckerInterface
         }
 
         if (!$user->isEmailVerified()) {
-            throw new CustomUserMessageAuthenticationException('EMAIL_NOT_VERIFIED');
+            throw new CustomUserMessageAuthenticationException('Email is not verified.');
         }
     }
 
@@ -25,4 +25,3 @@ final class UserChecker implements UserCheckerInterface
         // no-op
     }
 }
-

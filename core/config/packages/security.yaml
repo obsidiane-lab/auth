@@ -33,7 +33,6 @@ security:
                 username_path: email
                 password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
-                failure_handler: App\Auth\Infrastructure\Security\JsonLoginFailureHandler
             jwt: ~
             refresh_jwt:
                 check_path: /api/auth/refresh

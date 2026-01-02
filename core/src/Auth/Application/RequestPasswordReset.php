@@ -2,13 +2,14 @@
 
 namespace App\Auth\Application;
 
-use App\Auth\Domain\Exception\PasswordResetException;
 use App\Entity\User;
 use App\Shared\Frontend\FrontendUrlBuilder;
 use App\Shared\Mail\MailDispatchException;
 use App\Shared\Mail\MailerGateway;
 use App\Repository\UserRepository;
 use App\Setup\Application\InitialAdminManager;
+use App\Shared\Http\Exception\InitialAdminRequiredException;
+use App\Shared\Http\Exception\ResetRequestFailedException;
 use App\Shared\Utils\EmailNormalizer;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -30,13 +31,10 @@ final readonly class RequestPasswordReset
     ) {
     }
 
-    /**
-     * @throws PasswordResetException
-     */
     public function handle(?string $email): void
     {
         if ($this->initialAdminManager->needsBootstrap()) {
-            throw new PasswordResetException('INITIAL_ADMIN_REQUIRED', 409);
+            throw new InitialAdminRequiredException();
         }
 
         $normalizedEmail = $this->emailNormalizer->normalize($email);
@@ -80,13 +78,13 @@ final readonly class RequestPasswordReset
                 'email' => $normalizedEmail,
             ]);
 
-            throw new PasswordResetException('EMAIL_SEND_FAILED', 503, $exception);
+            throw $exception;
         } catch (\Throwable $exception) {
             $this->logger->error('Password reset request failed', [
                 'email' => $normalizedEmail,
             ]);
 
-            throw new PasswordResetException('RESET_REQUEST_FAILED', 500, $exception);
+            throw new ResetRequestFailedException($exception);
         }
     }
 }

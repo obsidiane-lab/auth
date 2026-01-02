@@ -2,11 +2,13 @@
 
 namespace App\Auth\Application;
 
-use App\Auth\Domain\Exception\RegistrationException;
 use App\Auth\Http\Dto\RegisterUserInput;
 use App\Entity\InviteUser;
 use App\Entity\User;
 use App\Repository\InviteUserRepository;
+use App\Shared\Http\Exception\InvalidInvitationException;
+use App\Shared\Http\Exception\InvitationAlreadyUsedException;
+use App\Shared\Http\Exception\InvitationExpiredException;
 use App\Shared\Security\UserPasswordUpdater;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -20,23 +22,20 @@ final readonly class CompleteInvitation
     ) {
     }
 
-    /**
-     * @throws RegistrationException
-     */
     public function handle(string $token, string $plainPassword): User
     {
         $invite = $this->inviteRepository->findOneBy(['token' => $token]);
 
         if (!$invite instanceof InviteUser) {
-            throw new RegistrationException(['token' => 'INVALID_INVITATION'], 'INVALID_INVITATION');
+            throw new InvalidInvitationException();
         }
 
         if ($invite->isAccepted()) {
-            throw new RegistrationException(['token' => 'INVITATION_ALREADY_USED'], 'INVITATION_ALREADY_USED');
+            throw new InvitationAlreadyUsedException();
         }
 
         if ($invite->isExpired()) {
-            throw new RegistrationException(['token' => 'INVITATION_EXPIRED'], 'INVITATION_EXPIRED');
+            throw new InvitationExpiredException();
         }
 
         $user = $invite->getUser();

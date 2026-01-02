@@ -6,8 +6,7 @@ import { ButtonComponent } from 'src/app/shared/components/button/button.compone
 import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
-import { HttpErrorResponse } from '@angular/common/http';
-import { PASSWORD_REQUEST_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
+import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { ForgotPasswordFormType, type ForgotPasswordFormControls } from '../../forms/forgot-password.form';
 
 @Component({
@@ -21,7 +20,7 @@ export class ForgotPasswordComponent {
   submitted = false;
   readonly isSubmitting = signal(false);
   readonly returnUrl = signal<string | null>(null);
-  readonly errorMessage = signal('');
+  readonly errorMessageKey = signal('');
   readonly successMessage = signal('');
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
@@ -29,6 +28,7 @@ export class ForgotPasswordComponent {
     private readonly authService: AuthService,
     private readonly route: ActivatedRoute,
     private readonly forgotPasswordForm: ForgotPasswordFormType,
+    private readonly apiErrorService: ApiErrorService,
   ) {
     this.form = this.forgotPasswordForm.createForm(null);
 
@@ -43,7 +43,7 @@ export class ForgotPasswordComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessage.set('');
+    this.errorMessageKey.set('');
     this.successMessage.set('');
 
     if (this.form.invalid) {
@@ -57,24 +57,9 @@ export class ForgotPasswordComponent {
       await this.authService.forgotPassword(email);
       this.successMessage.set('Si un compte existe, un email de réinitialisation vient d’être envoyé.');
     } catch (error) {
-      this.errorMessage.set(this.resolveErrorMessage(error));
+      this.errorMessageKey.set(this.apiErrorService.handleError(error));
     } finally {
       this.isSubmitting.set(false);
     }
-  }
-
-  private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const payload = (error.error ?? null) as { error?: string; message?: string } | null;
-      const resolved = resolveApiErrorMessage(payload, PASSWORD_REQUEST_ERROR_MESSAGES);
-      if (resolved) {
-        return resolved;
-      }
-      if (error.status === 429) {
-        return PASSWORD_REQUEST_ERROR_MESSAGES['RATE_LIMIT'];
-      }
-    }
-
-    return PASSWORD_REQUEST_ERROR_MESSAGES['UNKNOWN'];
   }
 }

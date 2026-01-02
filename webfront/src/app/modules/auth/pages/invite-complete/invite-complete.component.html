@@ -8,7 +8,7 @@
       </p>
   </header>
 
-  <app-form-status-message kind="error" [message]="errorMessage()"></app-form-status-message>
+  <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
   <app-form-status-message kind="success" [message]="successMessage()"></app-form-status-message>
 
   @if (alreadyCompleted()) {
@@ -61,15 +61,12 @@
           ></svg-icon>
         </button>
       </div>
-      @if (apiFieldErrors().password || (submitted && f['password'].errors)) {
+      @if (submitted && f['password'].errors) {
         <p class="is__invalid-error">
-          @if (apiFieldErrors().password) {
-            <span>{{ apiFieldErrors().password }}</span>
-          }
-          @if (!apiFieldErrors().password && f['password'].hasError('weakPassword')) {
+          @if (f['password'].hasError('weakPassword')) {
             <span>Mot de passe trop faible.</span>
           }
-          @if (!apiFieldErrors().password && f['password'].hasError('required')) {
+          @if (f['password'].hasError('required')) {
             <span>Mot de passe requis.</span>
           }
         </p>
@@ -102,15 +99,12 @@
           Confirmez le mot de passe
         </label>
       </div>
-      @if (apiFieldErrors().confirmPassword || (submitted && f['confirmPassword'].errors)) {
+      @if (submitted && f['confirmPassword'].errors) {
         <p class="is__invalid-error">
-          @if (apiFieldErrors().confirmPassword) {
-            <span>{{ apiFieldErrors().confirmPassword }}</span>
-          }
-          @if (!apiFieldErrors().confirmPassword && f['confirmPassword'].hasError('mismatch')) {
+          @if (f['confirmPassword'].hasError('mismatch')) {
             <span>Les mots de passe ne correspondent pas.</span>
           }
-          @if (!apiFieldErrors().confirmPassword && f['confirmPassword'].hasError('required')) {
+          @if (f['confirmPassword'].hasError('required')) {
             <span>Confirmation requise.</span>
           }
         </p>

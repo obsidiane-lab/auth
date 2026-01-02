@@ -9,9 +9,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
 import { isInternalPath, normalizeInternalPath, resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
-import { HttpErrorResponse } from '@angular/common/http';
 import { SignInFormType, type SignInFormControls } from '../../forms/sign-in.form';
-import { ApiErrorPayload, LOGIN_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
+import { ApiErrorService } from '../../../../core/services/api-error.service';
 
 @Component({
   selector: 'app-sign-in',
@@ -35,7 +34,7 @@ export class SignInComponent {
   readonly returnUrl = signal<string | null>(null);
   redirectTarget: string | null = null;
   readonly canRegister = computed(() => this.configService.config().registrationEnabled);
-  readonly errorMessage = signal('');
+  readonly errorMessageKey = signal('');
   readonly successMessage = signal('');
   readonly infoMessage = signal('');
   private readonly queryParamMap = toSignal(this._route.queryParamMap, { initialValue: this._route.snapshot.queryParamMap });
@@ -46,6 +45,7 @@ export class SignInComponent {
     private readonly authService: AuthService,
     private readonly configService: FrontendConfigService,
     private readonly signInForm: SignInFormType,
+    private readonly apiErrorService: ApiErrorService,
   ) {
     this.form = this.signInForm.createForm(null);
 
@@ -83,7 +83,7 @@ export class SignInComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessage.set('');
+    this.errorMessageKey.set('');
     this.successMessage.set('');
     this.infoMessage.set('');
     if (this.form.invalid) {
@@ -110,7 +110,7 @@ export class SignInComponent {
         void this._router.navigate(['/login'], { queryParams: { status: 'logged-in' }, replaceUrl: true });
       }, 1000);
     } catch (error) {
-      this.errorMessage.set(this.resolveErrorMessage(error));
+      this.errorMessageKey.set(this.resolveErrorKey(error));
     } finally {
       this.isSubmitting.set(false);
     }
@@ -135,22 +135,7 @@ export class SignInComponent {
     }
   }
 
-  private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const payload = (error.error ?? null) as ApiErrorPayload | null;
-      const resolved = resolveApiErrorMessage(payload, LOGIN_ERROR_MESSAGES);
-      if (resolved) {
-        return resolved;
-      }
-
-      if (error.status === 401) {
-        return LOGIN_ERROR_MESSAGES['INVALID_CREDENTIALS'];
-      }
-      if (error.status === 429) {
-        return LOGIN_ERROR_MESSAGES['RATE_LIMIT'];
-      }
-    }
-
-    return LOGIN_ERROR_MESSAGES['UNKNOWN'];
+  private resolveErrorKey(error: unknown): string {
+    return this.apiErrorService.handleError(error);
   }
 }

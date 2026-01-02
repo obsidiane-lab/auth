@@ -3,7 +3,7 @@
 namespace App\Auth\Application;
 
 use App\Auth\Http\Dto\RegisterUserInput;
-use App\Auth\Domain\Exception\RegistrationException;
+use App\Shared\Http\Exception\EmailAlreadyUsedException;
 use App\Entity\User;
 use App\Shared\Mail\MailDispatchException;
 use App\Shared\Mail\MailerGateway;
@@ -27,7 +27,8 @@ final readonly class RegisterUser
     }
 
     /**
-     * @throws RegistrationException
+     * @throws EmailAlreadyUsedException
+     * @throws MailDispatchException
      */
     public function handle(RegisterUserInput $input): User
     {
@@ -41,7 +42,7 @@ final readonly class RegisterUser
         try {
             $this->entityManager->flush();
         } catch (UniqueConstraintViolationException $exception) {
-            throw new RegistrationException(['email' => 'EMAIL_ALREADY_USED'], 'EMAIL_ALREADY_USED', $exception);
+            throw new EmailAlreadyUsedException($exception);
         }
 
         try {
@@ -49,7 +50,7 @@ final readonly class RegisterUser
         } catch (MailDispatchException $exception) {
             $this->entityManager->remove($user);
             $this->entityManager->flush();
-            throw new RegistrationException([], 'EMAIL_SEND_FAILED', $exception);
+            throw $exception;
         }
 
         return $user;

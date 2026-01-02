@@ -8,8 +8,7 @@ import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { HttpErrorResponse } from '@angular/common/http';
-import { PASSWORD_RESET_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
+import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { NewPasswordFormType, type NewPasswordFormControls } from '../../forms/new-password.form';
 
@@ -33,7 +32,7 @@ export class NewPasswordComponent {
   readonly passwordStrength = signal(0);
   passwordVisible = false;
   confirmVisible = false;
-  readonly errorMessage = signal('');
+  readonly errorMessageKey = signal('');
   readonly successMessage = signal('');
   private readonly resetToken = signal('');
   readonly returnUrl = signal<string | null>(null);
@@ -47,6 +46,7 @@ export class NewPasswordComponent {
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
     private readonly newPasswordForm: NewPasswordFormType,
+    private readonly apiErrorService: ApiErrorService,
   ) {
     this.form = this.newPasswordForm.createForm(null);
 
@@ -75,7 +75,7 @@ export class NewPasswordComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessage.set('');
+    this.errorMessageKey.set('');
     this.successMessage.set('');
 
     if (this.form.invalid) {
@@ -83,7 +83,7 @@ export class NewPasswordComponent {
     }
 
     if (!this.hasToken()) {
-      this.errorMessage.set(PASSWORD_RESET_ERROR_MESSAGES['INVALID_TOKEN']);
+      this.errorMessageKey.set('auth.errors.codes.INVALID_TOKEN');
       return;
     }
 
@@ -104,21 +104,9 @@ export class NewPasswordComponent {
         void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
       }, 800);
     } catch (error) {
-      this.errorMessage.set(this.resolveErrorMessage(error));
+      this.errorMessageKey.set(this.apiErrorService.handleError(error));
     } finally {
       this.isSubmitting.set(false);
     }
-  }
-
-  private resolveErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse) {
-      const payload = (error.error ?? null) as { error?: string; message?: string } | null;
-      const resolved = resolveApiErrorMessage(payload, PASSWORD_RESET_ERROR_MESSAGES);
-      if (resolved) {
-        return resolved;
-      }
-    }
-
-    return PASSWORD_RESET_ERROR_MESSAGES['UNKNOWN'];
   }
 }

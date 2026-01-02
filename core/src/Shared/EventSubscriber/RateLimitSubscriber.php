@@ -2,11 +2,10 @@
 
 namespace App\Shared\EventSubscriber;
 
-use App\Shared\Response\ApiResponseFactory;
+use App\Shared\Http\Exception\RateLimitException;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
@@ -31,7 +30,6 @@ final class RateLimitSubscriber implements EventSubscriberInterface
         RateLimiterFactory $passwordResetLimiter,
         #[Autowire(service: 'limiter.setup_initial_admin')]
         RateLimiterFactory $initialAdminLimiter,
-        private ApiResponseFactory $responses,
     ) {
         $this->limiters = [
             'api_auth_register' => $registerLimiter,
@@ -75,15 +73,13 @@ final class RateLimitSubscriber implements EventSubscriberInterface
             return;
         }
 
-        $response = $this->responses->error('RATE_LIMIT', Response::HTTP_TOO_MANY_REQUESTS);
-
         $retryAfter = $limit->getRetryAfter();
+        $retryAfterSeconds = null;
         if ($retryAfter !== null) {
             $retryAfterSeconds = max(0, $retryAfter->getTimestamp() - time());
-            $response->headers->set('Retry-After', (string) $retryAfterSeconds);
         }
 
-        $event->setResponse($response);
+        throw new RateLimitException($retryAfterSeconds);
     }
 
     private function resolveLimiterKey(Request $request): string

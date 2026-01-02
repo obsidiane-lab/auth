@@ -5,8 +5,10 @@ namespace App\User\Http\Controller;
 use App\Entity\User;
 use App\Shared\Http\JsonRequestDecoderTrait;
 use App\Repository\UserRepository;
-use App\Shared\Response\ApiResponseFactory;
 use App\Shared\Response\UserPayloadFactory;
+use App\Shared\Http\Exception\InvalidPayloadException;
+use App\Shared\Http\Exception\InvalidRolesException;
+use App\Shared\Http\Exception\UserNotFoundException;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -25,7 +27,6 @@ final class UpdateUserRolesController extends AbstractController
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $entityManager,
-        private readonly ApiResponseFactory $responses,
         private readonly UserPayloadFactory $userPayloadFactory,
     ) {
     }
@@ -35,25 +36,25 @@ final class UpdateUserRolesController extends AbstractController
         try {
             $payload = $this->decodeJson($request);
         } catch (NotEncodableValueException) {
-            return $this->responses->error('INVALID_PAYLOAD', Response::HTTP_BAD_REQUEST);
+            throw new InvalidPayloadException();
         }
 
         $rolesInput = $payload['roles'] ?? null;
 
         if (!is_array($rolesInput)) {
-            return $this->responses->error('INVALID_ROLES', Response::HTTP_UNPROCESSABLE_ENTITY);
+            throw new InvalidRolesException(['roles' => 'INVALID_ROLES']);
         }
 
         $roles = [];
         foreach ($rolesInput as $role) {
             if (!is_string($role)) {
-                return $this->responses->error('INVALID_ROLES', Response::HTTP_UNPROCESSABLE_ENTITY);
+                throw new InvalidRolesException(['roles' => 'INVALID_ROLES']);
             }
 
             $normalized = strtoupper(trim($role));
 
             if ($normalized === '' || !str_starts_with($normalized, 'ROLE_')) {
-                return $this->responses->error('INVALID_ROLES', Response::HTTP_UNPROCESSABLE_ENTITY);
+                throw new InvalidRolesException(['roles' => 'INVALID_ROLES']);
             }
 
             $roles[] = $normalized;
@@ -63,7 +64,7 @@ final class UpdateUserRolesController extends AbstractController
 
         $user = $this->userRepository->find($id);
         if (!$user instanceof User) {
-            return $this->responses->error('USER_NOT_FOUND', Response::HTTP_NOT_FOUND);
+            throw new UserNotFoundException();
         }
 
         $user->setRoles($roles);

@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type { UserUserRead } from 'bridge';
 import { AuthRepository } from '../repositories/auth.repository';
+import { ApiErrorService } from './api-error.service';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +17,10 @@ export class AuthService {
   private sessionCheckPromise: Promise<boolean> | null = null;
   private readonly sessionCheckTimeoutMs = 2500;
 
-  constructor(private readonly authRepository: AuthRepository) {}
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly apiErrorService: ApiErrorService,
+  ) {}
 
   async login(email: string, password: string): Promise<{ user: UserUserRead; exp: number }> {
     return firstValueFrom(this.authRepository.login$(email, password));
@@ -55,7 +59,7 @@ export class AuthService {
         if (error instanceof HttpErrorResponse && (error.status === 401 || error.status === 403)) {
           return false;
         }
-        this.sessionCheckError.set('Impossible de vérifier la session. Vous pouvez continuer à vous connecter.');
+        this.sessionCheckError.set(this.apiErrorService.handleError(error));
         return false;
       } finally {
         this.sessionChecked = true;

@@ -4,32 +4,31 @@ namespace App\Auth\Http\Controller;
 
 use App\ApiResource\InvitePreview;
 use App\Repository\InviteUserRepository;
-use App\Shared\Response\ApiResponseFactory;
+use App\Shared\Http\Exception\InvalidInvitationException;
+use App\Shared\Http\Exception\InvalidInvitationPayloadException;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 #[AsController]
 final readonly class InvitePreviewController
 {
     public function __construct(
         private InviteUserRepository $inviteUserRepository,
-        private ApiResponseFactory $responses,
     ) {
     }
 
-    public function __invoke(Request $request): InvitePreview|Response
+    public function __invoke(Request $request): InvitePreview
     {
         $token = (string) $request->query->get('token', '');
 
         if ($token === '') {
-            return $this->responses->error('INVALID_INVITATION', Response::HTTP_BAD_REQUEST);
+            throw new InvalidInvitationPayloadException(['token' => 'INVALID_INVITATION']);
         }
 
         $invite = $this->inviteUserRepository->findOneBy(['token' => $token]);
 
         if ($invite === null) {
-            return $this->responses->error('INVALID_INVITATION', Response::HTTP_NOT_FOUND);
+            throw new InvalidInvitationException();
         }
 
         $preview = new InvitePreview();

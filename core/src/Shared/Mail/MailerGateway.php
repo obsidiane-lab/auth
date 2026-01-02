@@ -35,10 +35,10 @@ final readonly class MailerGateway
             $this->apiClient->sendTransactional($payload);
         } catch (NotifuseClientException $exception) {
             $this->logFailure($recipient, $templateId, $exception);
-            throw new MailDispatchException($exception->getMessage(), 0, $exception);
+            throw new MailDispatchException($exception);
         } catch (\Throwable $exception) {
             $this->logFailure($recipient, $templateId, $exception);
-            throw new MailDispatchException($exception->getMessage(), 0, $exception);
+            throw new MailDispatchException($exception);
         }
     }
 

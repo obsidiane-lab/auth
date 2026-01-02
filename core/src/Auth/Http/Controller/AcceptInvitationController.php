@@ -2,11 +2,10 @@
 
 namespace App\Auth\Http\Controller;
 
-use App\Auth\Domain\Exception\RegistrationException;
 use App\Auth\Application\CompleteInvitation;
 use App\Auth\Http\Dto\InviteCompleteInput;
-use App\Shared\Response\ApiResponseFactory;
 use App\Shared\Response\UserPayloadFactory;
+use App\Shared\Http\Exception\InvalidInvitationPayloadException;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -17,7 +16,6 @@ final class AcceptInvitationController extends AbstractController
 {
     public function __construct(
         private readonly CompleteInvitation $completeInvitation,
-        private readonly ApiResponseFactory $responses,
         private readonly UserPayloadFactory $userPayloadFactory,
     ) {
     }
@@ -28,21 +26,15 @@ final class AcceptInvitationController extends AbstractController
         $password = (string) ($input->password ?? '');
         $confirmPassword = (string) ($input->confirmPassword ?? '');
 
-        if ($token === '' || $password === '' || $password !== $confirmPassword) {
-            return $this->responses->error('INVALID_INVITATION_PAYLOAD', Response::HTTP_BAD_REQUEST);
+        if ($token === '') {
+            throw new InvalidInvitationPayloadException(['token' => 'INVALID_INVITATION']);
         }
 
-        try {
-            $user = $this->completeInvitation->handle($token, $password);
-        } catch (RegistrationException $exception) {
-            $errors = $exception->getErrors();
-            $errorCode = $exception->getMessage();
-            return $this->responses->error(
-                $errorCode,
-                Response::HTTP_UNPROCESSABLE_ENTITY,
-                ['details' => $errors]
-            );
+        if ($password === '' || $password !== $confirmPassword) {
+            throw new InvalidInvitationPayloadException(['plainPassword' => 'INVALID_PASSWORD']);
         }
+
+        $user = $this->completeInvitation->handle($token, $password);
 
         return new JsonResponse([
             'user' => $this->userPayloadFactory->create($user),

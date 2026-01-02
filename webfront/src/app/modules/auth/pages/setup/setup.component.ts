@@ -8,8 +8,7 @@ import { SetupService } from '../../../../core/services/setup.service';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { applyFieldErrors, INITIAL_ADMIN_ERROR_MESSAGES, resolveApiErrorMessage } from '../../utils/auth-errors.util';
-import { HttpErrorResponse } from '@angular/common/http';
+import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { SetupFormType, type SetupFormControls } from '../../forms/setup.form';
 
@@ -27,8 +26,7 @@ export class SetupComponent {
   readonly passwordStrength = signal(0);
   passwordVisible = false;
   readonly brandingName = computed(() => this.configService.config().brandingName);
-  readonly apiFieldErrors = signal<Partial<Record<'email' | 'password' | 'confirmPassword', string>>>({});
-  readonly errorMessage = signal('');
+  readonly errorMessageKey = signal('');
   readonly successMessage = signal('');
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
@@ -39,6 +37,7 @@ export class SetupComponent {
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
     private readonly setupForm: SetupFormType,
+    private readonly apiErrorService: ApiErrorService,
   ) {
     this.form = this.setupForm.createForm(null);
 
@@ -61,9 +60,8 @@ export class SetupComponent {
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessage.set('');
+    this.errorMessageKey.set('');
     this.successMessage.set('');
-    this.apiFieldErrors.set({});
 
     if (this.form.invalid) {
       return;
@@ -92,28 +90,6 @@ export class SetupComponent {
   }
 
   private handleError(error: unknown): void {
-    if (error instanceof HttpErrorResponse) {
-      const payload = (error.error ?? null) as { error?: string; message?: string; details?: Record<string, string> } | null;
-      const fieldApplied = applyFieldErrors(
-          payload,
-          INITIAL_ADMIN_ERROR_MESSAGES,
-          { email: 'email', plainPassword: 'password', password: 'password' },
-          (field, message) => {
-          this.apiFieldErrors.update((current) => ({
-            ...current,
-            [field as 'email' | 'password' | 'confirmPassword']: message,
-          }));
-        },
-        'email',
-      );
-      if (!fieldApplied) {
-        this.errorMessage.set(
-          resolveApiErrorMessage(payload, INITIAL_ADMIN_ERROR_MESSAGES) ?? INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN'],
-        );
-      }
-      return;
-    }
-
-    this.errorMessage.set(INITIAL_ADMIN_ERROR_MESSAGES['UNKNOWN']);
+    this.errorMessageKey.set(this.apiErrorService.handleError(error));
   }
 }
