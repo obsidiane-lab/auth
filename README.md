@@ -238,6 +238,9 @@ REGISTRATION_ENABLED=1
 PASSWORD_STRENGTH_LEVEL=2
 API_DOCS_ENABLED=0
 
+# Token S2S (Authorization: Bearer ...) pour les services internes
+CORE_TO_AUTH_TOKEN=change-me
+
 NOTIFUSE_API_BASE_URL=https://notifuse.example.com
 NOTIFUSE_WORKSPACE_ID=prod-workspace
 NOTIFUSE_API_KEY=change-me
