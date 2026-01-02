@@ -16,14 +16,16 @@ final class ServiceTokenHandler implements AccessTokenHandlerInterface
      */
     public function __construct(
         #[Autowire('%env(default::CORE_TO_AUTH_TOKEN)%')]
-        private string $primaryToken,
+        private ?string $primaryToken,
+        #[Autowire('%env(default::CORE_TO_AUTH_TOKEN_NEXT)%')]
+        private ?string $nextToken = null,
     )
     {
     }
 
     public function getUserBadgeFrom(string $accessToken): UserBadge
     {
-        $allowedTokens = [$this->primaryToken ?? ''];
+        $allowedTokens = [$this->primaryToken ?? '', $this->nextToken ?? ''];
 
         foreach ($allowedTokens as $allowed) {
             $allowed = trim($allowed);

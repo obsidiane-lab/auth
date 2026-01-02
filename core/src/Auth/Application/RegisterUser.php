@@ -16,13 +16,14 @@ final readonly class RegisterUser
 {
     public function __construct(
         private RegisterUserInputValidator $inputValidator,
-        private EntityManagerInterface      $entityManager,
-        private MailerGateway               $mailer,
-        private EmailVerifier               $emailVerifier,
-        private UserFactory                 $userFactory,
+        private EntityManagerInterface     $entityManager,
+        private MailerGateway              $mailer,
+        private EmailVerifier              $emailVerifier,
+        private UserFactory                $userFactory,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_WELCOME)%')]
-        private string                      $welcomeTemplateId = 'welcome',
-    ) {
+        private string                     $welcomeTemplateId = 'welcome',
+    )
+    {
     }
 
     /**
@@ -31,9 +32,9 @@ final readonly class RegisterUser
     public function handle(RegisterUserInput $input): User
     {
         $this->inputValidator->validate($input);
-        $plainPassword = (string) ($input->plainPassword ?? '');
+        $plainPassword = ($input->plainPassword ?? '');
 
-        $user = $this->userFactory->create((string) ($input->email ?? ''), $plainPassword);
+        $user = $this->userFactory->create(($input->email ?? ''), $plainPassword);
 
         $this->entityManager->persist($user);
 

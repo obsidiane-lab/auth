@@ -40,10 +40,12 @@ final class RegisterController extends AbstractController
         try {
             $user = $this->registerUser->handle($input);
         } catch (RegistrationException $exception) {
-            $errorCode = $exception->getMessage() === 'EMAIL_SEND_FAILED' ? 'EMAIL_SEND_FAILED' : 'INVALID_REGISTRATION';
+            $isEmailFailure = $exception->getMessage() === 'EMAIL_SEND_FAILED';
+            $errorCode = $isEmailFailure ? 'EMAIL_SEND_FAILED' : 'INVALID_REGISTRATION';
+            $statusCode = $isEmailFailure ? Response::HTTP_SERVICE_UNAVAILABLE : Response::HTTP_UNPROCESSABLE_ENTITY;
             return $this->responses->error(
                 $errorCode,
-                Response::HTTP_UNPROCESSABLE_ENTITY,
+                $statusCode,
                 ['details' => $exception->getErrors()]
             );
         }

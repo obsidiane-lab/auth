@@ -64,6 +64,8 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: "true"
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ChangeMe}
       MYSQL_USER: ${MYSQL_USER:-app}
+    ports:
+      - "3306:3306"
     volumes:
       - database_data:/var/lib/mysql:rw
     healthcheck:
