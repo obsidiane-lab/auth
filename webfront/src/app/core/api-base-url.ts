@@ -1,13 +1,3 @@
-export function normalizeApiBaseUrl(value: string): string {
-  const trimmed = value.trim();
-
-  if (trimmed === '') {
-    return trimmed;
-  }
-
-  return trimmed.endsWith('/') ? trimmed.slice(0, -1) : trimmed;
-}
-
 export function resolveApiBaseUrl(baseUrl: string): string {
   const trimmed = baseUrl.trim();
 

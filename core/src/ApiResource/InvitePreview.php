@@ -5,7 +5,7 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
-use App\Auth\Http\Controller\InvitePreviewController;
+use App\Controller\Auth\InvitePreviewController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(

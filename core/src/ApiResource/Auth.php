@@ -6,17 +6,17 @@ use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
-use App\Auth\Http\Dto\InviteCompleteInput;
-use App\Auth\Http\Dto\InviteUserInput;
-use App\Auth\Http\Dto\PasswordForgotInput;
-use App\Auth\Http\Dto\PasswordResetInput;
-use App\Auth\Http\Dto\RegisterUserInput;
-use App\Auth\Http\Controller\AcceptInvitationController;
-use App\Auth\Http\Controller\InviteUserController;
-use App\Auth\Http\Controller\LogoutController;
-use App\Auth\Http\Controller\MeController;
-use App\Auth\Http\Controller\RegisterController;
-use App\Auth\Http\Controller\ResetPasswordController;
+use App\Dto\Auth\InviteCompleteInput;
+use App\Dto\Auth\InviteUserInput;
+use App\Dto\Auth\PasswordForgotInput;
+use App\Dto\Auth\PasswordResetInput;
+use App\Dto\Auth\RegisterUserInput;
+use App\Controller\Auth\AcceptInvitationController;
+use App\Controller\Auth\InviteUserController;
+use App\Controller\Auth\LogoutController;
+use App\Controller\Auth\MeController;
+use App\Controller\Auth\RegisterController;
+use App\Controller\Auth\ResetPasswordController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(
@@ -30,8 +30,6 @@ use Symfony\Component\HttpFoundation\Response;
             denormalizationContext: ['groups' => ['user:register']],
             input: RegisterUserInput::class,
             read: false,
-            deserialize: true,
-            validate: false,
             write: false,
             name: 'api_auth_register',
         ),
@@ -43,8 +41,6 @@ use Symfony\Component\HttpFoundation\Response;
             denormalizationContext: ['groups' => ['invite:send']],
             input: InviteUserInput::class,
             read: false,
-            deserialize: true,
-            validate: false,
             write: false,
             name: 'api_auth_invite',
         ),
@@ -56,8 +52,6 @@ use Symfony\Component\HttpFoundation\Response;
             denormalizationContext: ['groups' => ['invite:complete']],
             input: InviteCompleteInput::class,
             read: false,
-            deserialize: true,
-            validate: false,
             write: false,
             name: 'api_auth_invite_complete',
         ),
@@ -68,7 +62,6 @@ use Symfony\Component\HttpFoundation\Response;
             description: 'Déconnecte l’utilisateur.',
             read: false,
             deserialize: false,
-            validate: false,
             write: false,
             name: 'api_auth_logout',
         ),
@@ -80,8 +73,6 @@ use Symfony\Component\HttpFoundation\Response;
             denormalizationContext: ['groups' => ['password:forgot']],
             input: PasswordForgotInput::class,
             read: false,
-            deserialize: true,
-            validate: false,
             write: false,
             name: 'api_auth_password_forgot',
         ),
@@ -93,8 +84,6 @@ use Symfony\Component\HttpFoundation\Response;
             denormalizationContext: ['groups' => ['password:reset']],
             input: PasswordResetInput::class,
             read: false,
-            deserialize: true,
-            validate: false,
             write: false,
             name: 'api_auth_password_reset',
         ),
@@ -104,7 +93,6 @@ use Symfony\Component\HttpFoundation\Response;
             description: 'Retourne l’utilisateur authentifié.',
             read: false,
             deserialize: false,
-            validate: false,
             name: 'api_auth_me',
         ),
     ],

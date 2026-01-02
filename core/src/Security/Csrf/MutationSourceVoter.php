@@ -19,7 +19,7 @@ final class MutationSourceVoter extends Voter
         private readonly RequestStack $requestStack,
         #[Autowire('%env(ALLOWED_ORIGINS)%')]
         private string $allowedOriginsPattern,
-        private readonly OriginExtractor $originExtractor = new OriginExtractor(),
+        private readonly OriginExtractor $originExtractor,
     ) {
     }
 

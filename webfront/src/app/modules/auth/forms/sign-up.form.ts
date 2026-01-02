@@ -20,7 +20,9 @@ export type SignUpFormControls = {
 };
 
 @Injectable({ providedIn: 'root' })
-export class SignUpFormType implements EntityFormType<SignUpFormModel, SignUpFormControls, SignUpPayload, SignUpPayload, void> {
+export class SignUpFormType
+  implements EntityFormType<SignUpFormModel, SignUpFormControls, SignUpPayload, SignUpPayload, void>
+{
   private readonly fb = inject(FormBuilder);
 
   createForm(model: SignUpFormModel | null): FormGroup<SignUpFormControls> {
@@ -45,9 +47,5 @@ export class SignUpFormType implements EntityFormType<SignUpFormModel, SignUpFor
       email: raw.email.trim(),
       password: raw.password,
     };
-  }
-
-  toPatchPayload(form: FormGroup<SignUpFormControls>): SignUpPayload {
-    return this.toCreatePayload(form);
   }
 }

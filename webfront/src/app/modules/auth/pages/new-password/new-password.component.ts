@@ -1,16 +1,17 @@
-import { NgClass } from '@angular/common';
 import { Component, DestroyRef, computed, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AngularSvgIconModule } from 'angular-svg-icon';
+import { TranslateModule } from '@ngx-translate/core';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
 import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { NewPasswordFormType, type NewPasswordFormControls } from '../../forms/new-password.form';
+import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
+import { PasswordInputComponent } from '../../../../shared/components/password-input/password-input.component';
+import { SuccessMessages } from '../../../../shared/utils/validation-messages';
 
 @Component({
   selector: 'app-new-password',
@@ -19,41 +20,33 @@ import { NewPasswordFormType, type NewPasswordFormControls } from '../../forms/n
   imports: [
     ReactiveFormsModule,
     RouterLink,
-    AngularSvgIconModule,
+    TranslateModule,
     ButtonComponent,
-    NgClass,
     FormStatusMessageComponent,
+    PasswordInputComponent,
   ],
 })
-export class NewPasswordComponent {
+export class NewPasswordComponent extends BaseAuthFormComponent<NewPasswordFormControls> {
   form: FormGroup<NewPasswordFormControls>;
-  submitted = false;
-  readonly isSubmitting = signal(false);
   readonly passwordStrength = signal(0);
-  passwordVisible = false;
-  confirmVisible = false;
-  readonly errorMessageKey = signal('');
-  readonly successMessage = signal('');
   private readonly resetToken = signal('');
-  readonly returnUrl = signal<string | null>(null);
   readonly hasToken = computed(() => this.resetToken().trim().length > 0);
-  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
+    route: ActivatedRoute,
+    router: Router,
+    apiErrorService: ApiErrorService,
     private readonly authService: AuthService,
-    private readonly router: Router,
-    private readonly route: ActivatedRoute,
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
     private readonly newPasswordForm: NewPasswordFormType,
-    private readonly apiErrorService: ApiErrorService,
   ) {
+    super(route, router, apiErrorService);
     this.form = this.newPasswordForm.createForm(null);
 
     effect(() => {
       const params = this.queryParamMap();
       this.resetToken.set(params.get('token') ?? '');
-      this.returnUrl.set(params.get('returnUrl'));
     });
 
     configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
@@ -61,29 +54,16 @@ export class NewPasswordComponent {
     });
   }
 
-  get f() {
-    return this.form.controls;
-  }
-
-  togglePasswordVisibility(): void {
-    this.passwordVisible = !this.passwordVisible;
-  }
-
-  toggleConfirmVisibility(): void {
-    this.confirmVisible = !this.confirmVisible;
-  }
-
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessageKey.set('');
-    this.successMessage.set('');
+    this.resetMessages();
 
     if (this.form.invalid) {
       return;
     }
 
     if (!this.hasToken()) {
-      this.errorMessageKey.set('auth.errors.codes.INVALID_TOKEN');
+      this.errorMessageKey.set('auth.errors.codes.410');
       return;
     }
 
@@ -94,7 +74,7 @@ export class NewPasswordComponent {
 
     try {
       await this.authService.resetPassword(token, password);
-      this.successMessage.set('Mot de passe mis à jour. Vous pouvez vous connecter.');
+      this.successMessage.set(SuccessMessages.passwordUpdated);
       window.setTimeout(() => {
         const returnUrl = this.returnUrl();
         const queryParams: { status?: string; returnUrl?: string } = { status: 'reset' };
@@ -104,7 +84,7 @@ export class NewPasswordComponent {
         void this.router.navigate(['/login'], { queryParams, replaceUrl: true });
       }, 800);
     } catch (error) {
-      this.errorMessageKey.set(this.apiErrorService.handleError(error));
+      this.handleError(error);
     } finally {
       this.isSubmitting.set(false);
     }

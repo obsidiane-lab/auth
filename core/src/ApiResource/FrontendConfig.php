@@ -5,7 +5,7 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Get;
-use App\Shared\Http\Controller\FrontendConfigController;
+use App\Controller\FrontendConfigController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(
@@ -13,8 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
     operations: [
         new Get(
             uriTemplate: '/config',
-            controller: FrontendConfigController::class,
             status: Response::HTTP_OK,
+            controller: FrontendConfigController::class,
             read: false,
             deserialize: false,
             name: 'api_frontend_config',
@@ -33,22 +33,12 @@ final class FrontendConfig
 
     public string $brandingName = '';
 
-    public string $frontendDefaultRedirect = '';
+    public string $frontendRedirectUrl = '';
 
-    /**
-     * @var list<string>
-     */
-    public array $frontendRedirectAllowlist = [];
+    public string $environment = '';
 
     public string $themeMode = 'dark';
 
     public string $themeColor = 'base';
-
-    public string $themeDirection = 'ltr';
-
-    /**
-     * @var list<string>
-     */
-    public array $themeColors = [];
 
 }

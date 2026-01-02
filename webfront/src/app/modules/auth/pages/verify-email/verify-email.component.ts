@@ -3,35 +3,45 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { ApiErrorService } from '../../../../core/services/api-error.service';
+import { AngularSvgIconModule } from 'angular-svg-icon';
+import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-verify-email',
   templateUrl: './verify-email.component.html',
   styleUrls: ['./verify-email.component.css'],
-  imports: [RouterLink, ButtonComponent],
+  imports: [RouterLink, TranslateModule, ButtonComponent, AngularSvgIconModule],
 })
 export class VerifyEmailComponent {
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
-  readonly message = signal('Vérification en cours...');
+  readonly messageKey = signal('auth.verifyEmail.message.loading');
   readonly returnUrl = signal<string | null>(null);
   private readonly queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });
   private lastSignature: string | null = null;
 
-  constructor(private readonly route: ActivatedRoute, private readonly authService: AuthService) {
+  constructor(
+    private readonly route: ActivatedRoute,
+    private readonly authService: AuthService,
+    private readonly apiErrorService: ApiErrorService,
+  ) {
     effect(() => {
       const params = this.queryParams() as {
         id?: string;
         token?: string;
         expires?: string;
+        signature?: string;
         _hash?: string;
         returnUrl?: string;
       };
 
       this.returnUrl.set(params.returnUrl ?? null);
 
-      if (!params.id || !params.token || !params.expires || !params._hash) {
+      const signature = params.signature ?? params._hash;
+
+      if (!params.id || !params.token || !params.expires || !signature) {
         this.status.set('error');
-        this.message.set('Lien de vérification invalide.');
+        this.messageKey.set('auth.errors.codes.400');
         return;
       }
 
@@ -39,17 +49,17 @@ export class VerifyEmailComponent {
         id: params.id,
         token: params.token,
         expires: params.expires,
-        _hash: params._hash,
+        signature,
       };
 
-      const signature = [verificationParams.id, verificationParams.token, verificationParams.expires, verificationParams._hash].join('|');
-      if (this.lastSignature === signature) {
+      const requestSignature = [verificationParams.id, verificationParams.token, verificationParams.expires, verificationParams.signature].join('|');
+      if (this.lastSignature === requestSignature) {
         return;
       }
 
-      this.lastSignature = signature;
+      this.lastSignature = requestSignature;
       this.status.set('loading');
-      this.message.set('Vérification en cours...');
+      this.messageKey.set('auth.verifyEmail.message.loading');
 
       void this.verifyEmail(verificationParams);
     });
@@ -70,14 +80,18 @@ export class VerifyEmailComponent {
     return Object.keys(params).length > 0 ? params : null;
   });
 
-  private async verifyEmail(params: { id: string; token: string; expires: string; _hash: string }): Promise<void> {
+  private async verifyEmail(params: { id: string; token: string; expires: string; signature: string }): Promise<void> {
     try {
       await this.authService.verifyEmail(params);
       this.status.set('success');
-      this.message.set('Votre adresse email est vérifiée.');
-    } catch {
+      this.messageKey.set('auth.verifyEmail.message.success');
+    } catch (error) {
+      const errorKey = this.apiErrorService.handleError(error);
+      if (!errorKey) {
+        return;
+      }
       this.status.set('error');
-      this.message.set('Lien expiré ou invalide.');
+      this.messageKey.set(errorKey);
     }
   }
 }

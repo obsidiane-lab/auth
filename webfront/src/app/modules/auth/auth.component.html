@@ -1,17 +1,49 @@
-<div class="flex h-screen w-screen">
-  <div class="bg-background flex flex-1 items-center justify-center">
-    <div class="max-w-md overflow-y-auto px-4 sm:w-[500px]">
-      <!-- logo -->
-      <div class="flex items-center justify-center gap-3">
-        <a class="bg-primary rounded-sm p-2">
-          <svg-icon src="assets/icons/logo.svg" [svgClass]="'h-5 w-5'"> </svg-icon>
-        </a>
-        <b class="text-md text-foreground font-bold">{{ config().brandingName }}</b>
-      </div>
-      <!-- Route -->
-      <app-already-authenticated [redirectTarget]="redirectTarget()">
-        <router-outlet></router-outlet>
-      </app-already-authenticated>
-    </div>
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-background p-4 font-poppins text-foreground selection:bg-primary selection:text-primary-foreground">
+
+  <!-- Ambient Background Effects -->
+  <div class="pointer-events-none absolute inset-0 overflow-hidden">
+    <!-- Primary Blob (Follows theme) -->
+    <div class="absolute -left-[10%] -top-[10%] h-[500px] w-[500px] rounded-full bg-primary/20 blur-[120px] opacity-50 mix-blend-multiply dark:mix-blend-screen animate-blob"></div>
+
+    <!-- Secondary Blob -->
+    <div class="absolute -bottom-[10%] -right-[10%] h-[500px] w-[500px] rounded-full bg-purple-500/20 blur-[120px] opacity-50 mix-blend-multiply dark:mix-blend-screen animate-blob animation-delay-2000"></div>
+
+    <!-- Grid Pattern Overlay -->
+    <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMWgydjJIMUMxeiIgZmlsbD0iIzAwMDAwMCIgZmlsbC1vcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')] [mask-image:linear-gradient(to_bottom,white,transparent)] dark:bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEgMWgydjJIMUMxeiIgZmlsbD0iI2ZmZmZmZiIgZmlsbC1vcGFjaXR5PSIwLjA1Ii8+PC9zdmc+')]"></div>
   </div>
+
+  <!-- Theme Switcher (Absolute Top Right) -->
+  @if (showThemeSwitcher()) {
+    <div class="absolute right-6 top-6 z-50">
+      <app-theme-switcher></app-theme-switcher>
+    </div>
+  }
+
+  <!-- Main Content Card -->
+  <main class="relative z-10 w-full max-w-[440px] animate-fade-in-up">
+    <!-- Typographic Header -->
+    <div class="mb-6 text-center" style="view-transition-name: auth-header">
+      <h1 class="text-4xl font-extrabold tracking-tight text-foreground bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">
+        {{ config().brandingName }}
+      </h1>
+    </div>
+
+    <!-- Glass Card -->
+    <div class="overflow-hidden rounded-2xl border border-white/20 bg-white/70 shadow-xl dark:shadow-none backdrop-blur-xl dark:border-white/10 dark:bg-black/40" style="view-transition-name: auth-card">
+
+      <!-- Content -->
+      <div class="p-8">
+        <app-already-authenticated [redirectTarget]="redirectTarget()">
+           <router-outlet></router-outlet>
+        </app-already-authenticated>
+      </div>
+
+    </div>
+
+    <!-- Footer / Copyright -->
+    <div class="mt-8 text-center text-xs text-muted-foreground opacity-60">
+      &copy; {{ config().brandingName }} 2026. All rights reserved.
+    </div>
+  </main>
+
 </div>

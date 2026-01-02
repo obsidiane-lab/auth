@@ -1,13 +1,13 @@
 auth_controllers:
-    resource: ../src/Auth/Http/Controller/
+    resource: ../src/Controller/Auth/
     type: attribute
 
 setup_controllers:
-    resource: ../src/Setup/Http/Controller/
+    resource: ../src/Controller/Setup/
     type: attribute
 
 user_controllers:
-    resource: ../src/User/Http/Controller/
+    resource: ../src/Controller/User/
     type: attribute
 
 api_token_refresh:

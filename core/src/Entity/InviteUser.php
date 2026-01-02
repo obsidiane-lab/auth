@@ -27,21 +27,26 @@ class InviteUser
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['invite:read'])]
     private ?int $id = null;
 
     #[ORM\Column(length: 180)]
+    #[Groups(['invite:read'])]
     private string $email;
 
     #[ORM\Column(length: 64, unique: true)]
     private string $token;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['invite:read'])]
     private \DateTimeImmutable $createdAt;
 
     #[ORM\Column(type: 'datetime_immutable')]
+    #[Groups(['invite:read'])]
     private \DateTimeImmutable $expiresAt;
 
     #[ORM\Column(type: 'datetime_immutable', nullable: true)]
+    #[Groups(['invite:read'])]
     private ?\DateTimeImmutable $acceptedAt = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]

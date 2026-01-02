@@ -39,8 +39,4 @@ export class SignInFormType
       password: raw.password,
     };
   }
-
-  toPatchPayload(form: FormGroup<SignInFormControls>): SignInPayload {
-    return this.toCreatePayload(form);
-  }
 }

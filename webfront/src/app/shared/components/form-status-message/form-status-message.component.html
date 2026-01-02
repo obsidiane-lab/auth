@@ -1,12 +1,30 @@
+
 @if (resolvedMessage) {
   <div [class]="containerClass" [attr.role]="role">
-    <p class="font-medium">
-      {{ resolvedMessage }}
-    </p>
-    @if (resolvedDescription) {
-      <p class="mt-1 text-xs" [class]="descriptionClass">
-        {{ resolvedDescription }}
+
+    <!-- Icon Column -->
+    <div class="shrink-0 pt-0.5">
+      @if (kind === 'success') {
+        <svg-icon src="assets/icons/heroicons/outline/check-circle.svg" [svgClass]="'h-5 w-5 ' + iconClass"></svg-icon>
+      }
+      @if (kind === 'error') {
+        <svg-icon src="assets/icons/heroicons/outline/exclamation-circle.svg" [svgClass]="'h-5 w-5 ' + iconClass"></svg-icon>
+      }
+      @if (kind === 'info') {
+        <svg-icon src="assets/icons/heroicons/outline/information-circle.svg" [svgClass]="'h-5 w-5 ' + iconClass"></svg-icon>
+      }
+    </div>
+
+    <!-- Content Column -->
+    <div class="flex-1">
+      <p class="font-semibold text-sm">
+        {{ resolvedMessage }}
       </p>
-    }
+      @if (resolvedDescription) {
+        <p class="mt-1 text-xs opacity-90" [class]="descriptionClass">
+          {{ resolvedDescription }}
+        </p>
+      }
+    </div>
   </div>
 }

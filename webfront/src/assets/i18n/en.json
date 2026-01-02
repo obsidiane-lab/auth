@@ -179,6 +179,17 @@
   }
   ,
   "auth": {
+    "verifyEmail": {
+      "title": {
+        "loading": "Verifying...",
+        "success": "Email verified!",
+        "error": "Oops!"
+      },
+      "message": {
+        "loading": "Verification in progress...",
+        "success": "Your email address is verified."
+      }
+    },
     "errors": {
       "codes": {
         "400": "Please check the submitted fields.",
@@ -188,38 +199,10 @@
         "409": "Request conflict. Please try again.",
         "410": "Link has expired.",
         "422": "The submitted data is invalid.",
+        "423": "Email is not verified.",
         "429": "Too many requests.",
         "500": "Server error. Please try again.",
-        "503": "Service unavailable. Please try again.",
-        "UNKNOWN": "An unexpected error occurred.",
-        "ACCESS_DENIED": "Access denied.",
-        "EMAIL_ALREADY_USED": "Email is already in use.",
-        "EMAIL_MISSING": "Email is required.",
-        "EMAIL_NOT_VERIFIED": "Email is not verified.",
-        "EMAIL_SEND_FAILED": "Unable to send email.",
-        "EMPTY_PASSWORD": "Password is required.",
-        "INITIAL_ADMIN_ALREADY_CREATED": "Initial admin already created.",
-        "INITIAL_ADMIN_REQUIRED": "Initial admin is required.",
-        "INVALID_CREDENTIALS": "Invalid credentials.",
-        "INVALID_EMAIL": "Invalid email address.",
-        "INVALID_INVITATION": "Invalid invitation.",
-        "INVALID_INVITATION_PAYLOAD": "Invalid invitation payload.",
-        "INVALID_PASSWORD": "Invalid password.",
-        "INVALID_PAYLOAD": "Invalid payload.",
-        "INVALID_REGISTRATION": "Registration is invalid.",
-        "INVALID_REGISTRATION_DATA": "Registration data is invalid.",
-        "INVALID_REQUEST": "Invalid request.",
-        "INVALID_ROLES": "Invalid roles.",
-        "INVALID_TOKEN": "Invalid token.",
-        "INVALID_USER": "Invalid user.",
-        "INVITATION_ALREADY_USED": "Invitation already used.",
-        "INVITATION_EXPIRED": "Invitation has expired.",
-        "ORIGIN_NOT_ALLOWED": "Origin not allowed.",
-        "RATE_LIMIT": "Too many requests.",
-        "REFRESH_TOKEN_INVALID": "Invalid refresh token.",
-        "REFRESH_TOKEN_MISSING": "Refresh token is missing.",
-        "RESET_REQUEST_FAILED": "Password reset request failed.",
-        "USER_NOT_FOUND": "User not found."
+        "503": "Service unavailable. Please try again."
       }
     }
   }

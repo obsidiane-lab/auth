@@ -32,7 +32,7 @@
 	header ?Permissions-Policy "browsing-topics=()"
 
 	@frontend {
-		not path /api/* /bundles/* /.well-known/mercure*
+		not path /api /api/* /bundles /bundles/* /.well-known/mercure*
 	}
 	handle @frontend {
 		import webfront

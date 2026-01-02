@@ -1,54 +1,49 @@
-import { NgClass } from '@angular/common';
 import { Component, DestroyRef, computed, effect, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
-import { AngularSvgIconModule } from 'angular-svg-icon';
+import { TranslateModule } from '@ngx-translate/core';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
 import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { InviteCompleteFormType, type InviteCompleteFormControls } from '../../forms/invite-complete.form';
+import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
+import { PasswordInputComponent } from '../../../../shared/components/password-input/password-input.component';
+import { AngularSvgIconModule } from 'angular-svg-icon';
+import { SuccessMessages } from '../../../../shared/utils/validation-messages';
 
 @Component({
   selector: 'app-invite-complete',
   templateUrl: './invite-complete.component.html',
   styleUrls: ['./invite-complete.component.css'],
-  imports: [ReactiveFormsModule, ButtonComponent, NgClass, AngularSvgIconModule, FormStatusMessageComponent],
+  imports: [ReactiveFormsModule, TranslateModule, ButtonComponent, FormStatusMessageComponent, PasswordInputComponent, AngularSvgIconModule],
 })
-export class InviteCompleteComponent {
+export class InviteCompleteComponent extends BaseAuthFormComponent<InviteCompleteFormControls> {
   form: FormGroup<InviteCompleteFormControls>;
-  submitted = false;
-  readonly isSubmitting = signal(false);
   readonly passwordStrength = signal(0);
-  passwordVisible = false;
   readonly invitedEmail = signal('');
   readonly alreadyCompleted = signal(false);
   readonly inviteExpired = signal(false);
   private readonly inviteToken = signal('');
-  readonly returnUrl = signal<string | null>(null);
-  readonly errorMessageKey = signal('');
-  readonly successMessage = signal('');
   readonly hasToken = computed(() => this.inviteToken().trim().length > 0);
-  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
   constructor(
+    route: ActivatedRoute,
+    router: Router,
+    apiErrorService: ApiErrorService,
     private readonly authService: AuthService,
-    private readonly router: Router,
-    private readonly route: ActivatedRoute,
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
     private readonly inviteCompleteForm: InviteCompleteFormType,
-    private readonly apiErrorService: ApiErrorService,
   ) {
+    super(route, router, apiErrorService);
     this.form = this.inviteCompleteForm.createForm(null);
 
     effect(() => {
       const params = this.queryParamMap();
       this.inviteToken.set(params.get('token') ?? '');
-      this.returnUrl.set(params.get('returnUrl'));
 
       if (this.inviteToken()) {
         void this.loadInvitePreview(this.inviteToken());
@@ -60,18 +55,9 @@ export class InviteCompleteComponent {
     });
   }
 
-  get f() {
-    return this.form.controls;
-  }
-
-  togglePasswordVisibility(): void {
-    this.passwordVisible = !this.passwordVisible;
-  }
-
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessageKey.set('');
-    this.successMessage.set('');
+    this.resetMessages();
 
     if (this.form.invalid) {
       return;
@@ -79,7 +65,7 @@ export class InviteCompleteComponent {
 
     const inviteToken = this.inviteToken();
     if (!inviteToken) {
-      this.errorMessageKey.set('auth.errors.codes.INVALID_INVITATION');
+      this.errorMessageKey.set('auth.errors.codes.400');
       return;
     }
 
@@ -89,7 +75,7 @@ export class InviteCompleteComponent {
 
     try {
       await this.authService.inviteComplete(inviteToken, password, confirmPassword);
-      this.successMessage.set('Compte activé. Vous pouvez vous connecter.');
+      this.successMessage.set(SuccessMessages.accountActivated);
       window.setTimeout(() => {
         const returnUrl = this.returnUrl();
         const queryParams: { status?: string; returnUrl?: string } = { status: 'invited' };
@@ -113,19 +99,15 @@ export class InviteCompleteComponent {
       this.inviteExpired.set(preview.expired ?? false);
 
       if (this.alreadyCompleted()) {
-        this.successMessage.set('Ce lien a déjà été utilisé. Vous pouvez vous connecter.');
+        this.successMessage.set(SuccessMessages.invitationAlreadyUsed);
       }
 
       if (this.inviteExpired()) {
-        this.errorMessageKey.set('auth.errors.codes.INVITATION_EXPIRED');
+        this.errorMessageKey.set('auth.errors.codes.410');
       }
     } catch (error) {
-      this.errorMessageKey.set(this.apiErrorService.handleError(error));
+      this.handleError(error);
     }
-  }
-
-  private handleError(error: unknown): void {
-    this.errorMessageKey.set(this.apiErrorService.handleError(error));
   }
 
   goToLogin(): void {

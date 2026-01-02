@@ -10,7 +10,7 @@ export interface EntityFormType<
   createForm(model: Model | null, options?: Options): FormGroup<Controls>;
   reset(form: FormGroup<Controls>, model: Model | null, options?: Options): void;
   toCreatePayload(form: FormGroup<Controls>, options?: Options): CreatePayload;
-  toPatchPayload(form: FormGroup<Controls>, base: Model, options?: Options): PatchPayload;
+  toPatchPayload?(form: FormGroup<Controls>, base: Model, options?: Options): PatchPayload;
 }
 
 export interface ToggleRequiredFormType<Controls extends { [K in keyof Controls]: AbstractControl<any, any, any> }> {

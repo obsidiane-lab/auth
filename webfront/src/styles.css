@@ -107,20 +107,20 @@
   padding-inline: 1rem;
 
   @media (width >=theme(--breakpoint-sm)) {
-    padding-inline: 2rem;
-  }
+  padding-inline: 2rem;
+}
 
   @media (width >=theme(--breakpoint-lg)) {
-    padding-inline: 4rem;
-  }
+  padding-inline: 4rem;
+}
 
   @media (width >=theme(--breakpoint-xl)) {
-    padding-inline: 5rem;
-  }
+  padding-inline: 5rem;
+}
 
   @media (width >=theme(--breakpoint-2xl)) {
-    padding-inline: 6rem;
-  }
+  padding-inline: 6rem;
+}
 }
 
 /*
@@ -139,6 +139,20 @@
   ::backdrop,
   ::file-selector-button {
     border-color: var(--color-gray-200, currentColor);
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full hover:bg-muted-foreground/50 transition-colors;
   }
 }
 
@@ -259,6 +273,24 @@
     --primary-foreground: #052E16;
   }
 
+  :root[data-theme='cyan'] {
+    --primary: #06b6d4;
+  }
+
+  .dark[data-theme='cyan'] {
+    --primary: #06b6d4;
+    --primary-foreground: #083344;
+  }
+
+  :root[data-theme='rose'] {
+    --primary: #f43f5e;
+  }
+
+  .dark[data-theme='rose'] {
+    --primary: #f43f5e;
+    --primary-foreground: #4c0519;
+  }
+
 }
 
 /** Scroll bar **/
@@ -284,7 +316,7 @@
 [multiple],
 textarea,
 select {
-  @apply w-full rounded-md border border-border bg-background text-xs text-foreground placeholder-muted-foreground focus:z-10 focus:border-primary focus:outline-hidden focus:ring-primary;
+  @apply w-full rounded-md my-3 bg-background text-xs text-foreground placeholder-muted-foreground focus:z-10 focus:border-primary focus:outline-hidden focus:ring-primary;
 }
 
 [type='checkbox'],
@@ -302,7 +334,7 @@ select {
   }
 
   .form__input {
-    @apply block w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder-transparent transition focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/60;
+    @apply block w-full rounded-xl border border-border bg-background/50 backdrop-blur-sm px-4 py-3 text-sm text-foreground placeholder-transparent transition focus:border-primary focus:outline-hidden focus:ring-2 focus:ring-primary/60;
   }
 
   .form__select {

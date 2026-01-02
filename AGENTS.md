@@ -38,7 +38,7 @@ Deux sous-projets :
 
 ### Auth & securite
 - Toute communication passe par le bridge (`BridgeFacade` / `ResourceFacade`).
-- CSRF stateless : cookie + header `csrf-token` (interceptor).
+- CSRF stateless : pas de token/header ; protection via CORS + Origin/Referer (MutationSourceVoter).
 - `AuthService` expose l'utilisateur courant (Signal) et les actions auth.
 
 ### Ressources metier (ce projet)

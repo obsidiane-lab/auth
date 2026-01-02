@@ -29,10 +29,42 @@
     "select": {
       "placeholder": "Sélectionnez une option"
     },
-    "required": "Ce champ est obligatoire.",
-    "minlength": "La longueur minimale est de {{ requiredLength }} caractères.",
-    "maxlength": "La longueur maximale est de {{ requiredLength }} caractères.",
-    "valide": "Ce champ est invalide."
+    "validation": {
+      "required": "Ce champ est obligatoire.",
+      "minlength": "La longueur minimale est de {{ requiredLength }} caractères.",
+      "maxlength": "La longueur maximale est de {{ requiredLength }} caractères.",
+      "invalid": "Ce champ est invalide.",
+      "email": {
+        "required": "Adresse email requise.",
+        "invalid": "Adresse email invalide."
+      },
+      "password": {
+        "required": "Mot de passe requis.",
+        "weak": "Mot de passe trop faible.",
+        "mismatch": "Les mots de passe ne correspondent pas."
+      },
+      "confirmPassword": {
+        "required": "Confirmation requise.",
+        "mismatch": "Les mots de passe ne correspondent pas."
+      }
+    },
+    "messages": {
+      "success": {
+        "accountCreated": "Compte créé. Vérifiez votre email pour activer l'accès.",
+        "emailVerified": "Email vérifié. Vous pouvez vous connecter.",
+        "passwordUpdated": "Mot de passe mis à jour. Vous pouvez vous connecter.",
+        "loginSuccess": "Connexion réussie. Redirection en cours...",
+        "loginSuccessClose": "Connexion réussie. Vous pouvez fermer cette fenêtre.",
+        "invitationConfirmed": "Invitation confirmée. Vous pouvez vous connecter.",
+        "adminCreated": "Administrateur créé. Vous pouvez vous connecter.",
+        "accountActivated": "Compte activé. Vous pouvez vous connecter.",
+        "resetEmailSent": "Si un compte existe, un email de réinitialisation vient d'être envoyé.",
+        "invitationAlreadyUsed": "Ce lien a déjà été utilisé. Vous pouvez vous connecter."
+      },
+      "info": {
+        "passwordHelper": "Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles."
+      }
+    }
   },
   "uikit": {
     "nav": {
@@ -179,6 +211,17 @@
   }
   ,
   "auth": {
+    "verifyEmail": {
+      "title": {
+        "loading": "Vérification...",
+        "success": "Email vérifié !",
+        "error": "Oups !"
+      },
+      "message": {
+        "loading": "Vérification en cours...",
+        "success": "Votre adresse email est vérifiée."
+      }
+    },
     "errors": {
       "codes": {
         "400": "Merci de vérifier les champs saisis.",
@@ -188,38 +231,10 @@
         "409": "Conflit de données. Merci de réessayer.",
         "410": "Lien expiré.",
         "422": "Merci de vérifier les champs saisis.",
+        "423": "Votre adresse email n’est pas encore vérifiée.",
         "429": "Trop de tentatives. Réessayez dans quelques minutes.",
         "500": "Erreur serveur. Réessayez.",
-        "503": "Service indisponible. Réessayez.",
-        "UNKNOWN": "Une erreur est survenue. Réessayez.",
-        "ACCESS_DENIED": "Accès refusé.",
-        "EMAIL_ALREADY_USED": "Cette adresse email est déjà utilisée.",
-        "EMAIL_MISSING": "Adresse email manquante.",
-        "EMAIL_NOT_VERIFIED": "Votre adresse email n’est pas encore vérifiée.",
-        "EMAIL_SEND_FAILED": "Impossible d’envoyer l’email.",
-        "EMPTY_PASSWORD": "Veuillez saisir un mot de passe.",
-        "INITIAL_ADMIN_ALREADY_CREATED": "Un administrateur existe déjà.",
-        "INITIAL_ADMIN_REQUIRED": "Créez d’abord l’administrateur initial.",
-        "INVALID_CREDENTIALS": "Identifiants invalides.",
-        "INVALID_EMAIL": "Adresse email invalide.",
-        "INVALID_INVITATION": "Invitation invalide ou expirée.",
-        "INVALID_INVITATION_PAYLOAD": "Merci de vérifier les champs saisis.",
-        "INVALID_PASSWORD": "Mot de passe trop faible.",
-        "INVALID_PAYLOAD": "Merci de vérifier les champs saisis.",
-        "INVALID_REGISTRATION": "Merci de vérifier les champs saisis.",
-        "INVALID_REGISTRATION_DATA": "Merci de vérifier les champs saisis.",
-        "INVALID_REQUEST": "Requête invalide.",
-        "INVALID_ROLES": "Rôles invalides.",
-        "INVALID_TOKEN": "Lien invalide ou expiré.",
-        "INVALID_USER": "Ce lien ne correspond à aucun utilisateur.",
-        "INVITATION_ALREADY_USED": "Ce lien a déjà été utilisé.",
-        "INVITATION_EXPIRED": "Invitation expirée.",
-        "ORIGIN_NOT_ALLOWED": "Origine non autorisée. Merci de réessayer.",
-        "RATE_LIMIT": "Trop de tentatives. Réessayez dans quelques minutes.",
-        "REFRESH_TOKEN_INVALID": "Jeton de rafraîchissement invalide.",
-        "REFRESH_TOKEN_MISSING": "Jeton de rafraîchissement manquant.",
-        "RESET_REQUEST_FAILED": "Impossible de traiter la demande. Réessayez.",
-        "USER_NOT_FOUND": "Utilisateur introuvable."
+        "503": "Service indisponible. Réessayez."
       }
     }
   }

@@ -22,7 +22,7 @@ security:
             pattern: ^/api
             stateless: true
             provider: chain_provider
-            user_checker: App\Auth\Infrastructure\Security\UserChecker
+            user_checker: App\Security\UserChecker
             entry_point: jwt
             login_throttling:
                 limiter: app.login_rate_limiter
@@ -33,6 +33,7 @@ security:
                 username_path: email
                 password_path: password
                 success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
             jwt: ~
             refresh_jwt:
                 check_path: /api/auth/refresh

@@ -3,7 +3,7 @@
 
 parameters:
     app.wording_name: '%env(BRANDING_NAME)%'
-    app.password_strength_level: '%env(PASSWORD_STRENGTH_LEVEL)%'
+    app.password_strength_level: '%env(int:PASSWORD_STRENGTH_LEVEL)%'
 
 services:
     # default configuration for services in *this* file
@@ -25,10 +25,10 @@ services:
         arguments:
             - App\Entity\RefreshToken
 
-    App\Auth\Http\OpenApi\AuthRoutesDecorator:
+    App\OpenApi\AuthRoutesDecorator:
         decorates: 'api_platform.openapi.factory'
         arguments:
-            - '@App\Auth\Http\OpenApi\AuthRoutesDecorator.inner'
+            - '@App\OpenApi\AuthRoutesDecorator.inner'
 
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

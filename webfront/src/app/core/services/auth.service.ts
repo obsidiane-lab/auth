@@ -1,21 +1,22 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import type { UserUserRead } from 'bridge';
 import { AuthRepository } from '../repositories/auth.repository';
 import { ApiErrorService } from './api-error.service';
+import { SetupStatusService } from './setup-status.service';
 
 @Injectable({
   providedIn: 'root',
 })
 export class AuthService {
   readonly user = this.authRepository.user;
-  readonly sessionExp = this.authRepository.sessionExp;
   readonly checkingSession = signal(false);
   readonly sessionCheckError = signal<string | null>(null);
   private sessionChecked = false;
   private sessionCheckPromise: Promise<boolean> | null = null;
   private readonly sessionCheckTimeoutMs = 2500;
+  private readonly setupStatusService = inject(SetupStatusService);
 
   constructor(
     private readonly authRepository: AuthRepository,
@@ -41,6 +42,14 @@ export class AuthService {
     }
     if (this.sessionCheckPromise) {
       return this.sessionCheckPromise;
+    }
+
+    const setupRequired = this.setupStatusService.isSetupRequired();
+
+    // Si le setup est requis OU si on ne sait pas encore (null), ne pas faire l'appel
+    if (setupRequired === true || setupRequired === null) {
+      this.sessionChecked = true;
+      return false;
     }
 
     this.checkingSession.set(true);
@@ -78,11 +87,6 @@ export class AuthService {
     await firstValueFrom(this.authRepository.logout$());
   }
 
-  async refresh(): Promise<number> {
-    const response = await firstValueFrom(this.authRepository.refresh$());
-    return response.exp;
-  }
-
   async forgotPassword(email: string): Promise<void> {
     await firstValueFrom(this.authRepository.forgotPassword$(email));
   }
@@ -91,16 +95,12 @@ export class AuthService {
     await firstValueFrom(this.authRepository.resetPassword$(token, password));
   }
 
-  async invite(email: string): Promise<void> {
-    await firstValueFrom(this.authRepository.invite$(email));
-  }
-
   async inviteComplete(token: string, password: string, confirmPassword: string): Promise<UserUserRead> {
     const response = await firstValueFrom(this.authRepository.inviteComplete$(token, password, confirmPassword));
     return response.user;
   }
 
-  async verifyEmail(params: { id: string; token: string; expires: string; _hash: string }): Promise<void> {
+  async verifyEmail(params: { id: string; token: string; expires: string; signature: string }): Promise<void> {
     await firstValueFrom(this.authRepository.verifyEmail$(params));
   }
 

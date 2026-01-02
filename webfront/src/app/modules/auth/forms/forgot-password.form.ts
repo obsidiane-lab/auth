@@ -32,8 +32,4 @@ export class ForgotPasswordFormType
     const raw = form.getRawValue();
     return { email: raw.email.trim() };
   }
-
-  toPatchPayload(form: FormGroup<ForgotPasswordFormControls>): ForgotPasswordPayload {
-    return this.toCreatePayload(form);
-  }
 }

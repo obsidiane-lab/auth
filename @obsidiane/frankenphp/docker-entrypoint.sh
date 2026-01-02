@@ -3,7 +3,7 @@ set -e
 
 if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 
-	REQUIRED_ENV_VARS="DATABASE_URL APP_BASE_DOMAIN NOTIFUSE_API_BASE_URL NOTIFUSE_WORKSPACE_ID NOTIFUSE_API_KEY NOTIFUSE_TEMPLATE_WELCOME NOTIFUSE_TEMPLATE_RESET_PASSWORD"
+	REQUIRED_ENV_VARS="APP_BASE_URL FRONTEND_REDIRECT_URL APP_SECRET DATABASE_URL JWT_SECRET NOTIFUSE_API_BASE_URL NOTIFUSE_WORKSPACE_ID NOTIFUSE_API_KEY ACCESS_COOKIE_DOMAIN"
 
 	for VAR_NAME in $REQUIRED_ENV_VARS; do
 		# shellcheck disable=SC2016
@@ -13,18 +13,6 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'bin/console' ]; then
 			exit 1
 		fi
 	done
-
-	if [ -z "${APP_SECRET:-}" ]; then
-		APP_SECRET=$(php -r 'echo bin2hex(random_bytes(32));')
-		export APP_SECRET
-		echo "APP_SECRET not set - generated random secret"
-	fi
-
-	if [ -z "${JWT_SECRET:-}" ]; then
-		JWT_SECRET=$(php -r 'echo bin2hex(random_bytes(64));')
-		export JWT_SECRET
-		echo "JWT_SECRET not set - generated random secret"
-	fi
 
 	if grep -q ^DATABASE_URL= .env; then
 		echo 'Waiting for database to be ready...'

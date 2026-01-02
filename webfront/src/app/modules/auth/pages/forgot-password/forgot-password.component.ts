@@ -1,50 +1,38 @@
-import { NgClass } from '@angular/common';
-import { Component, effect, signal } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { ForgotPasswordFormType, type ForgotPasswordFormControls } from '../../forms/forgot-password.form';
+import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
+import { FormFieldComponent } from '../../../../shared/components/form-field/form-field.component';
+import { ValidationMessages, SuccessMessages } from '../../../../shared/utils/validation-messages';
 
 @Component({
   selector: 'app-forgot-password',
   templateUrl: './forgot-password.component.html',
-  styleUrls: ['./forgot-password.component.css'],
-  imports: [ReactiveFormsModule, RouterLink, ButtonComponent, NgClass, FormStatusMessageComponent],
+  imports: [ReactiveFormsModule, RouterLink, ButtonComponent, FormStatusMessageComponent, FormFieldComponent],
 })
-export class ForgotPasswordComponent {
+export class ForgotPasswordComponent extends BaseAuthFormComponent<ForgotPasswordFormControls> {
   form: FormGroup<ForgotPasswordFormControls>;
-  submitted = false;
-  readonly isSubmitting = signal(false);
-  readonly returnUrl = signal<string | null>(null);
-  readonly errorMessageKey = signal('');
-  readonly successMessage = signal('');
-  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  readonly emailErrors = ValidationMessages.email();
 
   constructor(
+    route: ActivatedRoute,
+    router: Router,
+    apiErrorService: ApiErrorService,
     private readonly authService: AuthService,
-    private readonly route: ActivatedRoute,
     private readonly forgotPasswordForm: ForgotPasswordFormType,
-    private readonly apiErrorService: ApiErrorService,
   ) {
+    super(route, router, apiErrorService);
     this.form = this.forgotPasswordForm.createForm(null);
-
-    effect(() => {
-      this.returnUrl.set(this.queryParamMap().get('returnUrl'));
-    });
-  }
-
-  get f() {
-    return this.form.controls;
   }
 
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessageKey.set('');
-    this.successMessage.set('');
+    this.resetMessages();
 
     if (this.form.invalid) {
       return;
@@ -55,9 +43,9 @@ export class ForgotPasswordComponent {
 
     try {
       await this.authService.forgotPassword(email);
-      this.successMessage.set('Si un compte existe, un email de réinitialisation vient d’être envoyé.');
+      this.successMessage.set(SuccessMessages.resetEmailSent);
     } catch (error) {
-      this.errorMessageKey.set(this.apiErrorService.handleError(error));
+      this.handleError(error);
     } finally {
       this.isSubmitting.set(false);
     }

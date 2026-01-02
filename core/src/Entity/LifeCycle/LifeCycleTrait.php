@@ -1,42 +1,32 @@
 <?php
 
 namespace App\Entity\LifeCycle;
-
-
 use DateTimeImmutable;
 use Doctrine\ORM\Mapping as ORM;
 
-#[ORM\HasLifecycleCallbacks]
 trait LifeCycleTrait
 {
-    #[ORM\Column(type: "datetime_immutable")]
+    #[ORM\Column(type: 'datetime_immutable')]
     private DateTimeImmutable $createdAt;
 
-    #[ORM\Column(type: "datetime_immutable")]
+    #[ORM\Column(type: 'datetime_immutable')]
     private DateTimeImmutable $updatedAt;
-
-    public function __construct()
-    {
-        $this->createdAt = new DateTimeImmutable();
-        $this->updatedAt = new DateTimeImmutable();
-    }
 
     public function getCreatedAt(): DateTimeImmutable
     {
         return $this->createdAt;
     }
 
-
     public function getUpdatedAt(): DateTimeImmutable
     {
         return $this->updatedAt;
     }
+
     public function setCreatedAt(DateTimeImmutable $dateTimeImmutable): static
     {
         $this->createdAt = $dateTimeImmutable;
         return $this;
     }
-
 
     public function setUpdatedAt(DateTimeImmutable $dateTimeImmutable): static
     {
@@ -51,7 +41,6 @@ trait LifeCycleTrait
         $this->createdAt = $now;
         $this->updatedAt = $now;
     }
-
 
     #[ORM\PreUpdate]
     public function updateTimestamp(): void

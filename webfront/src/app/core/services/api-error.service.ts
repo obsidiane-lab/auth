@@ -1,19 +1,35 @@
 import { Injectable } from '@angular/core';
-import { HttpErrorResponse } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { extractHttpStatus } from '../utils/http-error.util';
+import { SetupStatusService } from './setup-status.service';
+import { isInitialAdminRequiredError } from '../utils/setup-required.util';
 
 @Injectable({ providedIn: 'root' })
 export class ApiErrorService {
-  handleError(error: unknown): string {
-    const status = this.extractStatusCode(error);
-    return status ? `auth.errors.codes.${status}` : 'auth.errors.codes.UNKNOWN';
-  }
+  constructor(
+    private readonly router: Router,
+    private readonly setupStatusService: SetupStatusService,
+  ) {}
 
-  private extractStatusCode(error: unknown): number | null {
-    if (!(error instanceof HttpErrorResponse)) {
-      return null;
+  handleError(error: unknown): string {
+    if (this.isSetupRequired(error)) {
+      this.handleSetupRequired();
+      return '';
     }
 
-    const status = error.status;
-    return status > 0 ? status : null;
+    const status = extractHttpStatus(error);
+    return `auth.errors.codes.${status ?? 500}`;
+  }
+
+  private isSetupRequired(error: unknown): boolean {
+    return isInitialAdminRequiredError(error);
+  }
+
+  private handleSetupRequired(): void {
+    this.setupStatusService.markSetupRequired();
+    if (this.router.url.startsWith('/setup')) {
+      return;
+    }
+    void this.router.navigate(['/setup']);
   }
 }

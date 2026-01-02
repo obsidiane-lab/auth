@@ -1,119 +1,70 @@
-<form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
-  <div class="text-center">
-    <h2 class="text-foreground mb-1 text-3xl font-semibold">Créer le premier administrateur</h2>
-    <p class="text-muted-foreground text-sm">
-      Aucun compte n’est encore présent. Créez l’administrateur initial de <strong>{{ brandingName() }}</strong>.
-    </p>
-  </div>
-
-  <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
-  <app-form-status-message kind="success" [message]="successMessage()"></app-form-status-message>
-
-  <div class="space-y-3 text-left">
-    <div class="form__group">
-      <div class="form__field">
-        <input
-          id="setup-email"
-          type="email"
-          inputmode="email"
-          autocomplete="email"
-          class="form__input peer"
-          placeholder=" "
-          formControlName="email"
-          [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
-        />
-        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="setup-email">
-          Adresse email
-        </label>
-      </div>
-      @if (submitted && f['email'].errors) {
-        <p class="is__invalid-error">
-          @if (f['email'].hasError('required')) {
-            <span>Adresse email requise.</span>
-          }
-          @if (f['email'].hasError('email')) {
-            <span>Adresse email invalide.</span>
-          }
-        </p>
-      }
-    </div>
-
-    <div class="form__group">
-      <div class="form__field">
-        <input
-          id="setup-password"
-          [type]="passwordVisible ? 'text' : 'password'"
-          autocomplete="new-password"
-          class="form__input peer pr-12"
-          placeholder=" "
-          formControlName="password"
-          [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
-        />
-        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="setup-password">
-          Mot de passe
-        </label>
-        <button
-          type="button"
-          class="form__toggle"
-          aria-label="Afficher ou masquer le mot de passe"
-          [attr.aria-pressed]="passwordVisible"
-          (click)="togglePasswordVisibility()"
-        >
-          <svg-icon
-            [src]="!passwordVisible ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
-            [svgClass]="'h-5 w-5'"
-          ></svg-icon>
-        </button>
-      </div>
-      @if (submitted && f['password'].errors) {
-        <p class="is__invalid-error">
-          @if (f['password'].hasError('weakPassword')) {
-            <span>Mot de passe trop faible.</span>
-          }
-          @if (f['password'].hasError('required')) {
-            <span>Mot de passe requis.</span>
-          }
-        </p>
-      }
-      <div class="grid grid-cols-4 gap-2">
-        @for (index of [1, 2, 3, 4]; track index) {
-          <span
-            [ngClass]="passwordStrength() >= index ? 'bg-primary' : 'bg-muted'"
-            class="h-1 rounded-xs transition"
-          ></span>
-        }
-      </div>
-      <p class="text-muted-foreground text-xs">
-        Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.
+<form class="my-10 space-y-6 animate-fade-in-up" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="space-y-4">
+    <div class="text-center">
+      <h2 class="mb-1 text-3xl font-semibold text-foreground">Créer le premier administrateur</h2>
+      <p class="text-sm text-muted-foreground">
+        Aucun compte n'est encore présent. Créez l'administrateur initial de <strong>{{ brandingName() }}</strong>.
       </p>
     </div>
+  </div>
 
-    <div class="form__group">
-      <div class="form__field">
-        <input
-          id="setup-password-confirm"
-          type="password"
-          autocomplete="new-password"
-          class="form__input peer"
-          placeholder=" "
-          formControlName="confirmPassword"
-          [ngClass]="{ 'is__invalid-input': submitted && f['confirmPassword'].errors }"
-        />
-        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['confirmPassword'].errors }" for="setup-password-confirm">
-          Confirmez le mot de passe
-        </label>
-      </div>
-      @if (submitted && f['confirmPassword'].errors) {
-        <p class="is__invalid-error">
-          @if (f['confirmPassword'].hasError('mismatch')) {
-            <span>Les mots de passe ne correspondent pas.</span>
-          }
-          @if (f['confirmPassword'].hasError('required')) {
-            <span>Confirmation requise.</span>
-          }
-        </p>
-      }
-    </div>
+  <div class="space-y-2">
+    <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
+    <app-form-status-message kind="success" [messageKey]="successMessage()"></app-form-status-message>
+  </div>
+
+  <div class="space-y-3 text-left">
+    <!-- Email Field -->
+    <app-form-field
+      label="Adresse email"
+      id="setup-email"
+      type="email"
+      inputmode="email"
+      autocomplete="email"
+      icon="assets/icons/heroicons/outline/envelope.svg"
+      [control]="f['email']"
+      [submitted]="submitted"
+      [errors]="emailErrors"
+    ></app-form-field>
+
+    <!-- Password Field -->
+    <app-password-input
+      label="Mot de passe"
+      id="setup-password"
+      autocomplete="new-password"
+      [control]="f['password']"
+      [submitted]="submitted"
+      [showStrengthMeter]="true"
+      [strength]="passwordStrength()"
+      [showHelper]="true"
+    >
+      <span error>
+        @if (f['password'].hasError('weakPassword')) {
+          <span>{{ 'form.validation.password.weak' | translate }}</span>
+        }
+        @if (f['password'].hasError('required')) {
+          <span>{{ 'form.validation.password.required' | translate }}</span>
+        }
+      </span>
+    </app-password-input>
+
+    <!-- Confirm Password -->
+    <app-password-input
+      label="Confirmez le mot de passe"
+      id="setup-password-confirm"
+      autocomplete="new-password"
+      [control]="f['confirmPassword']"
+      [submitted]="submitted"
+    >
+      <span error>
+        @if (f['confirmPassword'].hasError('mismatch')) {
+          <span>{{ 'form.validation.password.mismatch' | translate }}</span>
+        }
+        @if (f['confirmPassword'].hasError('required')) {
+          <span>{{ 'form.validation.confirmPassword.required' | translate }}</span>
+        }
+      </span>
+    </app-password-input>
   </div>
 
   <div>

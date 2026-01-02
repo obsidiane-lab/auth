@@ -386,7 +386,7 @@ curl -i -b cookiejar.txt -H "Origin: http://localhost:8000" -X POST http://local
 |    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
 |    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
 
-Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<AUTH_HOST>/api/docs` (OpenAPI).
+Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<APP_BASE_URL>/api/docs` (OpenAPI).
 
 ---
 
@@ -436,33 +436,32 @@ docker compose -f compose.prod.yaml up -d --build
 
 Les variables ci-dessous couvrent 95 % des cas. Copie/colle ce bloc puis adapte-le à ton infra.
 
-Variables **critiques** vérifiées au démarrage (entrypoint) : `DATABASE_URL`, `APP_BASE_DOMAIN`, `NOTIFUSE_API_BASE_URL`, `NOTIFUSE_WORKSPACE_ID`, `NOTIFUSE_API_KEY`, `NOTIFUSE_TEMPLATE_WELCOME`, `NOTIFUSE_TEMPLATE_RESET_PASSWORD`. `APP_SECRET` et `JWT_SECRET` doivent aussi être fournis (sinon l’entrypoint en génère à chaque start, ce qui invalide les tokens).
+Variables **critiques** vérifiées au démarrage (entrypoint) : `APP_BASE_URL`, `FRONTEND_REDIRECT_URL`, `APP_SECRET`, `DATABASE_URL`, `JWT_SECRET`, `NOTIFUSE_API_BASE_URL`, `NOTIFUSE_WORKSPACE_ID`, `NOTIFUSE_API_KEY`.
 
 **Bloc prêt à copier-coller (prod typique)**
 
 ```env
-APP_BASE_DOMAIN=example.com
-AUTH_HOST=auth.${APP_BASE_DOMAIN}
-APP_DEFAULT_URI=https://${AUTH_HOST}
+APP_BASE_URL=https://auth.example.com
+FRONTEND_REDIRECT_URL=https://app.example.com/
 
 APP_SECRET=change-me
 JWT_SECRET=change-me-too
 DATABASE_URL="mysql://app:!ChangeMe!database:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
 
-JWT_ISSUER=https://${AUTH_HOST}
+JWT_ISSUER=${APP_BASE_URL}
 JWT_AUDIENCE=core-api
 JWT_ACCESS_TTL=600
 JWT_REFRESH_TTL=2592000
-ALLOWED_ORIGINS="^https?://([a-zA-Z0-9-]+\\.)?${APP_BASE_DOMAIN}(:[0-9]+)?$"
+ALLOWED_ORIGINS="^https?://example.com(:[0-9]+)?$"
 
-ACCESS_COOKIE_DOMAIN=".${APP_BASE_DOMAIN}"
-FRONTEND_DEFAULT_REDIRECT=https://app.${APP_BASE_DOMAIN}/
-FRONTEND_REDIRECT_ALLOWLIST=https://app.${APP_BASE_DOMAIN}/,https://partners.${APP_BASE_DOMAIN}/
-FRONTEND_BASE_URL=${APP_DEFAULT_URI}
+ACCESS_COOKIE_DOMAIN=".example.com"
 
 REGISTRATION_ENABLED=1
 PASSWORD_STRENGTH_LEVEL=2
 API_DOCS_ENABLED=0
+
+# Token S2S (Authorization: Bearer ...) pour les services internes
+CORE_TO_AUTH_TOKEN=change-me
 
 NOTIFUSE_API_BASE_URL=https://notifuse.example.com
 NOTIFUSE_WORKSPACE_ID=prod-workspace
@@ -475,8 +474,26 @@ Variables complémentaires (généralement à garder telles quelles) :
 
 - `JWT_ALGORITHM` (HS256), `JWT_AUDIENCE`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`
 - `ACCESS_COOKIE_NAME`, `ACCESS_COOKIE_PATH`, `ACCESS_COOKIE_SAMESITE`, `ACCESS_COOKIE_SECURE`
-- `BRANDING_NAME`, `FRONTEND_BASE_URL`, `API_DOCS_ENABLED`
+- `BRANDING_NAME`, `API_DOCS_ENABLED`
 - Rate limiting : `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`, `RATE_LOGIN_GLOBAL_LIMIT`
+
+---
+
+### Configuration frontend (`/api/config`)
+
+Le frontend consomme `/api/config` (public) pour piloter l’UI et la politique de mots de passe.
+
+| Variable | Champ `/api/config` | Effet côté UI |
+| --- | --- | --- |
+| `APP_ENV` | `environment` | `dev` affiche le ThemeSwitcher + persistance locale; tout autre env masque le switcher et force le thème fourni. |
+| `REGISTRATION_ENABLED` | `registrationEnabled` | Active l’inscription (route `/register`). |
+| `PASSWORD_STRENGTH_LEVEL` | `passwordStrengthLevel` | Niveau 1–4 (weak → very strong) pour validation + jauge de force. |
+| `BRANDING_NAME` | `brandingName` | Nom affiché dans l’UI et utilisé dans les emails. |
+| `FRONTEND_REDIRECT_URL` | `frontendRedirectUrl` | Redirection après login si fournie. |
+| `FRONTEND_THEME_MODE` | `themeMode` | `light` ou `dark` (appliqué en non‑dev). |
+| `FRONTEND_THEME_COLOR` | `themeColor` | Couleur principale (`base`, `red`, `blue`, `orange`, `yellow`, `green`, `violet`, `cyan`, `rose`). |
+
+En environnement non‑dev, le thème est **forcé** par `/api/config` (pas de lecture `localStorage`).
 
 ---
 

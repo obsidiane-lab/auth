@@ -3,12 +3,12 @@ gesdinet_jwt_refresh_token:
   ttl: '%env(int:JWT_REFRESH_TTL)%'
   single_use: true
   firewall: api
-  token_parameter_name: '__Host-rt'
+  token_parameter_name: '%env(string:REFRESH_COOKIE_NAME)%'
   cookie:
     enabled: true
     path: '/'
     domain: null
-    same_site: strict
+    same_site: '%env(string:REFRESH_COOKIE_SAMESITE)%'
     http_only: true
-    secure: true
+    secure: '%env(bool:REFRESH_COOKIE_SECURE)%'
     remove_token_from_body: true

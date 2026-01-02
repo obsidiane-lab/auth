@@ -2,7 +2,7 @@
 
 Service d’authentification **stateless** pour applications web & SPA, basé sur **Lexik JWT (HS256)** et **Gesdinet
 Refresh Tokens**.  
-Il fournit un login centré **cookies HttpOnly** (`__Secure-at` / `__Host-rt`), des endpoints API simples et une
+Il fournit un login centré **cookies HttpOnly** (`__Secure-at` / `__Host-rt` en prod, `at` / `rt` en dev compose), des endpoints API simples et une
 validation **Origin/Referer** (Same Origin).
 
 > UI Angular (dossier `/webfront`), tokens en cookies sécurisés, refresh rotatif, vérification d’email.
@@ -28,7 +28,7 @@ validation **Origin/Referer** (Same Origin).
 
 ## Vue d’ensemble
 
-- Service d’auth centré **cookies HttpOnly** : access token JWT (`__Secure-at`) + refresh opaque (`__Host-rt`).
+- Service d’auth centré **cookies HttpOnly** : access token JWT (`__Secure-at`) + refresh opaque (`__Host-rt`) en prod.
 - Deux usages possibles :
   - UI Angular : `/login`, `/register`, `/reset-password`, `/reset-password/confirm`, `/verify-email`, `/invite/complete`, `/setup`.
   - API JSON : `/api/auth/...` pour front SPA, mobile, backends.
@@ -53,8 +53,9 @@ validation **Origin/Referer** (Same Origin).
   - Setup : `POST /api/setup/admin`.
 
 - **Cookies & tokens**
-  - `__Secure-at` : access token JWT (HttpOnly).
-  - `__Host-rt` : refresh token opaque, single-use (HttpOnly).
+  - `__Secure-at` : access token JWT (HttpOnly, prod).
+  - `__Host-rt` : refresh token opaque, single-use (HttpOnly, prod).
+  - En dev local via `docker compose` : `at` / `rt` (HTTP).
   - Validation Origin/Referer (Same Origin) sur les requêtes sensibles.
 
 ---
@@ -160,7 +161,7 @@ curl -i -b cookiejar.txt -H "Origin: http://localhost:8000" -X POST http://local
 |    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
 |    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
 
-Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<AUTH_HOST>/api/docs` (OpenAPI).
+Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<APP_BASE_URL>/api/docs` (OpenAPI).
 
 ---
 
@@ -193,8 +194,9 @@ Tous les endpoints sensibles (login, register, reset, logout, setup, invitation)
 
 ### `.env` & Docker
 
-* Le `.env` racine fournit désormais des valeurs par défaut **orientées production** (domaine `example.com`, cookies sécurisés, SameSite `lax`). Ne mets aucun secret sensible dans ce fichier versionné.
-* Pour un usage local, crée un `.env.local` ou charge `.env.dev` (APP_ENV=dev, CORS localhost, cookies non Secure, DB `database:3306`, mot de passe niveau 1).
+* `core/.env` fournit des valeurs par défaut **orientées production** (cookies sécurisés). Ne mets aucun secret sensible dans ce fichier versionné.
+* Le `.env` racine sert à la substitution de variables pour `docker compose` (ex: `NOTIFUSE_*`).
+* En local, les valeurs **dev** sont définies directement dans `compose.yaml` (APP_ENV=dev, cookies non Secure, CORS localhost, DB `database:3306`).
 * `docker compose` lit automatiquement `.env` ; toute variable peut être surchargée par l’environnement du runtime/compose.
 * L’entrypoint génère `APP_SECRET` et `JWT_SECRET` si absents, mais ces valeurs tournent à chaque redémarrage : renseigne-les pour un déploiement réel.
 
@@ -210,29 +212,25 @@ docker compose -f compose.prod.yaml up -d --build
 
 Les variables ci-dessous couvrent 95 % des cas. Copie/colle ce bloc puis adapte-le à ton infra.
 
-Variables **critiques** vérifiées au démarrage (entrypoint) : `DATABASE_URL`, `APP_BASE_DOMAIN`, `NOTIFUSE_API_BASE_URL`, `NOTIFUSE_WORKSPACE_ID`, `NOTIFUSE_API_KEY`, `NOTIFUSE_TEMPLATE_WELCOME`, `NOTIFUSE_TEMPLATE_RESET_PASSWORD`. `APP_SECRET` et `JWT_SECRET` doivent aussi être fournis (sinon l’entrypoint en génère à chaque start, ce qui invalide les tokens).
+Variables **critiques** vérifiées au démarrage (entrypoint) : `APP_BASE_URL`, `FRONTEND_REDIRECT_URL`, `APP_SECRET`, `DATABASE_URL`, `JWT_SECRET`, `NOTIFUSE_API_BASE_URL`, `NOTIFUSE_WORKSPACE_ID`, `NOTIFUSE_API_KEY`.
 
 **Bloc prêt à copier-coller (prod typique)**
 
 ```env
-APP_BASE_DOMAIN=example.com
-AUTH_HOST=auth.${APP_BASE_DOMAIN}
-APP_DEFAULT_URI=https://${AUTH_HOST}
+APP_BASE_URL=https://auth.example.com
+FRONTEND_REDIRECT_URL=https://app.example.com/
 
 APP_SECRET=change-me
 JWT_SECRET=change-me-too
 DATABASE_URL="mysql://app:!ChangeMe!database:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
 
-JWT_ISSUER=https://${AUTH_HOST}
+JWT_ISSUER=${APP_BASE_URL}
 JWT_AUDIENCE=core-api
 JWT_ACCESS_TTL=600
 JWT_REFRESH_TTL=2592000
-ALLOWED_ORIGINS="^https?://([a-zA-Z0-9-]+\\.)?${APP_BASE_DOMAIN}(:[0-9]+)?$"
+ALLOWED_ORIGINS="^https?://example.com(:[0-9]+)?$"
 
-ACCESS_COOKIE_DOMAIN=".${APP_BASE_DOMAIN}"
-FRONTEND_DEFAULT_REDIRECT=https://app.${APP_BASE_DOMAIN}/
-FRONTEND_REDIRECT_ALLOWLIST=https://app.${APP_BASE_DOMAIN}/,https://partners.${APP_BASE_DOMAIN}/
-FRONTEND_BASE_URL=${APP_DEFAULT_URI}
+ACCESS_COOKIE_DOMAIN=".example.com"
 
 REGISTRATION_ENABLED=1
 PASSWORD_STRENGTH_LEVEL=2
@@ -252,8 +250,121 @@ Variables complémentaires (généralement à garder telles quelles) :
 
 - `JWT_ALGORITHM` (HS256), `JWT_AUDIENCE`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`
 - `ACCESS_COOKIE_NAME`, `ACCESS_COOKIE_PATH`, `ACCESS_COOKIE_SAMESITE`, `ACCESS_COOKIE_SECURE`
-- `BRANDING_NAME`, `FRONTEND_BASE_URL`, `API_DOCS_ENABLED`
+- `BRANDING_NAME`, `API_DOCS_ENABLED`
 - Rate limiting : `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`, `RATE_LOGIN_GLOBAL_LIMIT`
+
+### Valeurs par défaut des variables d’environnement
+
+#### Core (defaults de `core/.env`)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `APP_ENV` | `prod` |
+| `APP_DEBUG` | `0` |
+| `APP_SECRET` | `` |
+| `APP_BASE_URL` | `` |
+| `DATABASE_URL` | `` |
+| `ALLOWED_ORIGINS` | `^https?://example.com(:[0-9]+)?$` |
+| `JWT_ALGORITHM` | `HS256` |
+| `JWT_SECRET` | `` |
+| `JWT_ISSUER` | `${APP_BASE_URL}` |
+| `JWT_AUDIENCE` | `core-api` |
+| `JWT_ACCESS_TTL` | `600` |
+| `JWT_REFRESH_TTL` | `2592000` |
+| `ACCESS_COOKIE_NAME` | `__Secure-at` |
+| `ACCESS_COOKIE_DOMAIN` | `` |
+| `ACCESS_COOKIE_PATH` | `/` |
+| `ACCESS_COOKIE_SAMESITE` | `lax` |
+| `ACCESS_COOKIE_SECURE` | `1` |
+| `REFRESH_COOKIE_NAME` | `__Host-rt` |
+| `REFRESH_COOKIE_SAMESITE` | `strict` |
+| `REFRESH_COOKIE_SECURE` | `1` |
+| `FRONTEND_REDIRECT_URL` | `` |
+| `TRUSTED_PROXIES` | `127.0.0.1` |
+| `REGISTRATION_ENABLED` | `1` |
+| `BRANDING_NAME` | `Obsidiane Auth` |
+| `PASSWORD_STRENGTH_LEVEL` | `2` |
+| `FRONTEND_THEME_MODE` | `dark` |
+| `FRONTEND_THEME_COLOR` | `base` |
+| `FRONTEND_THEME_COLORS` | `base,red,blue,orange,yellow,green,violet` |
+| `RATE_LOGIN_LIMIT` | `5` |
+| `RATE_LOGIN_INTERVAL` | `60 seconds` |
+| `RATE_LOGIN_GLOBAL_LIMIT` | `25` |
+| `API_DOCS_ENABLED` | `0` |
+| `NOTIFUSE_API_BASE_URL` | `` |
+| `NOTIFUSE_WORKSPACE_ID` | `` |
+| `NOTIFUSE_API_KEY` | `` |
+| `NOTIFUSE_TEMPLATE_WELCOME` | `welcome` |
+| `NOTIFUSE_TEMPLATE_RESET_PASSWORD` | `resetpass` |
+
+#### Racine (defaults de `.env` pour `docker compose`)
+
+| Variable | Valeur par défaut |
+| --- | -- |
+| `NOTIFUSE_API_BASE_URL` | `https://relay.obsidiane.fr` |
+| `NOTIFUSE_API_KEY` | `` |
+
+#### Dev local (`compose.yaml` -> service `core`)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `APP_BASE_URL` | `http://localhost:${CADDY_HTTP_PORT:-8000}` |
+| `APP_SECRET` | `secret` |
+| `APP_ENV` | `dev` |
+| `ACCESS_COOKIE_NAME` | `at` |
+| `ACCESS_COOKIE_DOMAIN` | `localhost` |
+| `ACCESS_COOKIE_SECURE` | `0` |
+| `REFRESH_COOKIE_NAME` | `rt` |
+| `REFRESH_COOKIE_SECURE` | `0` |
+| `REFRESH_COOKIE_SAMESITE` | `lax` |
+| `XDEBUG_MODE` | `off` |
+| `ALLOWED_ORIGINS` | `^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$` |
+| `DATABASE_URL` | `mysql://app:ChangeMe@database:3306/app` |
+| `JWT_SECRET` | `!ChangeThisMercureHubJWTSecretKey!` |
+| `FRONTEND_REDIRECT_URL` | `http://localhost:4200/` |
+| `NOTIFUSE_API_BASE_URL` | `${NOTIFUSE_API_BASE_URL:-}` |
+| `NOTIFUSE_WORKSPACE_ID` | `obsidiane` |
+| `NOTIFUSE_API_KEY` | `${NOTIFUSE_API_KEY:-}` |
+| `BRANDING_NAME` | `Obsidiane` |
+| `NOTIFUSE_TEMPLATE_WELCOME` | `welcome` |
+| `NOTIFUSE_TEMPLATE_RESET_PASSWORD` | `resetpass` |
+| `API_DOCS_ENABLED` | `1` |
+| `REGISTRATION_ENABLED` | `1` |
+
+#### Dev local (`compose.yaml` -> service `database`)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `MYSQL_DATABASE` | `${MYSQL_DATABASE:-app}` |
+| `MYSQL_USER` | `${MYSQL_USER:-app}` |
+| `MYSQL_PASSWORD` | `${MYSQL_PASSWORD:-ChangeMe}` |
+| `MYSQL_RANDOM_ROOT_PASSWORD` | `true` |
+
+#### Tests/optionnels (non définis par défaut)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `CORE_TO_AUTH_TOKEN` | `` |
+| `CORE_TO_AUTH_TOKEN_NEXT` | `` |
+| `TEST_TOKEN` | `` |
+
+---
+
+### Configuration frontend (`/api/config`)
+
+Le frontend consomme `/api/config` (public) pour piloter l’UI et la politique de mots de passe.
+
+| Variable | Champ `/api/config` | Effet côté UI |
+| --- | --- | --- |
+| `APP_ENV` | `environment` | `dev` affiche le ThemeSwitcher + persistance locale; tout autre env masque le switcher et force le thème fourni. |
+| `REGISTRATION_ENABLED` | `registrationEnabled` | Active l’inscription (route `/register`). |
+| `PASSWORD_STRENGTH_LEVEL` | `passwordStrengthLevel` | Niveau 1–4 (weak → very strong) pour validation + jauge de force. |
+| `BRANDING_NAME` | `brandingName` | Nom affiché dans l’UI et utilisé dans les emails. |
+| `FRONTEND_REDIRECT_URL` | `frontendRedirectUrl` | Redirection après login si fournie. |
+| `FRONTEND_THEME_MODE` | `themeMode` | `light` ou `dark` (appliqué en non‑dev). |
+| `FRONTEND_THEME_COLOR` | `themeColor` | Couleur principale (`base`, `red`, `blue`, `orange`, `yellow`, `green`, `violet`, `cyan`, `rose`). |
+
+En environnement non‑dev, le thème est **forcé** par `/api/config` (pas de lecture `localStorage`).
 
 ---
 

@@ -20,7 +20,9 @@ export type SetupFormControls = {
 };
 
 @Injectable({ providedIn: 'root' })
-export class SetupFormType implements EntityFormType<SetupFormModel, SetupFormControls, SetupPayload, SetupPayload, void> {
+export class SetupFormType
+  implements EntityFormType<SetupFormModel, SetupFormControls, SetupPayload, SetupPayload, void>
+{
   private readonly fb = inject(FormBuilder);
 
   createForm(model: SetupFormModel | null): FormGroup<SetupFormControls> {
@@ -45,9 +47,5 @@ export class SetupFormType implements EntityFormType<SetupFormModel, SetupFormCo
       email: raw.email.trim(),
       password: raw.password,
     };
-  }
-
-  toPatchPayload(form: FormGroup<SetupFormControls>): SetupPayload {
-    return this.toCreatePayload(form);
   }
 }

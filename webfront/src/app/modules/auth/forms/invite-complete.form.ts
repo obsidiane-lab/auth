@@ -45,8 +45,4 @@ export class InviteCompleteFormType
       confirmPassword: raw.confirmPassword,
     };
   }
-
-  toPatchPayload(form: FormGroup<InviteCompleteFormControls>): InviteCompletePayload {
-    return this.toCreatePayload(form);
-  }
 }

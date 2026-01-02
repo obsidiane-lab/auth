@@ -5,8 +5,8 @@ namespace App\ApiResource;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Post;
-use App\Auth\Http\Dto\RegisterUserInput;
-use App\Setup\Http\Controller\InitialAdminController;
+use App\Dto\Auth\RegisterUserInput;
+use App\Controller\Setup\InitialAdminController;
 use Symfony\Component\HttpFoundation\Response;
 
 #[ApiResource(
@@ -20,8 +20,6 @@ use Symfony\Component\HttpFoundation\Response;
             denormalizationContext: ['groups' => ['user:register']],
             input: RegisterUserInput::class,
             read: false,
-            deserialize: true,
-            validate: false,
             write: false,
             name: 'api_setup_initial_admin',
         ),

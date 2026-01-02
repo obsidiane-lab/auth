@@ -17,7 +17,9 @@ export type NewPasswordFormControls = {
 };
 
 @Injectable({ providedIn: 'root' })
-export class NewPasswordFormType implements EntityFormType<NewPasswordFormModel, NewPasswordFormControls, NewPasswordPayload, NewPasswordPayload, void> {
+export class NewPasswordFormType
+  implements EntityFormType<NewPasswordFormModel, NewPasswordFormControls, NewPasswordPayload, NewPasswordPayload, void>
+{
   private readonly fb = inject(FormBuilder);
 
   createForm(model: NewPasswordFormModel | null): FormGroup<NewPasswordFormControls> {
@@ -37,9 +39,5 @@ export class NewPasswordFormType implements EntityFormType<NewPasswordFormModel,
   toCreatePayload(form: FormGroup<NewPasswordFormControls>): NewPasswordPayload {
     const raw = form.getRawValue();
     return { password: raw.password };
-  }
-
-  toPatchPayload(form: FormGroup<NewPasswordFormControls>): NewPasswordPayload {
-    return this.toCreatePayload(form);
   }
 }

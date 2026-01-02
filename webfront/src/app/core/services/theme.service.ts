@@ -6,27 +6,41 @@ import { FrontendConfigService } from './frontend-config.service';
   providedIn: 'root',
 })
 export class ThemeService {
-  public theme = signal<Theme>({ mode: 'dark', color: 'base', direction: 'ltr' });
+  public theme = signal<Theme>({ mode: 'dark', color: 'base' });
   private hasStoredTheme = false;
+  private hasLoadedStoredTheme = false;
 
   constructor(private readonly configService: FrontendConfigService) {
-    this.loadTheme();
     effect(() => {
-      this.setConfig();
+      const isDev = this.isDevEnvironment();
+      if (isDev && !this.hasLoadedStoredTheme) {
+        this.loadTheme();
+        this.hasLoadedStoredTheme = true;
+      }
+      if (!isDev) {
+        this.hasStoredTheme = false;
+        this.hasLoadedStoredTheme = false;
+      }
     });
 
     effect(() => {
-      if (this.hasStoredTheme) {
+      const config = this.configService.config();
+      if (this.isDevEnvironment() && this.hasStoredTheme) {
         return;
       }
-
-      const config = this.configService.config();
       this.theme.set({
-        mode: config.themeMode,
-        color: config.themeColor,
-        direction: config.themeDirection,
+        mode: config.themeMode ?? 'dark',
+        color: config.themeColor ?? 'base',
       });
     });
+
+    effect(() => {
+      this.applyTheme();
+    });
+  }
+
+  private isDevEnvironment(): boolean {
+    return (this.configService.config().environment ?? 'prod') === 'dev';
   }
 
   private loadTheme() {
@@ -37,10 +51,11 @@ export class ThemeService {
     }
   }
 
-  private setConfig() {
-    this.setLocalStorage();
+  private applyTheme() {
     this.setThemeClass();
-    this.setRTL();
+    if (this.isDevEnvironment()) {
+      this.setLocalStorage();
+    }
   }
 
   public get isDark(): boolean {
@@ -54,10 +69,5 @@ export class ThemeService {
 
   private setLocalStorage() {
     localStorage.setItem('theme', JSON.stringify(this.theme()));
-  }
-
-  private setRTL() {
-    document.querySelector('html')!.setAttribute('dir', this.theme().direction);
-    this.setLocalStorage();
   }
 }

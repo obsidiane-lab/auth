@@ -7,7 +7,8 @@ use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
-use App\User\Http\Controller\UpdateUserRolesController;
+use App\Controller\User\UpdateUserRolesController;
+use App\Dto\User\UpdateUserRolesInput;
 use App\Entity\LifeCycle\LifeCycleInterface;
 use App\Entity\LifeCycle\LifeCycleTrait;
 use App\Repository\UserRepository;
@@ -38,15 +39,15 @@ use Symfony\Component\HttpFoundation\Response;
             status: Response::HTTP_OK,
             controller: UpdateUserRolesController::class,
             description: 'Met a jour les roles d\'un utilisateur (admin).',
+            denormalizationContext: ['groups' => ['user:roles']],
             security: "is_granted('ROLE_ADMIN')",
+            input: UpdateUserRolesInput::class,
             read: false,
-            deserialize: false,
-            validate: false,
+            write: false,
             name: 'api_users_update_roles',
         ),
     ],
     normalizationContext: ['groups' => ['user:read']],
-    denormalizationContext: ['groups' => ['user:update']],
 )]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
@@ -59,19 +60,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(['user:read'])]
     private ?int $id = null;
 
     #[Assert\NotBlank]
     #[Assert\Email]
-    #[Groups(['user:read', 'user:update'])]
+    #[Groups(['user:read'])]
     #[ORM\Column(length: 180, unique: true, nullable: false)]
     private ?string $email = null;
 
     #[ORM\Column(length: 255, nullable: false)]
     private ?string $password = null;
-
-    #[Groups(['user:update'])]
-    private ?string $plainPassword = null;
 
     /**
      * @var list<string>
@@ -125,18 +124,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
         return $this;
     }
 
-    public function getPlainPassword(): ?string
-    {
-        return $this->plainPassword;
-    }
-
-    public function setPlainPassword(?string $plainPassword): static
-    {
-        $this->plainPassword = $plainPassword;
-
-        return $this;
-    }
-
     /**
      * @return list<string>
      */
@@ -161,7 +148,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface, LifeCyc
 
     public function eraseCredentials(): void
     {
-        $this->plainPassword = null;
     }
 
     /**

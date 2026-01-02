@@ -6,36 +6,30 @@ services:
       dockerfile: Dockerfile
       target: frankenphp_dev
     ports:
-      - "${CADDY_HTTP_PORT:-8000}:80"
+      - "8000:80"
     environment:
-      APP_BASE_DOMAIN: "localhost"
-      AUTH_HOST: "localhost:${CADDY_HTTP_PORT:-8000}"
-      APP_DEFAULT_URI: "http://localhost:${CADDY_HTTP_PORT:-8000}"
+      APP_BASE_URL: "http://localhost:${CADDY_HTTP_PORT:-8000}"
       APP_SECRET: "secret"
       APP_ENV: "dev"
-      ACCESS_COOKIE_NAME: "__Secure-at"
-      ACCESS_COOKIE_DOMAIN: ""
-      ACCESS_COOKIE_PATH: "/"
-      ACCESS_COOKIE_SAMESITE: "lax"
+      ACCESS_COOKIE_NAME: "at"
+      ACCESS_COOKIE_DOMAIN: "localhost"
       ACCESS_COOKIE_SECURE: "0"
-      MERCURE_URL: "http://core/.well-known/mercure"
-      FRANKENPHP_WORKER_CONFIG: "watch"
+      REFRESH_COOKIE_NAME: "rt"
+      REFRESH_COOKIE_SECURE: "0"
+      REFRESH_COOKIE_SAMESITE: "lax"
       XDEBUG_MODE: "off"
       ALLOWED_ORIGINS: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
       DATABASE_URL: "mysql://app:ChangeMe@database:3306/app"
       JWT_SECRET: "!ChangeThisMercureHubJWTSecretKey!"
-      JWT_ISSUER: "http://localhost:${CADDY_HTTP_PORT:-8000}"
-      JWT_AUDIENCE: "core-api"
-      FRONTEND_DEFAULT_REDIRECT: "http://localhost:${CADDY_HTTP_PORT:-8000}/"
-      FRONTEND_REDIRECT_ALLOWLIST: "http://localhost:${CADDY_HTTP_PORT:-8000}/"
-      FRONTEND_BASE_URL: "http://localhost:${CADDY_HTTP_PORT:-8000}"
-      NOTIFUSE_API_BASE_URL: "https://notifuse.obsidiane.fr"
-      NOTIFUSE_WORKSPACE_ID: "suretiq"
-      NOTIFUSE_API_KEY: "secret"
-      BRANDING_NAME: "SurEtiq"
+      FRONTEND_REDIRECT_URL: "http://localhost:4200/"
+      NOTIFUSE_API_BASE_URL: "${NOTIFUSE_API_BASE_URL:-}"
+      NOTIFUSE_WORKSPACE_ID: "obsidiane"
+      NOTIFUSE_API_KEY: "${NOTIFUSE_API_KEY:-}"
+      BRANDING_NAME: "Obsidiane"
       NOTIFUSE_TEMPLATE_WELCOME: "welcome"
       NOTIFUSE_TEMPLATE_RESET_PASSWORD: "resetpass"
       API_DOCS_ENABLED: "1"
+      REGISTRATION_ENABLED: "1"
     volumes:
       - ./core:/app
       - ./@obsidiane/caddy/Caddyfile:/etc/frankenphp/Caddyfile:ro
@@ -55,7 +49,7 @@ services:
       - ./webfront:/app
       - webfront_node_modules:/app/node_modules
     ports:
-      - "${WEBFRONT_HTTP_PORT:-4200}:4200"
+      - "4200:4200"
 
   database:
     image: mariadb

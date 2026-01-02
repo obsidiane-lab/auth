@@ -1,17 +1,18 @@
-import { NgClass } from '@angular/common';
-import { Component, DestroyRef, effect, signal } from '@angular/core';
+import { Component, DestroyRef, signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { AngularSvgIconModule } from 'angular-svg-icon';
+import { TranslateModule } from '@ngx-translate/core';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { normalizeInternalPath } from '../../../../core/utils/redirect-policy.util';
 import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { SignUpFormType, type SignUpFormControls } from '../../forms/sign-up.form';
+import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
+import { FormFieldComponent } from '../../../../shared/components/form-field/form-field.component';
+import { PasswordInputComponent } from '../../../../shared/components/password-input/password-input.component';
+import { ValidationMessages, SuccessMessages } from '../../../../shared/utils/validation-messages';
 
 @Component({
   selector: 'app-sign-up',
@@ -20,56 +21,38 @@ import { SignUpFormType, type SignUpFormControls } from '../../forms/sign-up.for
   imports: [
     ReactiveFormsModule,
     RouterLink,
-    AngularSvgIconModule,
+    TranslateModule,
     ButtonComponent,
-    NgClass,
     FormStatusMessageComponent,
+    FormFieldComponent,
+    PasswordInputComponent,
   ],
 })
-export class SignUpComponent {
+export class SignUpComponent extends BaseAuthFormComponent<SignUpFormControls> {
   form: FormGroup<SignUpFormControls>;
-  submitted = false;
-  readonly isSubmitting = signal(false);
-  readonly returnUrl = signal<string | null>(null);
   readonly passwordStrength = signal(0);
-  passwordVisible = false;
-  readonly errorMessageKey = signal('');
-  readonly successMessage = signal('');
-  private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
+  readonly emailErrors = ValidationMessages.email();
 
   constructor(
+    route: ActivatedRoute,
+    router: Router,
+    apiErrorService: ApiErrorService,
     private readonly authService: AuthService,
-    private readonly router: Router,
-    private readonly route: ActivatedRoute,
     private readonly configService: FrontendConfigService,
     private readonly destroyRef: DestroyRef,
     private readonly signUpForm: SignUpFormType,
-    private readonly apiErrorService: ApiErrorService,
   ) {
+    super(route, router, apiErrorService);
     this.form = this.signUpForm.createForm(null);
-
-    effect(() => {
-      const queryParams = this.queryParamMap();
-      this.returnUrl.set(normalizeInternalPath(queryParams.get('returnUrl')));
-    });
 
     configurePasswordForm(this.form, this.configService, this.destroyRef, (strength) => {
       this.passwordStrength.set(strength);
     });
   }
 
-  get f() {
-    return this.form.controls;
-  }
-
-  togglePasswordVisibility(): void {
-    this.passwordVisible = !this.passwordVisible;
-  }
-
   async onSubmit(): Promise<void> {
     this.submitted = true;
-    this.errorMessageKey.set('');
-    this.successMessage.set('');
+    this.resetMessages();
 
     if (this.form.invalid) {
       return;
@@ -80,7 +63,7 @@ export class SignUpComponent {
     this.isSubmitting.set(true);
     try {
       await this.authService.register(email, password);
-      this.successMessage.set('Compte créé. Vérifiez votre email pour activer l’accès.');
+      this.successMessage.set(SuccessMessages.accountCreated);
       window.setTimeout(() => {
         const returnUrl = this.returnUrl();
         const queryParams: { status?: string; email?: string; returnUrl?: string } = {
@@ -97,9 +80,5 @@ export class SignUpComponent {
     } finally {
       this.isSubmitting.set(false);
     }
-  }
-
-  private handleError(error: unknown): void {
-    this.errorMessageKey.set(this.apiErrorService.handleError(error));
   }
 }

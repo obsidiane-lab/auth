@@ -5,17 +5,24 @@ import { ButtonComponent } from '../../../../shared/components/button/button.com
 import { AuthService } from '../../../../core/services/auth.service';
 import { isInternalPath } from '../../../../core/utils/redirect-policy.util';
 import { ApiErrorService } from '../../../../core/services/api-error.service';
+import { AngularSvgIconModule } from 'angular-svg-icon';
 
 @Component({
   selector: 'app-already-authenticated',
   templateUrl: './already-authenticated.component.html',
   standalone: true,
-  imports: [ButtonComponent, TranslateModule],
+  imports: [ButtonComponent, TranslateModule, AngularSvgIconModule],
 })
 export class AlreadyAuthenticatedComponent {
   @Input() redirectTarget: string | null = null;
 
   readonly alreadyAuthenticated = computed(() => this.authService.user() !== null);
+  readonly userEmail = computed(() => this.authService.user()?.email ?? '');
+  readonly userInitial = computed(() => {
+    const email = this.userEmail();
+    return email ? email.charAt(0).toUpperCase() : '?';
+  });
+
   readonly checkingSession = this.authService.checkingSession;
   readonly sessionCheckError = this.authService.sessionCheckError;
   readonly logoutLoading = signal(false);

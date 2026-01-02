@@ -106,12 +106,10 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 | `REGISTRATION_ENABLED` | Active l’inscription. |
 | `PASSWORD_STRENGTH_LEVEL` | Politique de mot de passe. |
 | `BRANDING_NAME` | Nom branding (emails). |
-| `FRONTEND_BASE_URL` | Base URL utilisée pour les liens email. |
-| `FRONTEND_DEFAULT_REDIRECT` | Redirection par défaut après login (allowlist appliquée). |
-| `FRONTEND_REDIRECT_ALLOWLIST` | Origines autorisées pour `redirect_uri`. |
+| `APP_BASE_URL` | Base URL de l'API (utilisée pour les liens email). |
+| `FRONTEND_REDIRECT_URL` | URL de redirection après login. |
 | `FRONTEND_THEME_MODE` | Thème par défaut (dark/light). |
 | `FRONTEND_THEME_COLOR` | Couleur par défaut (base/red/...). |
-| `FRONTEND_THEME_DIRECTION` | Direction par défaut (ltr/rtl). |
 | `FRONTEND_THEME_COLORS` | Liste des couleurs disponibles. |
 | `API_DOCS_ENABLED` | Active `/api/docs` (dev uniquement). |
 

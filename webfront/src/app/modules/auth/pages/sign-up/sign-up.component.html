@@ -1,4 +1,4 @@
-<form class="my-10 space-y-6" [formGroup]="form" (ngSubmit)="onSubmit()">
+<form class="my-10 space-y-6 animate-fade-in-up" [formGroup]="form" (ngSubmit)="onSubmit()">
   <div class="space-y-4">
     <div class="text-center">
       <h2 class="text-foreground mb-1 text-3xl font-semibold">Créer un compte <span class="text-primary">!</span></h2>
@@ -6,112 +6,63 @@
     </div>
   </div>
 
-  <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
-  <app-form-status-message kind="success" [message]="successMessage()"></app-form-status-message>
+  <div class="space-y-2">
+    <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
+    <app-form-status-message kind="success" [messageKey]="successMessage()"></app-form-status-message>
+  </div>
 
   <div class="space-y-3 text-left">
-    <div class="form__group">
-      <div class="form__field">
-        <input
-          id="register-email"
-          type="email"
-          inputmode="email"
-          autocomplete="email"
-          class="form__input peer"
-          placeholder=" "
-          formControlName="email"
-          [ngClass]="{ 'is__invalid-input': submitted && f['email'].errors }"
-        />
-        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['email'].errors }" for="register-email">
-          Adresse email
-        </label>
-      </div>
-      @if (submitted && f['email'].errors) {
-        <p class="is__invalid-error">
-          @if (f['email'].hasError('email')) {
-            <span>Adresse email invalide.</span>
-          }
-          @if (f['email'].hasError('required')) {
-            <span>Adresse email requise.</span>
-          }
-        </p>
-      }
-    </div>
+    <!-- Email Field -->
+    <app-form-field
+      label="Adresse email"
+      id="register-email"
+      type="email"
+      inputmode="email"
+      autocomplete="email"
+      icon="assets/icons/heroicons/outline/envelope.svg"
+      [control]="f['email']"
+      [submitted]="submitted"
+      [errors]="emailErrors"
+    ></app-form-field>
 
-    <div class="form__group">
-      <div class="form__field">
-        <input
-          id="register-password"
-          [type]="passwordVisible ? 'text' : 'password'"
-          autocomplete="new-password"
-          class="form__input peer pr-12"
-          placeholder=" "
-          formControlName="password"
-          [ngClass]="{ 'is__invalid-input': submitted && f['password'].errors }"
-        />
-        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['password'].errors }" for="register-password">
-          Mot de passe
-        </label>
-        <button
-          type="button"
-          class="form__toggle"
-          aria-label="Afficher ou masquer le mot de passe"
-          [attr.aria-pressed]="passwordVisible"
-          (click)="togglePasswordVisibility()"
-        >
-          <svg-icon
-            [src]="!passwordVisible ? 'assets/icons/heroicons/outline/eye-off.svg' : 'assets/icons/heroicons/outline/eye.svg'"
-            [svgClass]="'h-5 w-5'"
-          ></svg-icon>
-        </button>
-      </div>
-      @if (submitted && f['password'].errors) {
-        <p class="is__invalid-error">
-          @if (f['password'].hasError('weakPassword')) {
-            <span>Mot de passe trop faible.</span>
-          }
-          @if (f['password'].hasError('required')) {
-            <span>Mot de passe requis.</span>
-          }
-        </p>
-      }
-      <div class="grid grid-cols-4 gap-2">
-        @for (index of [1, 2, 3, 4]; track index) {
-          <span
-            [ngClass]="passwordStrength() >= index ? 'bg-primary' : 'bg-muted'"
-            class="h-1 rounded-xs transition"
-          ></span>
+    <!-- Password Field -->
+    <app-password-input
+      label="Mot de passe"
+      id="register-password"
+      autocomplete="new-password"
+      [control]="f['password']"
+      [submitted]="submitted"
+      [showStrengthMeter]="true"
+      [strength]="passwordStrength()"
+      [showHelper]="true"
+    >
+      <span error>
+        @if (f['password'].hasError('weakPassword')) {
+          <span>{{ 'form.validation.password.weak' | translate }}</span>
         }
-      </div>
-      <p class="text-muted-foreground text-xs">Choisissez un mot de passe robuste mélangeant lettres, chiffres et symboles.</p>
-    </div>
+        @if (f['password'].hasError('required')) {
+          <span>{{ 'form.validation.password.required' | translate }}</span>
+        }
+      </span>
+    </app-password-input>
 
-    <div class="form__group">
-      <div class="form__field">
-        <input
-          id="register-confirm-password"
-          type="password"
-          autocomplete="new-password"
-          class="form__input peer"
-          placeholder=" "
-          formControlName="confirmPassword"
-          [ngClass]="{ 'is__invalid-input': submitted && f['confirmPassword'].errors }"
-        />
-        <label class="form__label" [ngClass]="{ 'peer-focus:text-destructive!': submitted && f['confirmPassword'].errors }" for="register-confirm-password">
-          Confirmez le mot de passe
-        </label>
-      </div>
-      @if (submitted && f['confirmPassword'].errors) {
-        <p class="is__invalid-error">
-          @if (f['confirmPassword'].hasError('mismatch')) {
-            <span>Les mots de passe ne correspondent pas.</span>
-          }
-          @if (f['confirmPassword'].hasError('required')) {
-            <span>Confirmation requise.</span>
-          }
-        </p>
-      }
-    </div>
+    <!-- Confirm Password Field -->
+    <app-password-input
+      label="Confirmez le mot de passe"
+      id="register-confirm-password"
+      autocomplete="new-password"
+      [control]="f['confirmPassword']"
+      [submitted]="submitted"
+    >
+      <span error>
+        @if (f['confirmPassword'].hasError('mismatch')) {
+          <span>{{ 'form.validation.password.mismatch' | translate }}</span>
+        }
+        @if (f['confirmPassword'].hasError('required')) {
+          <span>{{ 'form.validation.confirmPassword.required' | translate }}</span>
+        }
+      </span>
+    </app-password-input>
   </div>
 
   <div>

@@ -1,0 +1,31 @@
+<div class="form__group">
+  <div class="form__field">
+    @if (icon) {
+      <svg-icon [src]="icon" [svgClass]="'h-5 w-5 absolute left-3 top-3.5 text-muted-foreground z-20'"></svg-icon>
+    }
+    <input
+      #inputRef
+      [id]="id"
+      [type]="type"
+      [attr.inputmode]="inputmode || type"
+      [attr.autocomplete]="autocomplete || 'off'"
+      [class]="'form__input peer ' + (icon ? 'pl-10' : 'pl-4') + (hasToggle ? ' pr-12' : '')"
+      [placeholder]="placeholder"
+      [formControl]="control"
+      [ngClass]="{ 'is__invalid-input': hasErrors }"
+    />
+    <label
+      [class]="'form__label ' + (icon ? 'left-9' : 'left-4')"
+      [ngClass]="{ 'peer-focus:text-destructive!': hasErrors }"
+      [attr.for]="id"
+      (click)="inputRef.focus()">
+      {{ label }}
+    </label>
+    <ng-content></ng-content>
+  </div>
+  @if (hasErrors) {
+    <p class="is__invalid-error animate-fade-in-down">
+      {{ getErrorMessageKey() | translate }}
+    </p>
+  }
+</div>
