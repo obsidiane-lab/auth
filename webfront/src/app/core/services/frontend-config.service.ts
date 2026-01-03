@@ -16,14 +16,13 @@ const DEFAULT_CONFIG: FrontendConfig = {
 
 @Injectable({ providedIn: 'root' })
 export class FrontendConfigService {
+  private readonly configRepository = inject(FrontendConfigRepository);
+  private readonly setupStatusService = inject(SetupStatusService);
   private readonly configSignal = signal<FrontendConfig>(DEFAULT_CONFIG);
   private readonly loadedSignal = signal(false);
   private readonly loadingSignal = signal(false);
-  private readonly setupStatusService = inject(SetupStatusService);
 
   readonly config = computed(() => this.configSignal());
-
-  constructor(private readonly configRepository: FrontendConfigRepository) {}
 
   async loadOnce(): Promise<FrontendConfig> {
     if (this.loadingSignal() || this.loadedSignal()) {

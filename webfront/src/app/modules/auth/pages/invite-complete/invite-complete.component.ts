@@ -1,12 +1,10 @@
-import { Component, DestroyRef, computed, effect, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, signal, inject } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { InviteCompleteFormType, type InviteCompleteFormControls } from '../../forms/invite-complete.form';
 import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
@@ -21,6 +19,11 @@ import { SuccessMessages } from '../../../../shared/utils/validation-messages';
   imports: [ReactiveFormsModule, TranslateModule, ButtonComponent, FormStatusMessageComponent, PasswordInputComponent, AngularSvgIconModule],
 })
 export class InviteCompleteComponent extends BaseAuthFormComponent<InviteCompleteFormControls> {
+  private readonly authService = inject(AuthService);
+  private readonly configService = inject(FrontendConfigService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly inviteCompleteForm = inject(InviteCompleteFormType);
+
   form: FormGroup<InviteCompleteFormControls>;
   readonly passwordStrength = signal(0);
   readonly invitedEmail = signal('');
@@ -29,16 +32,8 @@ export class InviteCompleteComponent extends BaseAuthFormComponent<InviteComplet
   private readonly inviteToken = signal('');
   readonly hasToken = computed(() => this.inviteToken().trim().length > 0);
 
-  constructor(
-    route: ActivatedRoute,
-    router: Router,
-    apiErrorService: ApiErrorService,
-    private readonly authService: AuthService,
-    private readonly configService: FrontendConfigService,
-    private readonly destroyRef: DestroyRef,
-    private readonly inviteCompleteForm: InviteCompleteFormType,
-  ) {
-    super(route, router, apiErrorService);
+  constructor() {
+    super();
     this.form = this.inviteCompleteForm.createForm(null);
 
     effect(() => {

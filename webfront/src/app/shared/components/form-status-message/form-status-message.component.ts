@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 
@@ -11,12 +11,12 @@ type FormStatusKind = 'success' | 'error' | 'info';
   imports: [TranslateModule, AngularSvgIconModule],
 })
 export class FormStatusMessageComponent {
+  private readonly translate = inject(TranslateService);
+
   @Input() kind: FormStatusKind = 'info';
   @Input() messageKey?: string;
   @Input() message?: string;
   @Input() descriptionKey?: string;
-
-  constructor(private readonly translate: TranslateService) {}
 
   get resolvedMessage(): string {
     if (this.messageKey) {

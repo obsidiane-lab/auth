@@ -1,4 +1,4 @@
-import { Injectable, effect, signal } from '@angular/core';
+import { Injectable, effect, signal, inject } from '@angular/core';
 import { Theme } from '../models/theme.model';
 import { FrontendConfigService } from './frontend-config.service';
 
@@ -6,11 +6,12 @@ import { FrontendConfigService } from './frontend-config.service';
   providedIn: 'root',
 })
 export class ThemeService {
+  private readonly configService = inject(FrontendConfigService);
   public theme = signal<Theme>({ mode: 'dark', color: 'base' });
   private hasStoredTheme = false;
   private hasLoadedStoredTheme = false;
 
-  constructor(private readonly configService: FrontendConfigService) {
+  constructor() {
     effect(() => {
       const isDev = this.isDevEnvironment();
       if (isDev && !this.hasLoadedStoredTheme) {

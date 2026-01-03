@@ -10,18 +10,16 @@ import { SetupStatusService } from './setup-status.service';
   providedIn: 'root',
 })
 export class AuthService {
+  private readonly authRepository = inject(AuthRepository);
+  private readonly apiErrorService = inject(ApiErrorService);
+  private readonly setupStatusService = inject(SetupStatusService);
+
   readonly user = this.authRepository.user;
   readonly checkingSession = signal(false);
   readonly sessionCheckError = signal<string | null>(null);
   private sessionChecked = false;
   private sessionCheckPromise: Promise<boolean> | null = null;
   private readonly sessionCheckTimeoutMs = 2500;
-  private readonly setupStatusService = inject(SetupStatusService);
-
-  constructor(
-    private readonly authRepository: AuthRepository,
-    private readonly apiErrorService: ApiErrorService,
-  ) {}
 
   async login(email: string, password: string): Promise<{ user: UserUserRead; exp: number }> {
     return firstValueFrom(this.authRepository.login$(email, password));

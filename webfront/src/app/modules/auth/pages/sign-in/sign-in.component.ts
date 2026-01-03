@@ -1,13 +1,12 @@
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal, inject } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
 import { isInternalPath, resolveRedirectTarget } from '../../../../core/utils/redirect-policy.util';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { SignInFormType, type SignInFormControls } from '../../forms/sign-in.form';
-import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
 import { FormFieldComponent } from '../../../../shared/components/form-field/form-field.component';
 import { PasswordInputComponent } from '../../../../shared/components/password-input/password-input.component';
@@ -27,21 +26,18 @@ import { ValidationMessages, SuccessMessages } from '../../../../shared/utils/va
   ],
 })
 export class SignInComponent extends BaseAuthFormComponent<SignInFormControls> {
+  private readonly authService = inject(AuthService);
+  private readonly configService = inject(FrontendConfigService);
+  private readonly signInForm = inject(SignInFormType);
+
   form: FormGroup<SignInFormControls>;
   redirectTarget: string | null = null;
   readonly canRegister = computed(() => this.configService.config().registrationEnabled);
   readonly infoMessage = signal('');
   readonly emailErrors = ValidationMessages.email();
 
-  constructor(
-    route: ActivatedRoute,
-    router: Router,
-    apiErrorService: ApiErrorService,
-    private readonly authService: AuthService,
-    private readonly configService: FrontendConfigService,
-    private readonly signInForm: SignInFormType,
-  ) {
-    super(route, router, apiErrorService);
+  constructor() {
+    super();
     this.form = this.signInForm.createForm(null);
 
     effect(() => {

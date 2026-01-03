@@ -2,7 +2,7 @@ import type { AbstractControl, FormGroup } from '@angular/forms';
 
 export interface EntityFormType<
   Model,
-  Controls extends { [K in keyof Controls]: AbstractControl<any, any, any> },
+  Controls extends { [K in keyof Controls]: AbstractControl<unknown, unknown, unknown> },
   CreatePayload,
   PatchPayload,
   Options = void,
@@ -13,6 +13,6 @@ export interface EntityFormType<
   toPatchPayload?(form: FormGroup<Controls>, base: Model, options?: Options): PatchPayload;
 }
 
-export interface ToggleRequiredFormType<Controls extends { [K in keyof Controls]: AbstractControl<any, any, any> }> {
+export interface ToggleRequiredFormType<Controls extends { [K in keyof Controls]: AbstractControl<unknown, unknown, unknown> }> {
   setRequired(form: FormGroup<Controls>, enabled: boolean): void;
 }

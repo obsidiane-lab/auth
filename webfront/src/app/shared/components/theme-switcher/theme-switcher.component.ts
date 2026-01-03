@@ -22,10 +22,10 @@ import { AngularSvgIconModule } from 'angular-svg-icon';
       </button>
 
       <!-- Dropdown Menu -->
-      <div
-        *ngIf="isOpen"
-        class="absolute right-0 top-12 z-50 w-64 origin-top-right rounded-xl border border-border bg-card p-4 shadow-xl ring-1 ring-black/5 focus:outline-hidden animate-fade-in-up"
-      >
+      @if (isOpen) {
+        <div
+          class="absolute right-0 top-12 z-50 w-64 origin-top-right rounded-xl border border-border bg-card p-4 shadow-xl ring-1 ring-black/5 focus:outline-hidden animate-fade-in-up"
+        >
         <!-- Mode Toggle -->
         <div class="mb-4">
           <h3 class="mb-2 text-xs font-semibold uppercase text-muted-foreground tracking-wider">Mode</h3>
@@ -57,21 +57,25 @@ import { AngularSvgIconModule } from 'angular-svg-icon';
         <div>
           <h3 class="mb-2 text-xs font-semibold uppercase text-muted-foreground tracking-wider">Color</h3>
           <div class="grid grid-cols-5 gap-2">
-            <button
-              *ngFor="let color of colors"
-              (click)="setColor(color)"
-              [title]="color"
-              class="h-8 w-8 rounded-full border border-border transition-transform hover:scale-110 focus:outline-hidden ring-offset-2 ring-offset-card"
-              [class.ring-2]="themeService.theme().color === color"
-              [class.ring-primary]="themeService.theme().color === color"
-              [style.background-color]="getColorValue(color)"
-            ></button>
+            @for (color of colors; track color) {
+              <button
+                (click)="setColor(color)"
+                [title]="color"
+                class="h-8 w-8 rounded-full border border-border transition-transform hover:scale-110 focus:outline-hidden ring-offset-2 ring-offset-card"
+                [class.ring-2]="themeService.theme().color === color"
+                [class.ring-primary]="themeService.theme().color === color"
+                [style.background-color]="getColorValue(color)"
+              ></button>
+            }
           </div>
         </div>
-      </div>
-      
+        </div>
+      }
+
       <!-- Backdrop for closing -->
-      <div *ngIf="isOpen" (click)="isOpen = false" class="fixed inset-0 z-40 bg-transparent"></div>
+      @if (isOpen) {
+        <div (click)="isOpen = false" (keydown.escape)="isOpen = false" tabindex="0" role="button" aria-label="Close menu" class="fixed inset-0 z-40 bg-transparent"></div>
+      }
     </div>
   `,
   styles: []

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { extractHttpStatus } from '../utils/http-error.util';
 import { SetupStatusService } from './setup-status.service';
@@ -6,10 +6,8 @@ import { isInitialAdminRequiredError } from '../utils/setup-required.util';
 
 @Injectable({ providedIn: 'root' })
 export class ApiErrorService {
-  constructor(
-    private readonly router: Router,
-    private readonly setupStatusService: SetupStatusService,
-  ) {}
+  private readonly router = inject(Router);
+  private readonly setupStatusService = inject(SetupStatusService);
 
   handleError(error: unknown): string {
     if (this.isSetupRequired(error)) {

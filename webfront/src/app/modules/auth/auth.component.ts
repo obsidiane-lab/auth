@@ -1,4 +1,4 @@
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal, inject } from '@angular/core';
 import { ActivatedRoute, RouterOutlet } from '@angular/router';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 import { FrontendConfigService } from '../../core/services/frontend-config.service';
@@ -14,15 +14,15 @@ import { ThemeSwitcherComponent } from '../../shared/components/theme-switcher/t
   imports: [AngularSvgIconModule, RouterOutlet, AlreadyAuthenticatedComponent, ThemeSwitcherComponent],
 })
 export class AuthComponent {
+  private readonly configService = inject(FrontendConfigService);
+  private readonly route = inject(ActivatedRoute);
+
   readonly config = this.configService.config;
   readonly showThemeSwitcher = computed(() => this.configService.config().environment === 'dev');
   readonly redirectTarget = signal<string | null>(null);
   private readonly queryParamMap = toSignal(this.route.queryParamMap, { initialValue: this.route.snapshot.queryParamMap });
 
-  constructor(
-    private readonly configService: FrontendConfigService,
-    private readonly route: ActivatedRoute,
-  ) {
+  constructor() {
     effect(() => {
       const queryParams = this.queryParamMap();
       const returnUrl = normalizeInternalPath(queryParams.get('returnUrl'));

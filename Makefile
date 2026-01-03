@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: bridge bridge-clean
+.PHONY: bridge bridge-clean pre-push pre-push-webfront pre-push-core pre-push-full
 
 # Generate bridge for Angular app (webfront)
 bridge:
@@ -17,3 +17,16 @@ bridge-clean:
 	echo "🧹 Cleaning generated files..."
 	rm -rf frontend/bridge projects/
 	echo "✅ Cleaned"
+
+# Pre-push checks (fast)
+pre-push: pre-push-webfront
+
+pre-push-webfront:
+	cd webfront && npm run lint
+	cd webfront && npm run build
+
+# Pre-push checks (full)
+pre-push-full: pre-push-webfront pre-push-core
+
+pre-push-core:
+	cd core && vendor/bin/phpstan analyse -c phpstan.neon.dist

@@ -1,10 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
-import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { ForgotPasswordFormType, type ForgotPasswordFormControls } from '../../forms/forgot-password.form';
 import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
 import { FormFieldComponent } from '../../../../shared/components/form-field/form-field.component';
@@ -16,17 +15,14 @@ import { ValidationMessages, SuccessMessages } from '../../../../shared/utils/va
   imports: [ReactiveFormsModule, RouterLink, ButtonComponent, FormStatusMessageComponent, FormFieldComponent],
 })
 export class ForgotPasswordComponent extends BaseAuthFormComponent<ForgotPasswordFormControls> {
+  private readonly authService = inject(AuthService);
+  private readonly forgotPasswordForm = inject(ForgotPasswordFormType);
+
   form: FormGroup<ForgotPasswordFormControls>;
   readonly emailErrors = ValidationMessages.email();
 
-  constructor(
-    route: ActivatedRoute,
-    router: Router,
-    apiErrorService: ApiErrorService,
-    private readonly authService: AuthService,
-    private readonly forgotPasswordForm: ForgotPasswordFormType,
-  ) {
-    super(route, router, apiErrorService);
+  constructor() {
+    super();
     this.form = this.forgotPasswordForm.createForm(null);
   }
 

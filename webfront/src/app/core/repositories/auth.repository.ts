@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import {
   AuthInviteCompleteInputInviteComplete,
@@ -12,12 +12,9 @@ import { AuthStore } from '../stores/auth.store';
   providedIn: 'root',
 })
 export class AuthRepository {
+  private readonly bridge = inject(BridgeFacade);
+  private readonly store = inject(AuthStore);
   readonly user = this.store.user;
-
-  constructor(
-    private readonly bridge: BridgeFacade,
-    private readonly store: AuthStore,
-  ) {}
 
   login$(email: string, password: string): Observable<{ user: UserUserRead; exp: number }> {
     return this.bridge

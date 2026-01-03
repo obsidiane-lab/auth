@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, signal, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { isInitialAdminRequiredError } from '../utils/setup-required.util';
 import { FrontendConfigRepository } from '../repositories/frontend-config.repository';
@@ -8,10 +8,9 @@ import type { FrontendConfig } from 'bridge';
   providedIn: 'root',
 })
 export class SetupStatusService {
+  private readonly configRepository = inject(FrontendConfigRepository);
   private readonly setupRequired = signal<boolean | null>(null);
   private cachedConfig: FrontendConfig | null = null;
-
-  constructor(private readonly configRepository: FrontendConfigRepository) {}
 
   isSetupRequired(): boolean | null {
     return this.setupRequired();

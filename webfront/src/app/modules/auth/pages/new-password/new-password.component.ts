@@ -1,12 +1,11 @@
-import { Component, DestroyRef, computed, effect, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, signal, inject } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonComponent } from 'src/app/shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
 import { FormStatusMessageComponent } from '../../../../shared/components/form-status-message/form-status-message.component';
 import { FrontendConfigService } from '../../../../core/services/frontend-config.service';
-import { ApiErrorService } from '../../../../core/services/api-error.service';
 import { configurePasswordForm } from '../../utils/password-form.util';
 import { NewPasswordFormType, type NewPasswordFormControls } from '../../forms/new-password.form';
 import { BaseAuthFormComponent } from '../../components/base-auth-form.component';
@@ -27,21 +26,18 @@ import { SuccessMessages } from '../../../../shared/utils/validation-messages';
   ],
 })
 export class NewPasswordComponent extends BaseAuthFormComponent<NewPasswordFormControls> {
+  private readonly authService = inject(AuthService);
+  private readonly configService = inject(FrontendConfigService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly newPasswordForm = inject(NewPasswordFormType);
+
   form: FormGroup<NewPasswordFormControls>;
   readonly passwordStrength = signal(0);
   private readonly resetToken = signal('');
   readonly hasToken = computed(() => this.resetToken().trim().length > 0);
 
-  constructor(
-    route: ActivatedRoute,
-    router: Router,
-    apiErrorService: ApiErrorService,
-    private readonly authService: AuthService,
-    private readonly configService: FrontendConfigService,
-    private readonly destroyRef: DestroyRef,
-    private readonly newPasswordForm: NewPasswordFormType,
-  ) {
-    super(route, router, apiErrorService);
+  constructor() {
+    super();
     this.form = this.newPasswordForm.createForm(null);
 
     effect(() => {

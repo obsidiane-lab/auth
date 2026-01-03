@@ -1,4 +1,4 @@
-import { Component, computed, effect, signal } from '@angular/core';
+import { Component, computed, effect, signal, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
 import { AuthService } from '../../../../core/services/auth.service';
@@ -14,17 +14,17 @@ import { TranslateModule } from '@ngx-translate/core';
   imports: [RouterLink, TranslateModule, ButtonComponent, AngularSvgIconModule],
 })
 export class VerifyEmailComponent {
+  private readonly route = inject(ActivatedRoute);
+  private readonly authService = inject(AuthService);
+  private readonly apiErrorService = inject(ApiErrorService);
+
   readonly status = signal<'loading' | 'success' | 'error'>('loading');
   readonly messageKey = signal('auth.verifyEmail.message.loading');
   readonly returnUrl = signal<string | null>(null);
   private readonly queryParams = toSignal(this.route.queryParams, { initialValue: this.route.snapshot.queryParams });
   private lastSignature: string | null = null;
 
-  constructor(
-    private readonly route: ActivatedRoute,
-    private readonly authService: AuthService,
-    private readonly apiErrorService: ApiErrorService,
-  ) {
+  constructor() {
     effect(() => {
       const params = this.queryParams() as {
         id?: string;

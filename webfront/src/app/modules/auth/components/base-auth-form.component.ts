@@ -1,4 +1,4 @@
-import { Directive, effect, signal } from '@angular/core';
+import { Directive, effect, signal, inject } from '@angular/core';
 import { AbstractControl, FormGroup } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
@@ -7,6 +7,10 @@ import { normalizeInternalPath } from '../../../core/utils/redirect-policy.util'
 
 @Directive()
 export abstract class BaseAuthFormComponent<T extends { [K in keyof T]: AbstractControl }> {
+  protected readonly route = inject(ActivatedRoute);
+  protected readonly router = inject(Router);
+  protected readonly apiErrorService = inject(ApiErrorService);
+
   abstract form: FormGroup<T>;
   submitted = false;
   readonly isSubmitting = signal(false);
@@ -18,11 +22,7 @@ export abstract class BaseAuthFormComponent<T extends { [K in keyof T]: Abstract
     initialValue: this.route.snapshot.queryParamMap,
   });
 
-  constructor(
-    protected readonly route: ActivatedRoute,
-    protected readonly router: Router,
-    protected readonly apiErrorService: ApiErrorService,
-  ) {
+  constructor() {
     this.setupReturnUrl();
   }
 

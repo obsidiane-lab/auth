@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NgxSonnerToaster } from 'ngx-sonner';
 import { TranslateService, type TranslationObject } from '@ngx-translate/core';
@@ -13,11 +13,11 @@ import { FrontendConfigService } from './core/services/frontend-config.service';
   imports: [RouterOutlet, NgxSonnerToaster],
 })
 export class AppComponent {
-  constructor(
-    public themeService: ThemeService,
-    private readonly translate: TranslateService,
-    private readonly configService: FrontendConfigService,
-  ) {
+  public themeService = inject(ThemeService);
+  private readonly translate = inject(TranslateService);
+  private readonly configService = inject(FrontendConfigService);
+
+  constructor() {
     this.translate.addLangs(['fr', 'en']);
     this.translate.setTranslation('fr', frTranslations as TranslationObject, true);
     this.translate.setTranslation('en', enTranslations as TranslationObject, true);

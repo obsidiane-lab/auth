@@ -1,4 +1,4 @@
-import { Component, Input, computed, signal } from '@angular/core';
+import { Component, Input, computed, signal, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonComponent } from '../../../../shared/components/button/button.component';
@@ -14,6 +14,10 @@ import { AngularSvgIconModule } from 'angular-svg-icon';
   imports: [ButtonComponent, TranslateModule, AngularSvgIconModule],
 })
 export class AlreadyAuthenticatedComponent {
+  private readonly authService = inject(AuthService);
+  private readonly router = inject(Router);
+  private readonly apiErrorService = inject(ApiErrorService);
+
   @Input() redirectTarget: string | null = null;
 
   readonly alreadyAuthenticated = computed(() => this.authService.user() !== null);
@@ -28,11 +32,7 @@ export class AlreadyAuthenticatedComponent {
   readonly logoutLoading = signal(false);
   readonly logoutError = signal<string | null>(null);
 
-  constructor(
-    private readonly authService: AuthService,
-    private readonly router: Router,
-    private readonly apiErrorService: ApiErrorService,
-  ) {
+  constructor() {
     void this.authService.checkSessionOnce();
   }
 
