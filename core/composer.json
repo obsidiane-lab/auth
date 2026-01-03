@@ -8,39 +8,39 @@
         "php": ">=8.4",
         "ext-ctype": "*",
         "ext-iconv": "*",
-        "api-platform/doctrine-orm": "^4.2.4",
-        "api-platform/symfony": "^4.2.4",
-        "doctrine/dbal": "^3.10.3",
-        "doctrine/doctrine-bundle": ">=2.18.1",
-        "doctrine/doctrine-migrations-bundle": "^3.6",
-        "doctrine/orm": ">=3.5.7",
+        "api-platform/doctrine-orm": "^4.2.11",
+        "api-platform/symfony": "^4.2.11",
+        "doctrine/dbal": "^3.10.4",
+        "doctrine/doctrine-bundle": ">=2.18.2",
+        "doctrine/doctrine-migrations-bundle": "^3.7",
+        "doctrine/orm": ">=3.6.0",
         "gesdinet/jwt-refresh-token-bundle": ">=1.5",
-        "lexik/jwt-authentication-bundle": "^3.1.1",
+        "lexik/jwt-authentication-bundle": "^3.2.0",
         "nelmio/cors-bundle": "^2.6",
         "obsidiane/notifuse-symfony-bundle": "^0.13.0",
-        "phpdocumentor/reflection-docblock": "^5.6.3",
+        "phpdocumentor/reflection-docblock": "^5.6.6",
         "phpstan/phpdoc-parser": "^2.3",
-        "symfony/console": "7.3.*",
-        "symfony/dotenv": "7.3.*",
-        "symfony/expression-language": "7.3.*",
-        "symfony/flex": "^2.9",
-        "symfony/form": "7.3.*",
-        "symfony/framework-bundle": "7.3.*",
-        "symfony/mailer": "7.3.*",
-        "symfony/password-hasher": "7.3.*",
-        "symfony/property-access": "7.3.*",
-        "symfony/property-info": "7.3.*",
-        "symfony/rate-limiter": "7.3.*",
-        "symfony/runtime": "7.3.*",
-        "symfony/security-bundle": "7.3.*",
-        "symfony/serializer": "7.3.*",
-        "symfony/translation": "7.3.*",
-        "symfony/twig-bundle": "7.3.*",
-        "symfony/uid": "7.3.*",
-        "symfony/validator": "7.3.*",
-        "symfony/yaml": "7.3.*",
-        "symfonycasts/reset-password-bundle": "^1.23.2",
-        "symfonycasts/verify-email-bundle": "^1.17.4"
+        "symfony/console": "7.4.*",
+        "symfony/dotenv": "7.4.*",
+        "symfony/expression-language": "7.4.*",
+        "symfony/flex": "^2.10",
+        "symfony/form": "7.4.*",
+        "symfony/framework-bundle": "7.4.*",
+        "symfony/mailer": "7.4.*",
+        "symfony/password-hasher": "7.4.*",
+        "symfony/property-access": "7.4.*",
+        "symfony/property-info": "7.4.*",
+        "symfony/rate-limiter": "7.4.*",
+        "symfony/runtime": "7.4.*",
+        "symfony/security-bundle": "7.4.*",
+        "symfony/serializer": "7.4.*",
+        "symfony/translation": "7.4.*",
+        "symfony/twig-bundle": "7.4.*",
+        "symfony/uid": "7.4.*",
+        "symfony/validator": "7.4.*",
+        "symfony/yaml": "7.4.*",
+        "symfonycasts/reset-password-bundle": "^1.24.0",
+        "symfonycasts/verify-email-bundle": "^1.18.0"
     },
     "config": {
         "allow-plugins": {
@@ -89,11 +89,11 @@
     "extra": {
         "symfony": {
             "allow-contrib": false,
-            "require": "7.3.*"
+            "require": "7.4.*"
         }
     },
     "require-dev": {
-        "phpstan/phpstan": "^1.11",
-        "symfony/maker-bundle": "^1.64"
+        "phpstan/phpstan": "^1.12.32",
+        "symfony/maker-bundle": "^1.65.1"
     }
 }
