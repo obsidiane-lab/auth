@@ -277,7 +277,6 @@ Variables complémentaires (généralement à garder telles quelles) :
 | `ACCESS_COOKIE_SAMESITE` | `lax` |
 | `ACCESS_COOKIE_SECURE` | `1` |
 | `REFRESH_COOKIE_NAME` | `__Host-rt` |
-| `REFRESH_COOKIE_SAMESITE` | `strict` |
 | `REFRESH_COOKIE_SECURE` | `1` |
 | `FRONTEND_REDIRECT_URL` | `` |
 | `TRUSTED_PROXIES` | `127.0.0.1` |
@@ -316,7 +315,6 @@ Variables complémentaires (généralement à garder telles quelles) :
 | `ACCESS_COOKIE_SECURE` | `0` |
 | `REFRESH_COOKIE_NAME` | `rt` |
 | `REFRESH_COOKIE_SECURE` | `0` |
-| `REFRESH_COOKIE_SAMESITE` | `lax` |
 | `XDEBUG_MODE` | `off` |
 | `ALLOWED_ORIGINS` | `^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$` |
 | `DATABASE_URL` | `mysql://app:ChangeMe@database:3306/app` |

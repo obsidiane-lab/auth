@@ -30,7 +30,7 @@ return [
 ```yaml
 obsidiane_auth:
   base_url: '%env(OBSIDIANE_AUTH_BASE_URL)%'
-  token: '%env(OBSIDIANE_AUTH_TOKEN)%'
+  token: '%env(OBSIDIANE_AUTH_TOKEN)%' # optionnel
   defaults:
     headers: { }
     timeout_ms: 10000
@@ -42,6 +42,8 @@ obsidiane_auth:
 OBSIDIANE_AUTH_BASE_URL=https://auth.example.com
 OBSIDIANE_AUTH_TOKEN=your-static-bearer-token
 ```
+
+Le `token` est optionnel : s'il est absent ou vide, aucun header `Authorization` n'est ajouté (utile pour les endpoints publics).
 
 ## Utilisation
 

@@ -5,10 +5,8 @@ export interface FrontendConfig extends Item {
   registrationEnabled?: boolean;
   passwordStrengthLevel?: number;
   brandingName?: string;
-  frontendDefaultRedirect?: string;
-  frontendRedirectAllowlist?: string[];
+  frontendRedirectUrl?: string;
+  environment?: string;
   themeMode?: string;
   themeColor?: string;
-  themeDirection?: string;
-  themeColors?: string[];
 }

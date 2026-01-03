@@ -6,6 +6,7 @@ namespace Obsidiane\AuthBundle\Model;
 
 final class UserUserRead extends Item
 {
+    public ?int $id = null;
     public string $email = '';
 
     /**

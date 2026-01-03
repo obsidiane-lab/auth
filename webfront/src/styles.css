@@ -350,7 +350,7 @@ select {
   }
 
   .form__toggle {
-    @apply absolute right-3 top-2 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60;
+    @apply absolute right-3 top-1 flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/60;
   }
 
   .form__toggle[aria-pressed='true'] {

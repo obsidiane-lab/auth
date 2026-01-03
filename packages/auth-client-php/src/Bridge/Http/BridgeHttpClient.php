@@ -94,7 +94,7 @@ final class BridgeHttpClient
             $merged['Accept'] = 'application/ld+json';
         }
 
-        if ($this->options->token !== '' && !$this->hasHeader($merged, 'Authorization')) {
+        if ($this->options->token !== null && !$this->hasHeader($merged, 'Authorization')) {
             $merged['Authorization'] = 'Bearer '.$this->options->token;
         }
 

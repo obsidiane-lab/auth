@@ -10,19 +10,8 @@ final class FrontendConfig extends Item
     public ?bool $registrationEnabled = null;
     public ?int $passwordStrengthLevel = null;
     public ?string $brandingName = null;
-    public ?string $frontendDefaultRedirect = null;
-
-    /**
-     * @var list<string>|null
-     */
-    public ?array $frontendRedirectAllowlist = null;
-
+    public ?string $frontendRedirectUrl = null;
+    public ?string $environment = null;
     public ?string $themeMode = null;
     public ?string $themeColor = null;
-    public ?string $themeDirection = null;
-
-    /**
-     * @var list<string>|null
-     */
-    public ?array $themeColors = null;
 }
