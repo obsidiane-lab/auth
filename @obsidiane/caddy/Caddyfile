@@ -1,0 +1,57 @@
+{
+	skip_install_trust
+
+	{$CADDY_GLOBAL_OPTIONS}
+
+	frankenphp {
+		{$FRANKENPHP_CONFIG}
+	}
+}
+
+{$CADDY_EXTRA_CONFIG}
+
+(webfront) {
+	import webfront.caddy
+}
+
+:80 {
+	log {
+		{$CADDY_SERVER_LOG_OPTIONS}
+		format filter {
+			request>uri query {
+				replace authorization REDACTED
+			}
+		}
+	}
+
+	encode zstd gzip
+	vulcain
+
+	{$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+	header ?Permissions-Policy "browsing-topics=()"
+
+	@frontend {
+		not path /api /api/* /bundles /bundles/* /.well-known/mercure*
+	}
+	handle @frontend {
+		import webfront
+	}
+
+	handle {
+		root * /app/public
+
+		@phpRoute {
+			not path /.well-known/mercure*
+			not file {path}
+		}
+		rewrite @phpRoute index.php
+
+		@frontController path index.php
+		php @frontController
+
+		file_server {
+			hide *.php
+		}
+	}
+}

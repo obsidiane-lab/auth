@@ -1,0 +1,85 @@
+@if (sessionCheckError()) {
+  <div class="mb-4 rounded-lg border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive flex items-center gap-3 animate-fade-in-up" role="alert">
+    <svg-icon src="assets/icons/heroicons/outline/exclamation-circle.svg" [svgClass]="'h-5 w-5'"></svg-icon>
+    {{ sessionCheckError() | translate }}
+  </div>
+}
+
+@if (checkingSession()) {
+  <div class="flex flex-col items-center justify-center py-12 animate-fade-in-up">
+    <div class="relative flex h-16 w-16 items-center justify-center rounded-full bg-muted/30 mb-4">
+      <svg class="h-8 w-8 animate-spin text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+    <p class="text-sm font-medium text-muted-foreground animate-pulse">Récupération de votre profil...</p>
+  </div>
+} @else if (alreadyAuthenticated()) {
+  <div class="flex flex-col items-center justify-center py-2 text-center animate-fade-in-up">
+    
+    <h2 class="mb-6 text-2xl font-bold tracking-tight text-foreground">Bon retour !</h2>
+
+    <!-- Modern Profile Card -->
+    <div class="mb-8 w-full rounded-2xl border border-border/60 bg-background/50 p-3 backdrop-blur-sm flex items-center gap-4 text-left shadow-xs transition-colors hover:border-primary/30">
+      
+      <!-- Avatar -->
+      <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary font-bold text-xl shadow-inner border border-primary/10">
+        {{ userInitial() }}
+      </div>
+      
+      <!-- User Info -->
+      <div class="flex-1 overflow-hidden">
+        <p class="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Connecté en tant que</p>
+        <p class="text-sm font-semibold text-foreground truncate" [title]="userEmail()">
+          {{ userEmail() }}
+        </p>
+      </div>
+
+      <!-- Pulse Dot -->
+      <div class="relative flex h-3 w-3 mr-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+      </div>
+    </div>
+
+    @if (logoutError()) {
+      <p class="mb-4 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-md" role="alert">
+        {{ logoutError() | translate }}
+      </p>
+    }
+
+    <!-- Main Actions -->
+    <div class="flex w-full flex-col gap-4">
+      <!-- Primary Action -->
+      <app-button 
+        full 
+        impact="bold" 
+        tone="primary" 
+        size="medium" 
+        type="button" 
+        (buttonClick)="goToService()">
+        <span class="flex items-center justify-center gap-2">
+          Accéder à l'application
+          <svg-icon src="assets/icons/heroicons/outline/arrow-right.svg" [svgClass]="'h-4 w-4'"></svg-icon>
+        </span>
+      </app-button>
+      
+      <!-- Secondary Action (Ghost Button) -->
+      <app-button
+        full
+        impact="none"
+        tone="light"
+        size="small"
+        type="button"
+        [disabled]="logoutLoading()"
+        (buttonClick)="logout()">
+        <span class="text-muted-foreground hover:text-foreground transition-colors">
+          Ce n'est pas vous ? <span class="underline decoration-dotted underline-offset-4">Se déconnecter</span>
+        </span>
+      </app-button>
+    </div>
+  </div>
+} @else {
+  <ng-content />
+}

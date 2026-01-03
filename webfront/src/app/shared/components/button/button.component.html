@@ -1,0 +1,19 @@
+<button
+  [attr.aria-busy]="loading() ? 'true' : null"
+  [disabled]="disabled() || loading()"
+  [type]="type()"
+  (click)="onButtonClick()"
+  [ngClass]="classes"
+>
+  <span class="app-button__content" [class.app-button__content--hidden]="loading()">
+    <ng-content></ng-content>
+  </span>
+  @if (loading()) {
+    <span class="app-button__loader" aria-hidden="true">
+      <span class="app-button__spinner"></span>
+      @if (loadingText()) {
+        <span class="app-button__loading-text">{{ loadingText() }}</span>
+      }
+    </span>
+  }
+</button>

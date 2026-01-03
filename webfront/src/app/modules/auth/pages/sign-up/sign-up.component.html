@@ -1,0 +1,88 @@
+<form class="my-10 space-y-6 animate-fade-in-up" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="space-y-4">
+    <div class="text-center">
+      <h2 class="text-foreground mb-1 text-3xl font-semibold">Créer un compte <span class="text-primary">!</span></h2>
+      <p class="text-muted-foreground text-sm">Créez votre compte pour aller plus loin.</p>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
+    <app-form-status-message kind="success" [messageKey]="successMessage()"></app-form-status-message>
+  </div>
+
+  <div class="space-y-3 text-left">
+    <!-- Email Field -->
+    <app-form-field
+      label="Adresse email"
+      id="register-email"
+      type="email"
+      inputmode="email"
+      autocomplete="email"
+      icon="assets/icons/heroicons/outline/envelope.svg"
+      [control]="f['email']"
+      [submitted]="submitted"
+      [errors]="emailErrors"
+    ></app-form-field>
+
+    <!-- Password Field -->
+    <app-password-input
+      label="Mot de passe"
+      id="register-password"
+      autocomplete="new-password"
+      [control]="f['password']"
+      [submitted]="submitted"
+      [showStrengthMeter]="true"
+      [strength]="passwordStrength()"
+      [showHelper]="true"
+    >
+      <span error>
+        @if (f['password'].hasError('weakPassword')) {
+          <span>{{ 'form.validation.password.weak' | translate }}</span>
+        }
+        @if (f['password'].hasError('required')) {
+          <span>{{ 'form.validation.password.required' | translate }}</span>
+        }
+      </span>
+    </app-password-input>
+
+    <!-- Confirm Password Field -->
+    <app-password-input
+      label="Confirmez le mot de passe"
+      id="register-confirm-password"
+      autocomplete="new-password"
+      [control]="f['confirmPassword']"
+      [submitted]="submitted"
+    >
+      <span error>
+        @if (f['confirmPassword'].hasError('mismatch')) {
+          <span>{{ 'form.validation.password.mismatch' | translate }}</span>
+        }
+        @if (f['confirmPassword'].hasError('required')) {
+          <span>{{ 'form.validation.confirmPassword.required' | translate }}</span>
+        }
+      </span>
+    </app-password-input>
+  </div>
+
+  <div>
+    <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting()">
+      Créer mon compte
+    </app-button>
+  </div>
+
+  <div class="text-muted-foreground flex items-center text-sm">
+    Déjà un compte ?
+    <app-button
+      routerLink="/login"
+      [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : null"
+      type="button"
+      impact="none"
+      tone="primary"
+      shape="rounded"
+      size="small"
+    >
+      Se connecter
+    </app-button>
+  </div>
+</form>

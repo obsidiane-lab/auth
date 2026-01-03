@@ -1,0 +1,79 @@
+<form class="my-10 space-y-6 animate-fade-in-up" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="space-y-4">
+    <div class="text-center">
+      <h2 class="text-foreground mb-1 text-3xl font-semibold">
+        Ravi de vous revoir <span class="text-primary">!</span>
+      </h2>
+      <p class="text-muted-foreground text-sm">Entrez vos identifiants pour accéder à votre compte.</p>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
+    <app-form-status-message kind="success" [messageKey]="successMessage()"></app-form-status-message>
+    @if (infoMessage()) {
+      <app-form-status-message kind="info" [messageKey]="infoMessage()"></app-form-status-message>
+    }
+  </div>
+
+  <div class="space-y-3 text-left">
+    <!-- Email Field -->
+    <app-form-field
+      label="Adresse email"
+      id="login-email"
+      type="email"
+      inputmode="email"
+      autocomplete="email"
+      icon="assets/icons/heroicons/outline/envelope.svg"
+      [control]="f['email']"
+      [submitted]="submitted"
+      [errors]="emailErrors"
+    ></app-form-field>
+
+    <!-- Password Field -->
+    <app-password-input
+      label="Mot de passe"
+      id="login-password"
+      autocomplete="current-password"
+      [control]="f['password']"
+      [submitted]="submitted"
+    ></app-password-input>
+  </div>
+
+  <div class="mb-2 flex items-center justify-end">
+    <app-button
+      routerLink="/reset-password"
+      [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : null"
+      type="button"
+      impact="none"
+      tone="primary"
+      shape="rounded"
+      size="small"
+    >
+      Mot de passe oublié ?
+    </app-button>
+  </div>
+
+  <div>
+    <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting()">
+      Se connecter
+    </app-button>
+  </div>
+
+  @if (canRegister()) {
+    <div class="text-muted-foreground flex items-center text-sm">
+      Pas encore membre ?
+      <app-button
+        routerLink="/register"
+        [queryParams]="returnUrl() ? { returnUrl: returnUrl() } : null"
+        type="button"
+        impact="none"
+        tone="primary"
+        shape="rounded"
+        size="small"
+      >
+        Inscrivez-vous
+      </app-button>
+    </div>
+  }
+</form>

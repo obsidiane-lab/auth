@@ -1,41 +1,54 @@
+name: auth
 services:
-  php:
+  core:
     build:
       context: .
+      dockerfile: Dockerfile
       target: frankenphp_dev
+    ports:
+      - "8000:80"
     environment:
-      APP_BASE_URL: "http://localhost:8000"
+      APP_BASE_URL: "http://localhost:${CADDY_HTTP_PORT:-8000}"
       APP_SECRET: "secret"
       APP_ENV: "dev"
-      ACCESS_COOKIE_NAME: "__Secure-at"
-      ACCESS_COOKIE_DOMAIN: ""
-      ACCESS_COOKIE_PATH: "/"
-      ACCESS_COOKIE_SAMESITE: "lax"
+      ACCESS_COOKIE_NAME: "at"
+      ACCESS_COOKIE_DOMAIN: "localhost"
       ACCESS_COOKIE_SECURE: "0"
-      MERCURE_URL: "http://php/.well-known/mercure"
-      FRANKENPHP_WORKER_CONFIG: "watch"
+      REFRESH_COOKIE_NAME: "rt"
+      REFRESH_COOKIE_SECURE: "0"
       XDEBUG_MODE: "off"
       ALLOWED_ORIGINS: '^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$'
       DATABASE_URL: "mysql://app:ChangeMe@database:3306/app"
       JWT_SECRET: "!ChangeThisMercureHubJWTSecretKey!"
-      JWT_ISSUER: "https://auth.example.com"
-      JWT_AUDIENCE: "core-api"
-      FRONTEND_DEFAULT_REDIRECT: "https://app.example.com"
-      FRONTEND_REDIRECT_ALLOWLIST: "https://app.example.com/,https://another.example.com/"
-      UI_THEME_COLOR: "red"
-      UI_THEME_MODE: "light"
-      NOTIFUSE_API_BASE_URL: "https://notifuse.obsidiane.fr"
-      NOTIFUSE_WORKSPACE_ID: "suretiq"
-      NOTIFUSE_API_KEY: "secret"
-      BRANDING_NAME: "SurEtiq"
+      FRONTEND_REDIRECT_URL: "http://localhost:4200/"
+      NOTIFUSE_API_BASE_URL: "${NOTIFUSE_API_BASE_URL:-}"
+      NOTIFUSE_WORKSPACE_ID: "obsidiane"
+      NOTIFUSE_API_KEY: "${NOTIFUSE_API_KEY:-}"
+      BRANDING_NAME: "Obsidiane"
+      NOTIFUSE_TEMPLATE_WELCOME: "welcome"
+      NOTIFUSE_TEMPLATE_RESET_PASSWORD: "resetpass"
+      API_DOCS_ENABLED: "1"
+      REGISTRATION_ENABLED: "1"
     volumes:
-      - ./:/app
-      - ./infra/frankenphp/Caddyfile:/etc/frankenphp/Caddyfile:ro
-      - ./infra/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
-    ports:
-      - "8000:80"
+      - ./core:/app
+      - ./@obsidiane/caddy/Caddyfile:/etc/frankenphp/Caddyfile:ro
+      - ./@obsidiane/caddy/webfront.dev.caddy:/etc/frankenphp/webfront.caddy:ro
+      - ./@obsidiane/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
     depends_on:
       - database
+      - webfront
+
+  webfront:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: angular-dev
+    working_dir: /app
+    volumes:
+      - ./webfront:/app
+      - webfront_node_modules:/app/node_modules
+    ports:
+      - "4200:4200"
 
   database:
     image: mariadb
@@ -44,6 +57,8 @@ services:
       MYSQL_RANDOM_ROOT_PASSWORD: "true"
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-ChangeMe}
       MYSQL_USER: ${MYSQL_USER:-app}
+    ports:
+      - "3306:3306"
     volumes:
       - database_data:/var/lib/mysql:rw
     healthcheck:
@@ -51,8 +66,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    ports:
-      - "3306:3306"
 
 volumes:
   database_data:
+  webfront_node_modules:

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <title>Obsidiane Auth</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    
+    <script>
+      (function() {
+        let mode = 'light';
+        let colorHex = '#E11D48'; // Default Red
+
+        const colors = {
+          'base': '#E11D48', 'violet': '#6E56CF', 'red': '#CC0033',
+          'blue': '#2490FF', 'orange': '#EA580C', 'yellow': '#FACC15',
+          'green': '#22C55E', 'cyan': '#06b6d4', 'rose': '#f43f5e'
+        };
+
+        try {
+          const stored = localStorage.getItem('theme');
+          if (stored) {
+            const theme = JSON.parse(stored);
+            if (theme.mode) mode = theme.mode;
+            if (theme.color && colors[theme.color]) colorHex = colors[theme.color];
+          } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            mode = 'dark';
+          }
+        } catch (e) {}
+
+        if (mode === 'dark') document.documentElement.classList.add('dark');
+        
+        const root = document.documentElement;
+        root.style.setProperty('--loader-bg', mode === 'dark' ? '#0A0A0A' : '#FFFFFF');
+        root.style.setProperty('--loader-primary', colorHex);
+      })();
+    </script>
+
+    <style>
+      :root {
+        --loader-bg: #FFFFFF;
+        --loader-primary: #E11D48;
+      }
+
+      body { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+      .app-loading {
+        position: fixed;
+        inset: 0;
+        background-color: var(--loader-bg);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      /* Exact Match of the App's SVG Spinner */
+      .spinner-svg {
+        width: 48px;
+        height: 48px;
+        color: var(--loader-primary);
+        animation: spin 1s linear infinite;
+      }
+      
+      .spinner-circle {
+        opacity: 0.25;
+      }
+      
+      .spinner-path {
+        opacity: 0.75;
+      }
+
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+
+  <body class="bg-background font-poppins selection:bg-primary selection:text-primary-foreground">
+    <app-root>
+      <div class="app-loading">
+        <!-- Standard Tailwind UI Spinner SVG (Same as in components) -->
+        <svg class="spinner-svg" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="spinner-circle" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="spinner-path" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+      </div>
+    </app-root>
+  </body>
+</html>

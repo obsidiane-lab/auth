@@ -1,0 +1,12 @@
+includes:
+
+parameters:
+  level: 7
+  paths:
+    - src
+    - ../packages/auth-client-php/src
+
+  tmpDir: var/cache/phpstan
+
+  bootstrapFiles:
+    - vendor/autoload.php

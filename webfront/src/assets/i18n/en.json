@@ -1,0 +1,209 @@
+{
+  "common": {
+    "yes": "Yes",
+    "no": "No",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "reset": "Reset",
+    "loading": "Loading...",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "onboarding": "Onboarding"
+    }
+  },
+  "table": {
+    "show": "Show",
+    "per_page": "per page",
+    "of": "of",
+    "search": "Search",
+    "filters": "Filters",
+    "active": "Active",
+    "reset_filters": "Reset filters",
+    "apply_filters": "Apply filters",
+    "no_data_found": "No data found"
+  },
+  "form": {
+    "select": {
+      "placeholder": "Select an option"
+    },
+    "required": "This field is required.",
+    "minlength": "Minimum length is {{ requiredLength }} characters.",
+    "maxlength": "Maximum length is {{ requiredLength }} characters.",
+    "valide": "This field is invalid."
+  },
+  "uikit": {
+    "nav": {
+      "table": "Table",
+      "forms": "Forms",
+      "buttons": "Buttons",
+      "modals": "Modals"
+    },
+    "buttons": {
+      "title": "Buttons",
+      "description": "Showcase of the button component variants: tones, sizes, shapes and special states.",
+      "groups": {
+        "impact": {
+          "title": "Impacts and tones",
+          "description": "Each button can combine a tone with an impact level to highlight hierarchy."
+        },
+        "size": {
+          "title": "Sizes and shapes",
+          "description": "Buttons are available in multiple sizes and shapes to fit various contexts."
+        },
+        "states": {
+          "title": "Special states",
+          "description": "Demonstrates loading, full-width and disabled states to guide users."
+        }
+      },
+      "variants": {
+        "primaryBold": "Primary solid",
+        "primaryLight": "Primary light",
+        "primaryGhost": "Primary ghost",
+        "danger": "Danger",
+        "success": "Success",
+        "warning": "Warning",
+        "info": "Info",
+        "light": "Neutral",
+        "smallSquare": "Small square",
+        "mediumRounded": "Medium rounded",
+        "largePill": "Large pill",
+        "fullWidth": "Full width",
+        "loading": "Loading",
+        "disabled": "Disabled"
+      },
+      "lastAction": "Last button clicked: {{label}}"
+    },
+    "forms": {
+      "title": "Forms",
+      "description": "Example of custom form components: single or multi select and an accessible switch.",
+      "country": {
+        "label": "Country",
+        "placeholder": "Choose a country",
+        "helper": "Uses the app-select component in single mode with required validation.",
+        "options": {
+          "fr": "France",
+          "be": "Belgium",
+          "ca": "Canada",
+          "ch": "Switzerland"
+        }
+      },
+      "skills": {
+        "label": "Skills",
+        "placeholder": "Choose one or more skills",
+        "helper": "Multi-select: a checkbox appears on selected entries.",
+        "options": {
+          "design": "Design",
+          "ux": "UX",
+          "frontend": "Frontend",
+          "backend": "Backend",
+          "marketing": "Marketing"
+        }
+      },
+      "notifications": {
+        "title": "Notifications",
+        "switchLabel": "Receive product notifications",
+        "helper": "The switch implements ControlValueAccessor so it plugs into reactive forms."
+      },
+      "submittedValues": {
+        "title": "Submitted values"
+      }
+    },
+    "modals": {
+      "title": "Modals & confirmations",
+      "description": "Examples of using the modal component and the confirmation flow built on top of it.",
+      "basic": {
+        "title": "Basic modal",
+        "description": "Control the opening and closing by toggling the isOpen input.",
+        "open": "Open modal",
+        "modalTitle": "Modal preview",
+        "body": "This area is flexible: place texts, forms or action lists inside."
+      },
+      "confirm": {
+        "title": "Confirm",
+        "description": "The app-confirm component builds on the modal and exposes a customizable trigger.",
+        "modalTitle": "Confirm action",
+        "message": "Are you sure you want to perform this action?",
+        "trigger": "Delete item"
+      },
+      "log": {
+        "title": "Action history",
+        "entries": {
+          "modalOpened": "Modal opened",
+          "modalClosed": "Modal closed",
+          "actionConfirmed": "Action confirmed",
+          "actionCancelled": "Action cancelled"
+        }
+      }
+    },
+    "table": {
+      "title": "Table",
+      "description": "Complete showcase of the app-table component with search, filters and actions.",
+      "quickActions": {
+        "title": "Quick actions",
+        "export": "Export CSV",
+        "addMember": "Add teammate"
+      },
+      "filters": {
+        "role": {
+          "title": "Role",
+          "helper": "Multiple selection available (Ctrl/Cmd + click)."
+        },
+        "status": {
+          "title": "Status"
+        }
+      },
+      "columns": {
+        "id": "ID",
+        "name": "Name",
+        "role": "Role",
+        "team": "Team",
+        "location": "Location",
+        "status": "Status",
+        "activity": "Recent activity",
+        "productivity": "Productivity"
+      },
+      "summary": {
+        "none": "No filters applied",
+        "filtersActive": "Active filters",
+        "export": "Simulated CSV export for the current selection",
+        "items": {
+          "search": "Search: \"{{term}}\"",
+          "roles": "Roles: {{roles}}",
+          "statuses": "Statuses"
+        }
+      }
+    }
+  }
+  ,
+  "auth": {
+    "verifyEmail": {
+      "title": {
+        "loading": "Verifying...",
+        "success": "Email verified!",
+        "error": "Oops!"
+      },
+      "message": {
+        "loading": "Verification in progress...",
+        "success": "Your email address is verified."
+      }
+    },
+    "errors": {
+      "codes": {
+        "400": "Please check the submitted fields.",
+        "401": "Invalid credentials.",
+        "403": "Origin not allowed.",
+        "404": "Resource not found.",
+        "409": "Request conflict. Please try again.",
+        "410": "Link has expired.",
+        "422": "The submitted data is invalid.",
+        "423": "Email is not verified.",
+        "429": "Too many requests.",
+        "500": "Server error. Please try again.",
+        "503": "Service unavailable. Please try again."
+      }
+    }
+  }
+}

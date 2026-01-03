@@ -1,12 +1,7 @@
-#syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7
 
 # Versions
 FROM dunglas/frankenphp:1-php8.4 AS frankenphp_upstream
-
-# The different stages of this Dockerfile are meant to be built into separate images
-# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
-# https://docs.docker.com/compose/compose-file/#target
-
 
 # Base FrankenPHP image
 FROM frankenphp_upstream AS frankenphp_base
@@ -47,9 +42,10 @@ RUN install-php-extensions pdo_mysql
 ###< doctrine/doctrine-bundle ###
 ###< recipes ###
 
-COPY --link infra/frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
-COPY --link --chmod=755 infra/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY --link infra/frankenphp/Caddyfile /etc/frankenphp/Caddyfile
+COPY --link @obsidiane/frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
+COPY --link --chmod=755 @obsidiane/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY --link @obsidiane/caddy/Caddyfile /etc/frankenphp/Caddyfile
+COPY --link @obsidiane/caddy/webfront.prod.caddy /etc/frankenphp/webfront.caddy
 
 ENTRYPOINT ["docker-entrypoint"]
 
@@ -70,22 +66,9 @@ RUN set -eux; \
 		xdebug \
 	;
 
-COPY --link infra/frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
+COPY --link @obsidiane/frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
 
 CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
-
-# Frontend assets build image
-FROM node:20-alpine AS frontend_build
-
-WORKDIR /app
-
-COPY --link package*.json ./
-COPY --link webpack.config.js postcss.config.mjs tsconfig.json ./
-COPY --link templates ./templates
-COPY --link assets ./assets
-
-RUN npm ci
-RUN npm run build
 
 # Prod FrankenPHP image
 FROM frankenphp_base AS frankenphp_prod
@@ -94,19 +77,15 @@ ENV APP_ENV=prod
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-COPY --link infra/frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+COPY --link @obsidiane/frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
 
 # prevent the reinstallation of vendors at every changes in the source code
-COPY --link composer.* symfony.* ./
+COPY --link core/composer.* core/symfony.* ./
 RUN set -eux; \
 	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
 # copy sources
-COPY --link . ./
-RUN rm -Rf frankenphp/
-
-# copy built frontend assets
-COPY --from=frontend_build /app/public/build /app/public/build
+COPY --link core/. ./
 
 RUN set -eux; \
 	mkdir -p var/cache var/log; \
@@ -114,3 +93,25 @@ RUN set -eux; \
 	composer dump-env prod; \
 	composer run-script --no-dev post-install-cmd; \
 	chmod +x bin/console; sync;
+
+# Webfront builder
+FROM node:22-alpine AS webfront_builder_base
+WORKDIR /app
+
+COPY webfront/package*.json ./
+RUN npm ci
+COPY webfront/. .
+
+FROM webfront_builder_base AS webfront_builder_prod
+ARG ENVIRONMENT=production
+
+RUN npm install -g @angular/cli
+RUN ng build --configuration=$ENVIRONMENT
+
+FROM node:22-alpine AS angular-dev
+WORKDIR /app
+EXPOSE 4200
+CMD ["npm", "run", "start", "--", "--host", "0.0.0.0", "--port", "4200"]
+
+FROM frankenphp_prod AS app
+COPY --from=webfront_builder_prod /app/dist/angular /app/public/app

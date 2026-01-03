@@ -1,0 +1,18 @@
+:80 {
+  root * /app/browser
+  encode zstd gzip
+
+  try_files {path} /index.html
+  file_server
+
+  log {
+    format filter {
+      wrap console
+      fields {
+        uri query {
+          replace authorization REDACTED
+        }
+      }
+    }
+  }
+}

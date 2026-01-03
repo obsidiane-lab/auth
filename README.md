@@ -2,10 +2,10 @@
 
 Service d’authentification **stateless** pour applications web & SPA, basé sur **Lexik JWT (HS256)** et **Gesdinet
 Refresh Tokens**.  
-Il fournit un login centré **cookies HttpOnly** (`__Secure-at` / `__Host-rt`), des endpoints API simples et une
-protection **CSRF stateless** (Symfony).
+Il fournit un login centré **cookies HttpOnly** (`__Secure-at` / `__Host-rt` en prod, `at` / `rt` en dev compose), des endpoints API simples et une
+validation **Origin/Referer** (Same Origin).
 
-> UI intégrée (Twig + Vue), tokens en cookies sécurisés, refresh rotatif, vérification d’email, prêts pour la prod.
+> UI Angular (dossier `/webfront`), tokens en cookies sécurisés, refresh rotatif, vérification d’email.
 
 ---
 
@@ -19,6 +19,7 @@ protection **CSRF stateless** (Symfony).
 - [Intégration front (SPA)](#intégration-front-spa)
 - [Configuration & déploiement](#configuration--déploiement)
 - [SDKs](#sdks)
+- [Bridge Meridiane](#bridge-meridiane)
 - [Notes de sécurité](#notes-de-sécurité)
 - [Contribuer](#contribuer)
 - [Licence](#licence)
@@ -27,11 +28,11 @@ protection **CSRF stateless** (Symfony).
 
 ## Vue d’ensemble
 
-- Service d’auth centré **cookies HttpOnly** : access token JWT (`__Secure-at`) + refresh opaque (`__Host-rt`).
+- Service d’auth centré **cookies HttpOnly** : access token JWT (`__Secure-at`) + refresh opaque (`__Host-rt`) en prod.
 - Deux usages possibles :
-  - UI intégrée (Twig + Vue) : `/login`, `/register`, `/reset-password`, `/setup`, `/invite/complete`.
+  - UI Angular : `/login`, `/register`, `/reset-password`, `/reset-password/confirm`, `/verify-email`, `/invite/complete`, `/setup`.
   - API JSON : `/api/auth/...` pour front SPA, mobile, backends.
-- Sécurité intégrée : CSRF stateless (`csrf-token`), vérification d’email, rate limiting, redirections allowlistées.
+- Sécurité intégrée : validation Origin/Referer, vérification d’email, rate limiting, redirections allowlistées.
 - Au premier démarrage, si aucun user n’existe, tout redirige vers `/setup` pour créer l’admin.
 - Interface et emails uniquement **en français**.
 
@@ -39,10 +40,11 @@ protection **CSRF stateless** (Symfony).
 
 ## Fonctionnalités
 
-- **UI Twig + Vue**
-  - `/login`, `/register`, `/reset-password`, `/reset-password/reset/{token}`.
+- **UI Angular**
+  - `/login`, `/register`, `/reset-password`, `/reset-password/confirm`.
   - `/setup` pour créer l’admin initial.
   - `/invite/complete` pour finaliser une invitation.
+  - `/verify-email` pour la vérification d’email (appelle l’API).
 
 - **API JSON principale**
   - Auth : `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/refresh`, `POST /api/auth/logout`.
@@ -51,9 +53,10 @@ protection **CSRF stateless** (Symfony).
   - Setup : `POST /api/setup/admin`.
 
 - **Cookies & tokens**
-  - `__Secure-at` : access token JWT (HttpOnly).
-  - `__Host-rt` : refresh token opaque, single-use (HttpOnly).
-  - CSRF stateless : token aléatoire côté client dans l’en-tête `csrf-token` pour chaque requête sensible.
+  - `__Secure-at` : access token JWT (HttpOnly, prod).
+  - `__Host-rt` : refresh token opaque, single-use (HttpOnly, prod).
+  - En dev local via `docker compose` : `at` / `rt` (HTTP).
+  - Validation Origin/Referer (Same Origin) sur les requêtes sensibles.
 
 ---
 
@@ -66,18 +69,21 @@ protection **CSRF stateless** (Symfony).
 - **Refresh token (opaque)**
   - Stocké en base + cookie HttpOnly `__Host-rt` (host-only, single-use).
 
-- **CSRF stateless**
-  - Token aléatoire dans `csrf-token` + contrôle `Origin`/`Referer`.
+- **Origin/Referer**
+  - Validation Same Origin sur les requêtes sensibles.
 
 - **Vérification d’email**
-  - L’inscription envoie un lien signé `/verify-email`.
+  - L’inscription envoie un lien vers `/verify-email?...` (front), qui appelle `/api/auth/verify-email`.
   - Tant que l’email n’est pas confirmé, le login est refusé (`EMAIL_NOT_VERIFIED`).
 
 ---
 
 ## Démarrage rapide
 
-Par défaut, `docker compose` expose le service sur `http://localhost:8000`.
+Par défaut, `docker compose` expose une entrée unique sur `http://localhost:8000` (Caddy dans le core).
+`/api` est routé vers Symfony, le reste vers le webfront (Angular via `ng serve`).
+Le routing Caddy est dans `@obsidiane/caddy/Caddyfile` et le bloc frontend est injecté via `webfront.caddy`
+(`@obsidiane/caddy/webfront.dev.caddy` en dev, `@obsidiane/caddy/webfront.prod.caddy` en prod).
 
 La documentation OpenAPI générée par API Platform est disponible sur `http://localhost:8000/api/docs`.
 
@@ -87,8 +93,14 @@ La documentation OpenAPI générée par API Platform est disponible sur `http://
 # Dépendances PHP
 composer install
 
-# Démarrer les services
+# Démarrer le core (racine)
 docker compose up -d
+
+# Installer les dépendances du webfront (premier lancement)
+docker compose run --rm webfront npm install
+
+# Lancer le webfront (si besoin)
+docker compose up -d webfront
 
 # Migrations
 php bin/console doctrine:migrations:migrate
@@ -96,13 +108,14 @@ php bin/console doctrine:migrations:migrate
 
 ### URLs utiles (dev)
 
-* UI :
+* UI Angular :
 
     * `http://localhost:8000/login`
     * `http://localhost:8000/register`
     * `http://localhost:8000/reset-password`
-* Setup initial :
-
+    * `http://localhost:8000/reset-password/confirm?token=...`
+    * `http://localhost:8000/verify-email?...`
+    * `http://localhost:8000/invite/complete?token=...`
     * `http://localhost:8000/setup` (tant que la base ne contient aucun user).
 * API :
 
@@ -113,22 +126,19 @@ php bin/console doctrine:migrations:migrate
 ### Exemple minimal avec `curl`
 
 ```bash
-# Générer un token CSRF stateless côté client
-LOGIN_CSRF=$(php -r 'echo bin2hex(random_bytes(16));')
-
 # Login
 curl -i \
   -c cookiejar.txt \
   -H 'Content-Type: application/json' \
-  -H "csrf-token: $LOGIN_CSRF" \
-  -d '{"email":"user@example.com","password":"Secret123!"}' \
+  -H "Origin: http://localhost:8000" \
+  -d '{"email":"userexample.com","password":"Secret123!"}' \
   http://localhost:8000/api/auth/login
 
 # Profil courant
 curl -i -b cookiejar.txt http://localhost:8000/api/auth/me
 
 # Refresh
-curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
+curl -i -b cookiejar.txt -H "Origin: http://localhost:8000" -X POST http://localhost:8000/api/auth/refresh
 ```
 
 ---
@@ -147,25 +157,20 @@ curl -i -b cookiejar.txt -X POST http://localhost:8000/api/auth/refresh
 |    POST | `/api/auth/logout`          | Logout + invalidation tokens              |
 |    POST | `/api/auth/password/forgot` | Demande de reset (email)                  |
 |    POST | `/api/auth/password/reset`  | Réinitialisation via token                |
-|     GET | `/verify-email`             | Validation d’email via lien signé         |
+|     GET | `/api/auth/verify-email`    | Validation d’email via lien signé         |
 |    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
 |    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
 
-Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<AUTH_HOST>/api/docs` (OpenAPI).
+Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<APP_BASE_URL>/api/docs` (OpenAPI).
 
 ---
 
-## CSRF stateless
+## Origin/Referer
 
-Tous les endpoints sensibles (login, register, reset, logout, setup, invitation) utilisent une protection **CSRF stateless** :
+Tous les endpoints sensibles (login, register, reset, logout, setup, invitation) valident l’**Origin/Referer** :
 
-- Aucun token CSRF n’est stocké côté serveur.
-- Le client génère un token aléatoire par requête et le met dans l’en-tête `csrf-token`.
-- Le backend contrôle également l’origine (`Origin` ou `Referer`) via `ALLOWED_ORIGINS`.
-
-Pour les SPA sur un autre domaine (ex. `app.example.com` → `auth.example.com`) :
-
-- la combinaison `csrf-token` + CORS (`ALLOWED_ORIGINS`) suffit, sans cookie CSRF ni endpoint dédié.
+- Le backend vérifie le Same Origin via les en-têtes `Origin` ou `Referer`.
+- Cela implique d’utiliser un reverse-proxy pour servir `/api` et le front sous le même domaine.
 
 ---
 
@@ -178,14 +183,10 @@ Pour les SPA sur un autre domaine (ex. `app.example.com` → `auth.example.com`)
   * pas de `localStorage` / `sessionStorage` ;
   * le serveur lit directement le cookie `__Secure-at`.
 
-### CSRF
-
-Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/logout`, `/api/auth/invite`, etc.) doivent toujours recevoir un jeton **stateless** dans l’en-tête `csrf-token`. Reportez-vous à la section [CSRF stateless](#csrf-stateless) pour le protocole détaillé et un exemple de génération côté client.
-
 ### Refresh silencieux
 
 * Appeler régulièrement `POST /api/auth/refresh` (avec `credentials: 'include'`) avant l’expiration (`exp`).
-* Aucun CSRF n’est requis sur ce endpoint.
+* Aucun token supplémentaire n’est requis sur ce endpoint (Origin/Referer uniquement).
 
 ---
 
@@ -193,41 +194,50 @@ Les endpoints sensibles (`/api/auth/login`, `/api/auth/register`, `/api/auth/log
 
 ### `.env` & Docker
 
-* Le `.env` racine fournit désormais des valeurs par défaut **orientées production** (domaine `example.com`, cookies sécurisés, SameSite `lax`). Ne mets aucun secret sensible dans ce fichier versionné.
-* Pour un usage local, crée un `.env.local` ou charge `.env.dev` (APP_ENV=dev, CORS localhost, cookies non Secure, DB `database:3306`, mot de passe niveau 1).
+* `core/.env` fournit des valeurs par défaut **orientées production** (cookies sécurisés). Ne mets aucun secret sensible dans ce fichier versionné.
+* Le `.env` racine sert à la substitution de variables pour `docker compose` (ex: `NOTIFUSE_*`).
+* En local, les valeurs **dev** sont définies directement dans `compose.yaml` (APP_ENV=dev, cookies non Secure, CORS localhost, DB `database:3306`).
 * `docker compose` lit automatiquement `.env` ; toute variable peut être surchargée par l’environnement du runtime/compose.
 * L’entrypoint génère `APP_SECRET` et `JWT_SECRET` si absents, mais ces valeurs tournent à chaque redémarrage : renseigne-les pour un déploiement réel.
+
+### Compose prod local
+
+Pour un run prod-like local (front statique inclus dans l’image) :
+
+```bash
+docker compose -f compose.prod.yaml up -d --build
+```
 
 ### Variables d’environnement importantes
 
 Les variables ci-dessous couvrent 95 % des cas. Copie/colle ce bloc puis adapte-le à ton infra.
 
-Variables **critiques** vérifiées au démarrage (entrypoint) : `DATABASE_URL`, `APP_BASE_DOMAIN`, `NOTIFUSE_API_BASE_URL`, `NOTIFUSE_WORKSPACE_ID`, `NOTIFUSE_API_KEY`, `NOTIFUSE_TEMPLATE_WELCOME`, `NOTIFUSE_TEMPLATE_RESET_PASSWORD`. `APP_SECRET` et `JWT_SECRET` doivent aussi être fournis (sinon l’entrypoint en génère à chaque start, ce qui invalide les tokens).
+Variables **critiques** vérifiées au démarrage (entrypoint) : `APP_BASE_URL`, `FRONTEND_REDIRECT_URL`, `APP_SECRET`, `DATABASE_URL`, `JWT_SECRET`, `NOTIFUSE_API_BASE_URL`, `NOTIFUSE_WORKSPACE_ID`, `NOTIFUSE_API_KEY`.
 
 **Bloc prêt à copier-coller (prod typique)**
 
 ```env
-APP_BASE_DOMAIN=example.com
-AUTH_HOST=auth.${APP_BASE_DOMAIN}
-APP_DEFAULT_URI=https://${AUTH_HOST}
+APP_BASE_URL=https://auth.example.com
+FRONTEND_REDIRECT_URL=https://app.example.com/
 
 APP_SECRET=change-me
 JWT_SECRET=change-me-too
-DATABASE_URL="mysql://app:!ChangeMe!@database:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
+DATABASE_URL="mysql://app:!ChangeMe!database:3306/app?serverVersion=10.11.2-MariaDB&charset=utf8mb4"
 
-JWT_ISSUER=https://${AUTH_HOST}
+JWT_ISSUER=${APP_BASE_URL}
 JWT_AUDIENCE=core-api
 JWT_ACCESS_TTL=600
 JWT_REFRESH_TTL=2592000
-ALLOWED_ORIGINS="^https?://([a-zA-Z0-9-]+\\.)?${APP_BASE_DOMAIN}(:[0-9]+)?$"
+ALLOWED_ORIGINS="^https?://example.com(:[0-9]+)?$"
 
-ACCESS_COOKIE_DOMAIN=".${APP_BASE_DOMAIN}"
-FRONTEND_DEFAULT_REDIRECT=https://app.${APP_BASE_DOMAIN}/
-FRONTEND_REDIRECT_ALLOWLIST=https://app.${APP_BASE_DOMAIN}/,https://partners.${APP_BASE_DOMAIN}/
+ACCESS_COOKIE_DOMAIN=".example.com"
 
-UI_ENABLED=1
 REGISTRATION_ENABLED=1
 PASSWORD_STRENGTH_LEVEL=2
+API_DOCS_ENABLED=0
+
+# Token S2S (Authorization: Bearer ...) pour les services internes
+CORE_TO_AUTH_TOKEN=change-me
 
 NOTIFUSE_API_BASE_URL=https://notifuse.example.com
 NOTIFUSE_WORKSPACE_ID=prod-workspace
@@ -240,8 +250,119 @@ Variables complémentaires (généralement à garder telles quelles) :
 
 - `JWT_ALGORITHM` (HS256), `JWT_AUDIENCE`, `JWT_ACCESS_TTL`, `JWT_REFRESH_TTL`
 - `ACCESS_COOKIE_NAME`, `ACCESS_COOKIE_PATH`, `ACCESS_COOKIE_SAMESITE`, `ACCESS_COOKIE_SECURE`
-- `UI_THEME_COLOR`, `UI_THEME_MODE`, `BRANDING_NAME`
+- `BRANDING_NAME`, `API_DOCS_ENABLED`
 - Rate limiting : `RATE_LOGIN_LIMIT`, `RATE_LOGIN_INTERVAL`, `RATE_LOGIN_GLOBAL_LIMIT`
+
+### Valeurs par défaut des variables d’environnement
+
+#### Core (defaults de `core/.env`)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `APP_ENV` | `prod` |
+| `APP_DEBUG` | `0` |
+| `APP_SECRET` | `` |
+| `APP_BASE_URL` | `` |
+| `DATABASE_URL` | `` |
+| `ALLOWED_ORIGINS` | `^https?://example.com(:[0-9]+)?$` |
+| `JWT_ALGORITHM` | `HS256` |
+| `JWT_SECRET` | `` |
+| `JWT_ISSUER` | `${APP_BASE_URL}` |
+| `JWT_AUDIENCE` | `core-api` |
+| `JWT_ACCESS_TTL` | `600` |
+| `JWT_REFRESH_TTL` | `2592000` |
+| `ACCESS_COOKIE_NAME` | `__Secure-at` |
+| `ACCESS_COOKIE_DOMAIN` | `` |
+| `ACCESS_COOKIE_PATH` | `/` |
+| `ACCESS_COOKIE_SAMESITE` | `lax` |
+| `ACCESS_COOKIE_SECURE` | `1` |
+| `REFRESH_COOKIE_NAME` | `__Host-rt` |
+| `REFRESH_COOKIE_SECURE` | `1` |
+| `FRONTEND_REDIRECT_URL` | `` |
+| `TRUSTED_PROXIES` | `127.0.0.1` |
+| `REGISTRATION_ENABLED` | `1` |
+| `BRANDING_NAME` | `Obsidiane Auth` |
+| `PASSWORD_STRENGTH_LEVEL` | `2` |
+| `FRONTEND_THEME_MODE` | `dark` |
+| `FRONTEND_THEME_COLOR` | `base` |
+| `FRONTEND_THEME_COLORS` | `base,red,blue,orange,yellow,green,violet` |
+| `RATE_LOGIN_LIMIT` | `5` |
+| `RATE_LOGIN_INTERVAL` | `60 seconds` |
+| `RATE_LOGIN_GLOBAL_LIMIT` | `25` |
+| `API_DOCS_ENABLED` | `0` |
+| `NOTIFUSE_API_BASE_URL` | `` |
+| `NOTIFUSE_WORKSPACE_ID` | `` |
+| `NOTIFUSE_API_KEY` | `` |
+| `NOTIFUSE_TEMPLATE_WELCOME` | `welcome` |
+| `NOTIFUSE_TEMPLATE_RESET_PASSWORD` | `resetpass` |
+
+#### Racine (defaults de `.env` pour `docker compose`)
+
+| Variable | Valeur par défaut |
+| --- | -- |
+| `NOTIFUSE_API_BASE_URL` | `https://relay.obsidiane.fr` |
+| `NOTIFUSE_API_KEY` | `` |
+
+#### Dev local (`compose.yaml` -> service `core`)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `APP_BASE_URL` | `http://localhost:${CADDY_HTTP_PORT:-8000}` |
+| `APP_SECRET` | `secret` |
+| `APP_ENV` | `dev` |
+| `ACCESS_COOKIE_NAME` | `at` |
+| `ACCESS_COOKIE_DOMAIN` | `localhost` |
+| `ACCESS_COOKIE_SECURE` | `0` |
+| `REFRESH_COOKIE_NAME` | `rt` |
+| `REFRESH_COOKIE_SECURE` | `0` |
+| `XDEBUG_MODE` | `off` |
+| `ALLOWED_ORIGINS` | `^https?://(localhost|127\.0\.0\.1)(:[0-9]+)?$` |
+| `DATABASE_URL` | `mysql://app:ChangeMe@database:3306/app` |
+| `JWT_SECRET` | `!ChangeThisMercureHubJWTSecretKey!` |
+| `FRONTEND_REDIRECT_URL` | `http://localhost:4200/` |
+| `NOTIFUSE_API_BASE_URL` | `${NOTIFUSE_API_BASE_URL:-}` |
+| `NOTIFUSE_WORKSPACE_ID` | `obsidiane` |
+| `NOTIFUSE_API_KEY` | `${NOTIFUSE_API_KEY:-}` |
+| `BRANDING_NAME` | `Obsidiane` |
+| `NOTIFUSE_TEMPLATE_WELCOME` | `welcome` |
+| `NOTIFUSE_TEMPLATE_RESET_PASSWORD` | `resetpass` |
+| `API_DOCS_ENABLED` | `1` |
+| `REGISTRATION_ENABLED` | `1` |
+
+#### Dev local (`compose.yaml` -> service `database`)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `MYSQL_DATABASE` | `${MYSQL_DATABASE:-app}` |
+| `MYSQL_USER` | `${MYSQL_USER:-app}` |
+| `MYSQL_PASSWORD` | `${MYSQL_PASSWORD:-ChangeMe}` |
+| `MYSQL_RANDOM_ROOT_PASSWORD` | `true` |
+
+#### Tests/optionnels (non définis par défaut)
+
+| Variable | Valeur par défaut |
+| --- | --- |
+| `CORE_TO_AUTH_TOKEN` | `` |
+| `CORE_TO_AUTH_TOKEN_NEXT` | `` |
+| `TEST_TOKEN` | `` |
+
+---
+
+### Configuration frontend (`/api/config`)
+
+Le frontend consomme `/api/config` (public) pour piloter l’UI et la politique de mots de passe.
+
+| Variable | Champ `/api/config` | Effet côté UI |
+| --- | --- | --- |
+| `APP_ENV` | `environment` | `dev` affiche le ThemeSwitcher + persistance locale; tout autre env masque le switcher et force le thème fourni. |
+| `REGISTRATION_ENABLED` | `registrationEnabled` | Active l’inscription (route `/register`). |
+| `PASSWORD_STRENGTH_LEVEL` | `passwordStrengthLevel` | Niveau 1–4 (weak → very strong) pour validation + jauge de force. |
+| `BRANDING_NAME` | `brandingName` | Nom affiché dans l’UI et utilisé dans les emails. |
+| `FRONTEND_REDIRECT_URL` | `frontendRedirectUrl` | Redirection après login si fournie. |
+| `FRONTEND_THEME_MODE` | `themeMode` | `light` ou `dark` (appliqué en non‑dev). |
+| `FRONTEND_THEME_COLOR` | `themeColor` | Couleur principale (`base`, `red`, `blue`, `orange`, `yellow`, `green`, `violet`, `cyan`, `rose`). |
+
+En environnement non‑dev, le thème est **forcé** par `/api/config` (pas de lecture `localStorage`).
 
 ---
 
@@ -256,9 +377,9 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
 ```
 
 - Le script est interactif : il te demande la base URL, les emails/mots de passe à utiliser pour l’admin, l’utilisateur d’inscription et l’utilisateur invité.
-- À chaque étape nécessitant une action sur l’email (clic sur `/verify-email`, `/reset-password/reset/...`, `/invite/complete?...`), il affiche un message du type :
+- À chaque étape nécessitant une action sur l’email (clic sur `/verify-email?...`, `/reset-password/confirm?token=...`, `/invite/complete?...`), il affiche un message du type :
   - `Attente de confirmation d’email… Ouvrez Maildev/Notifuse et cliquez sur le lien`, puis attend `ENTER`.
-- Il utilise la même mécanique CSRF stateless que le reste du projet (`csrf-token` + cookies).
+- Il envoie les en-têtes `Origin` nécessaires à la validation Same Origin.
 
 ### Client JS – `@obsidiane/auth-sdk`
 
@@ -269,6 +390,18 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
 
 * Client HTTP Symfony pour ce service d’authentification.
 * Sources & doc : `packages/auth-client-php`.
+
+---
+
+## Bridge Meridiane
+
+Un bridge Angular peut être généré depuis la spec OpenAPI (API Platform) via le Makefile racine :
+
+```bash
+make bridge
+```
+
+La documentation d’usage et les bonnes pratiques frontend sont dans `@obsidiane/docs/meridiane.md`.
 
 ---
 

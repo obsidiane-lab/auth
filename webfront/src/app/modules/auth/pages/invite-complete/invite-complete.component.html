@@ -1,0 +1,92 @@
+<form class="my-10 space-y-6 animate-fade-in-up" [formGroup]="form" (ngSubmit)="onSubmit()">
+  <div class="space-y-4">
+    <div class="text-center">
+      <h2 class="mb-1 text-3xl font-semibold text-foreground">
+        Complétez votre <span class="text-primary">compte</span>
+      </h2>
+      <p class="text-sm text-muted-foreground">
+        Définissez votre mot de passe pour activer votre accès.
+      </p>
+    </div>
+  </div>
+
+  <div class="space-y-2">
+    <app-form-status-message kind="error" [messageKey]="errorMessageKey()"></app-form-status-message>
+    <app-form-status-message kind="success" [messageKey]="successMessage()"></app-form-status-message>
+  </div>
+
+  @if (alreadyCompleted()) {
+    <div class="flex justify-center">
+      <app-button impact="none" tone="primary" size="small" type="button" (buttonClick)="goToLogin()">
+        Retour à la connexion
+      </app-button>
+    </div>
+  }
+
+  @if (!alreadyCompleted()) {
+    <div class="space-y-3 text-left">
+      <!-- Read-only Email -->
+      <div class="form__group">
+        <div class="form__field">
+          <svg-icon src="assets/icons/heroicons/outline/envelope.svg" [svgClass]="'h-5 w-5 absolute left-3 top-2 text-muted-foreground z-20 opacity-70'"></svg-icon>
+          <input
+            id="invite-email"
+            [value]="invitedEmail()"
+            class="form__input peer pl-10 cursor-not-allowed opacity-60 bg-muted/50"
+            type="email"
+            placeholder=" "
+            disabled />
+          <label class="form__label left-9" for="invite-email">Adresse email invitée</label>
+          <svg-icon src="assets/icons/heroicons/outline/lock-closed.svg" [svgClass]="'h-4 w-4 absolute right-4 top-4 text-muted-foreground opacity-50'"></svg-icon>
+        </div>
+      </div>
+
+      <!-- Password Field -->
+      <app-password-input
+        label="Mot de passe"
+        id="invite-password"
+        autocomplete="new-password"
+        [control]="f['password']"
+        [submitted]="submitted"
+        [showStrengthMeter]="true"
+        [strength]="passwordStrength()"
+        [showHelper]="true"
+      >
+        <span error>
+          @if (f['password'].hasError('weakPassword')) {
+            <span>{{ 'form.validation.password.weak' | translate }}</span>
+          }
+          @if (f['password'].hasError('required')) {
+            <span>{{ 'form.validation.password.required' | translate }}</span>
+          }
+        </span>
+      </app-password-input>
+
+      <!-- Confirm Password -->
+      <app-password-input
+        label="Confirmez le mot de passe"
+        id="invite-confirm-password"
+        autocomplete="new-password"
+        [control]="f['confirmPassword']"
+        [submitted]="submitted"
+      >
+        <span error>
+          @if (f['confirmPassword'].hasError('mismatch')) {
+            <span>{{ 'form.validation.password.mismatch' | translate }}</span>
+          }
+          @if (f['confirmPassword'].hasError('required')) {
+            <span>{{ 'form.validation.confirmPassword.required' | translate }}</span>
+          }
+        </span>
+      </app-password-input>
+    </div>
+  }
+
+  @if (!alreadyCompleted()) {
+    <div>
+      <app-button full impact="bold" tone="primary" shape="rounded" size="medium" [loading]="isSubmitting()" [disabled]="!hasToken()">
+        Activer mon compte
+      </app-button>
+    </div>
+  }
+</form>
