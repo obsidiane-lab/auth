@@ -1,12 +1,12 @@
 import { Component, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { ThemeService } from '../../../core/services/theme.service';
 import { AngularSvgIconModule } from 'angular-svg-icon';
 
 @Component({
   selector: 'app-theme-switcher',
   standalone: true,
-  imports: [CommonModule, AngularSvgIconModule],
+  imports: [AngularSvgIconModule],
   template: `
     <div class="relative group">
       <!-- Trigger Button -->
