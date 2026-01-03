@@ -1,0 +1,35 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Obsidiane\AuthBundle\Bridge;
+
+use Symfony\Component\Serializer\SerializerInterface;
+
+final readonly class FacadeFactory
+{
+    public function __construct(
+        private BridgeFacade $bridge,
+        private SerializerInterface $serializer,
+    ) {
+    }
+
+    /**
+     * @param class-string<T> $modelClass
+     * @param array<string,mixed> $serializerContext
+     *
+     * @return ResourceFacade<T>
+     *
+     * @template T of object
+     */
+    public function create(string $url, string $modelClass, array $serializerContext = []): ResourceFacade
+    {
+        return new ResourceFacade(
+            $this->bridge,
+            $this->serializer,
+            $url,
+            $modelClass,
+            $serializerContext
+        );
+    }
+}
