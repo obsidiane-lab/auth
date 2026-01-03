@@ -31,5 +31,5 @@ jobs:
       - name: Show new version
         if: steps.tag_version.outputs.new_tag != ''
         run: |
-          echo "New tag: ${{ steps.tag_version.outputs.new_tag }}"
+          echo "New tag : ${{ steps.tag_version.outputs.new_tag }}"
           echo "Release type: ${{ steps.tag_version.outputs.release_type }}"
