@@ -26,6 +26,7 @@ jobs:
           release_branches: master
           tag_prefix: ""
           default_bump: patch
+          custom_release_rules: "#major:major,#minor:minor,#patch:patch"
 
       - name: Show new version
         if: steps.tag_version.outputs.new_tag != ''
