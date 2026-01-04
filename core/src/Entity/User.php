@@ -2,11 +2,13 @@
 
 namespace App\Entity;
 
+use ApiPlatform\Metadata\ApiFilter;
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Put;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use App\Controller\User\UpdateUserRolesController;
 use App\Dto\User\UpdateUserRolesInput;
 use App\Entity\LifeCycle\LifeCycleInterface;
@@ -49,6 +51,7 @@ use Symfony\Component\HttpFoundation\Response;
     ],
     normalizationContext: ['groups' => ['user:read']],
 )]
+#[ApiFilter(SearchFilter::class, properties: ['email' => 'exact'])]
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 #[ORM\Table(name: 'users')]
 #[UniqueEntity('email')]
