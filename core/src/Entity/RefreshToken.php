@@ -11,6 +11,7 @@ use Gesdinet\JWTRefreshTokenBundle\Model\AbstractRefreshToken;
 #[ORM\Index(name: 'idx_refresh_token_username', columns: ['username'])]
 class RefreshToken extends AbstractRefreshToken
 {
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column(type: 'integer')]
@@ -24,4 +25,5 @@ class RefreshToken extends AbstractRefreshToken
 
     #[ORM\Column(type: 'datetime')]
     protected $valid;
+
 }

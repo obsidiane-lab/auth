@@ -29,6 +29,7 @@ services:
       NOTIFUSE_TEMPLATE_RESET_PASSWORD: "resetpass"
       API_DOCS_ENABLED: "1"
       REGISTRATION_ENABLED: "1"
+      SERVICE_AUTH_TOKEN: "changeme"
     volumes:
       - ./core:/app
       - ./@obsidiane/caddy/Caddyfile:/etc/frankenphp/Caddyfile:ro
