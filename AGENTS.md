@@ -41,7 +41,7 @@ Deux sous-projets :
 - `AuthService` expose l'utilisateur courant (Signal) et les actions auth.
 
 ### Ressources metier (ce projet)
-- `User` : collection `/api/users`, mise a jour des roles via `/api/users/{id}/roles`.
+- `User` : collection `/api/users`, mise a jour des roles via `PUT /api/users/{id}/roles`.
 - `InviteUser` : collection `/api/invite_users`.
 - `Auth` & `Setup` : endpoints custom (`/api/auth/*`, `/api/setup/admin`).
 

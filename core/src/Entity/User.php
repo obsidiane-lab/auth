@@ -6,7 +6,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\GetCollection;
-use ApiPlatform\Metadata\Post;
+use ApiPlatform\Metadata\Put;
 use App\Controller\User\UpdateUserRolesController;
 use App\Dto\User\UpdateUserRolesInput;
 use App\Entity\LifeCycle\LifeCycleInterface;
@@ -33,7 +33,7 @@ use Symfony\Component\HttpFoundation\Response;
         new Delete(
             security: "is_granted('ROLE_ADMIN')",
         ),
-        new Post(
+        new Put(
             uriTemplate: '/users/{id}/roles',
             requirements: ['id' => '\d+'],
             status: Response::HTTP_OK,

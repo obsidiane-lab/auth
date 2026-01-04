@@ -242,6 +242,7 @@ validation **Origin/Referer** (Same Origin).
 - [Architecture](#architecture)
 - [Démarrage rapide](#démarrage-rapide)
 - [API & flux principaux](#api--flux-principaux)
+- [Codes d’erreur (API)](#codes-derreur-api)
 - [Intégration front (SPA)](#intégration-front-spa)
 - [Configuration & déploiement](#configuration--déploiement)
 - [SDKs](#sdks)
@@ -301,30 +302,6 @@ validation **Origin/Referer** (Same Origin).
 - **Vérification d’email**
   - L’inscription envoie un lien vers `/verify-email?...` (front), qui appelle `/api/auth/verify-email`.
   - Tant que l’email n’est pas confirmé, le login est refusé (`EMAIL_NOT_VERIFIED`).
-
----
-
-## Codes d’erreur (API)
-
-Statuts HTTP exposés par l’API Auth (indépendants du client Angular) :
-
-| HTTP | Cas principaux | Détails |
-| ---: | --- | --- |
-| 400 | Requête invalide, token invalide | `verify-email` (id manquant), reset/verify token invalide, invitation sans token (`details.token = INVALID_INVITATION`). |
-| 401 | Non authentifié | `me`, JWT invalide/expiré, service token invalide, login refusé. |
-| 403 | Accès refusé | Origin/Referer non autorisé, endpoints admin sans rôle. |
-| 404 | Introuvable | Invitation inconnue, user introuvable, inscription désactivée. |
-| 409 | Conflit | Email déjà utilisé, invitation déjà acceptée, bootstrap requis ou déjà fait. |
-| 410 | Expiré | Invitation expirée, lien de vérification expiré, reset token expiré. |
-| 422 | Validation | Email/mot de passe invalides, champs requis, `INVALID_ROLES`, confirmation mot de passe. |
-| 423 | Verrouillé | Email non vérifié lors du login. |
-| 429 | Rate limit | Login, register, invite, invite/complete, password/forgot/reset, setup/admin. |
-| 500 | Erreur interne | Échec de reset password non géré (`ResetRequestFailedException`). |
-| 503 | Service indisponible | Échec d’envoi d’email (`MailDispatchException`). |
-
-Identifiants d’erreurs utiles dans les payloads/validations :
-- `INVALID_INVITATION`
-- `INVALID_ROLES`
 
 ---
 
@@ -411,7 +388,7 @@ make check-prod
 make test
 ```
 
-**Avant de push :** Lancez `make test` pour vérifier que tout passe (lint, build production, PHPStan).`
+**Avant de push :** Lancez `make test` pour vérifier que tout passe (lint, build production, PHPStan).
 
 ### URLs utiles (dev)
 
@@ -438,7 +415,7 @@ curl -i \
   -c cookiejar.txt \
   -H 'Content-Type: application/json' \
   -H "Origin: http://localhost:8000" \
-  -d '{"email":"userexample.com","password":"Secret123!"}' \
+  -d '{"email":"user@example.com","password":"Secret123!"}' \
   http://localhost:8000/api/auth/login
 
 # Profil courant
@@ -466,9 +443,36 @@ curl -i -b cookiejar.txt -H "Origin: http://localhost:8000" -X POST http://local
 |    POST | `/api/auth/password/reset`  | Réinitialisation via token                |
 |     GET | `/api/auth/verify-email`    | Validation d’email via lien signé         |
 |    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
+|     GET | `/api/auth/invite/preview`  | Prévisualiser une invitation              |
 |    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
+|     PUT | `/api/users/{id}/roles`     | Mettre à jour les roles (admin)           |
 
 Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<APP_BASE_URL>/api/docs` (OpenAPI).
+
+---
+
+## Codes d’erreur (API)
+
+L’API expose des erreurs HTTP standard. Selon le format (`Accept`), la réponse suit le schéma Problem Details/JSON
+ou Hydra, mais les statuts restent identiques.
+
+| HTTP | Cas principaux | Détails |
+| ---: | --- | --- |
+| 400 | Requête invalide, token invalide | `verify-email` (id manquant), reset/verify token invalide, invitation sans token (`details.token = INVALID_INVITATION`). |
+| 401 | Non authentifié | `me`, JWT invalide/expiré, service token invalide, login refusé. |
+| 403 | Accès refusé | Origin/Referer non autorisé, endpoints admin sans rôle. |
+| 404 | Introuvable | Invitation inconnue, user introuvable, inscription désactivée. |
+| 409 | Conflit | Email déjà utilisé, invitation déjà acceptée, bootstrap requis ou déjà fait. |
+| 410 | Expiré | Invitation expirée, lien de vérification expiré, reset token expiré. |
+| 422 | Validation | Email/mot de passe invalides, champs requis, `INVALID_ROLES`, confirmation mot de passe. |
+| 423 | Verrouillé | Email non vérifié lors du login. |
+| 429 | Rate limit | Login, register, invite, invite/complete, password/forgot/reset, setup/admin. |
+| 500 | Erreur interne | Échec de reset password non géré (`ResetRequestFailedException`). |
+| 503 | Service indisponible | Échec d’envoi d’email (`MailDispatchException`). |
+
+Identifiants d’erreurs utiles dans les payloads/validations :
+- `INVALID_INVITATION` (token manquant ou invalide lors du preview).
+- `INVALID_ROLES` (payload de roles invalide).
 
 ---
 
@@ -734,7 +738,7 @@ cd core && vendor/bin/phpstan analyse -c phpstan.neon.dist
 
 #### Frontend (Angular/TypeScript)
 
-- **Angular 19+** : Standalone components, signals, inject()
+- **Angular 21** : Standalone components, signals, inject()
 - **TypeScript strict mode** : Tous les flags stricts activés
 - **ESLint** : Configuration custom avec règles Angular
 - **Prefer inject()** : Utiliser `inject()` au lieu de constructor injection
@@ -760,18 +764,14 @@ Le projet maintient une qualité de code stricte :
 
 ## Tests & SDKs
 
-### Tests end-to-end – `tests/e2e.sh`
+### Tests end-to-end (webfront)
 
-Un script Bash est fourni pour tester rapidement les principaux parcours (setup initial, login/logout, inscription + vérification d’email, reset password, invitation) :
+Des tests Playwright sont disponibles dans `webfront/tests-e2e` :
 
 ```bash
-./tests/e2e.sh
+cd webfront
+npm run test:e2e
 ```
-
-- Le script est interactif : il te demande la base URL, les emails/mots de passe à utiliser pour l’admin, l’utilisateur d’inscription et l’utilisateur invité.
-- À chaque étape nécessitant une action sur l’email (clic sur `/verify-email?...`, `/reset-password/confirm?token=...`, `/invite/complete?...`), il affiche un message du type :
-  - `Attente de confirmation d’email… Ouvrez Maildev/Notifuse et cliquez sur le lien`, puis attend `ENTER`.
-- Il envoie les en-têtes `Origin` nécessaires à la validation Same Origin.
 
 ### Client JS – `@obsidiane/auth-client-js`
 
@@ -787,7 +787,8 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
 
 ## Bridge Meridiane
 
-Un bridge Angular peut être généré depuis la spec OpenAPI (API Platform) via le Makefile racine :
+Un bridge Angular peut être généré depuis la spec OpenAPI (API Platform) via le Makefile racine.
+Le core doit être lancé avec `API_DOCS_ENABLED=1` (spec sur `http://localhost:8000/api/docs.json`).
 
 ```bash
 make bridge

@@ -167,6 +167,14 @@ npm start
 
 Le frontend consomme sa configuration depuis l'API (`/api/config`) au runtime. Aucune variable d'environnement n'est nécessaire côté client.
 
+### Endpoints API utiles
+
+- `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/refresh`, `POST /api/auth/logout`
+- `POST /api/auth/register`, `POST /api/auth/password/forgot`, `POST /api/auth/password/reset`
+- `POST /api/auth/invite`, `POST /api/auth/invite/complete`, `GET /api/auth/invite/preview`
+- `POST /api/setup/admin`
+- `PUT /api/users/{id}/roles` (admin)
+
 ## Codes d’erreur (frontend)
 
 Le front normalise les erreurs HTTP via `ApiErrorService` et mappe le statut vers la clé de traduction

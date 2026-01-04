@@ -219,6 +219,7 @@ curl -i -b cookiejar.txt -H "Origin: http://localhost:8000" -X POST http://local
 |    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
 |     GET | `/api/auth/invite/preview`  | Prévisualiser une invitation              |
 |    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
+|     PUT | `/api/users/{id}/roles`     | Mettre à jour les roles (admin)           |
 
 Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<APP_BASE_URL>/api/docs` (OpenAPI).
 

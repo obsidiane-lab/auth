@@ -28,6 +28,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 | `src/Auth/Http/Controller/VerifyEmailController.php` | `GET /api/auth/verify-email` (lien signé). |
 | `src/Auth/Http/Controller/ResetPasswordController.php` | `POST /api/auth/password/forgot` + `POST /api/auth/password/reset`. |
 | `src/Setup/Http/Controller/InitialAdminController.php` | `POST /api/setup/admin`. |
+| `src/Controller/User/UpdateUserRolesController.php` | `PUT /api/users/{id}/roles` (admin). |
 | `json_login (Lexik)` | `POST /api/auth/login`. |
 | `refresh_jwt (Gesdinet)` | `POST /api/auth/refresh` (cookie `__Host-rt`). |
 

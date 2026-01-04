@@ -242,6 +242,7 @@ validation **Origin/Referer** (Same Origin).
 - [Architecture](#architecture)
 - [Démarrage rapide](#démarrage-rapide)
 - [API & flux principaux](#api--flux-principaux)
+- [Codes d’erreur (API)](#codes-derreur-api)
 - [Intégration front (SPA)](#intégration-front-spa)
 - [Configuration & déploiement](#configuration--déploiement)
 - [SDKs](#sdks)
@@ -316,10 +317,10 @@ La documentation OpenAPI générée par API Platform est disponible sur `http://
 ### Installation
 
 ```bash
-# Dépendances PHP
-composer install
+# Dépendances PHP (dans le dossier core/)
+cd core && composer install && cd ..
 
-# Démarrer le core (racine)
+# Démarrer le core
 docker compose up -d
 
 # Installer les dépendances du webfront (premier lancement)
@@ -329,8 +330,65 @@ docker compose run --rm webfront npm install
 docker compose up -d webfront
 
 # Migrations
-php bin/console doctrine:migrations:migrate
-````
+docker compose exec core php bin/console doctrine:migrations:migrate
+```
+
+### Commandes Makefile (à la racine)
+
+Le projet fournit un Makefile avec des commandes pratiques pour le développement :
+
+#### Génération du Bridge
+
+```bash
+# Générer le bridge Angular depuis l'OpenAPI spec
+make bridge
+
+# Nettoyer les fichiers générés
+make bridge-clean
+```
+
+#### SDK npm (Angular package)
+
+```bash
+# Générer le package Angular complet (quand l'API change)
+make sdk-npm
+
+# Nettoyer les fichiers générés
+make sdk-npm-clean
+```
+
+**Workflow de publication:**
+1. Quand l'API change: `make sdk-npm` pour régénérer le package complet
+2. Committez le package: `git add packages/auth-client-js/ && git commit -m "chore: regenerate SDK"`
+3. Push sur master: Le CI publie automatiquement le package committé sur npmjs.com
+
+Le package est construit avec **meridiane build** (ng-packagr) et **entièrement committé** dans le repo, prêt à publier.
+
+#### Build & Tests
+
+```bash
+# Nettoyer le dossier dist
+make clean
+
+# Linter le code (webfront uniquement)
+make lint
+
+# Build development
+make build
+
+# Build production
+make build-prod
+
+# Checks rapides (lint + build dev)
+make check
+
+# Tests complets production (lint + build prod + PHPStan)
+make check-prod
+# ou
+make test
+```
+
+**Avant de push :** Lancez `make test` pour vérifier que tout passe (lint, build production, PHPStan).
 
 ### URLs utiles (dev)
 
@@ -357,7 +415,7 @@ curl -i \
   -c cookiejar.txt \
   -H 'Content-Type: application/json' \
   -H "Origin: http://localhost:8000" \
-  -d '{"email":"userexample.com","password":"Secret123!"}' \
+  -d '{"email":"user@example.com","password":"Secret123!"}' \
   http://localhost:8000/api/auth/login
 
 # Profil courant
@@ -385,9 +443,36 @@ curl -i -b cookiejar.txt -H "Origin: http://localhost:8000" -X POST http://local
 |    POST | `/api/auth/password/reset`  | Réinitialisation via token                |
 |     GET | `/api/auth/verify-email`    | Validation d’email via lien signé         |
 |    POST | `/api/auth/invite`          | Inviter un utilisateur (admin)            |
+|     GET | `/api/auth/invite/preview`  | Prévisualiser une invitation              |
 |    POST | `/api/auth/invite/complete` | Compléter une invitation                  |
+|     PUT | `/api/users/{id}/roles`     | Mettre à jour les roles (admin)           |
 
 Les payloads détaillés, codes de réponse et schémas sont disponibles dans `http://<APP_BASE_URL>/api/docs` (OpenAPI).
+
+---
+
+## Codes d’erreur (API)
+
+L’API expose des erreurs HTTP standard. Selon le format (`Accept`), la réponse suit le schéma Problem Details/JSON
+ou Hydra, mais les statuts restent identiques.
+
+| HTTP | Cas principaux | Détails |
+| ---: | --- | --- |
+| 400 | Requête invalide, token invalide | `verify-email` (id manquant), reset/verify token invalide, invitation sans token (`details.token = INVALID_INVITATION`). |
+| 401 | Non authentifié | `me`, JWT invalide/expiré, service token invalide, login refusé. |
+| 403 | Accès refusé | Origin/Referer non autorisé, endpoints admin sans rôle. |
+| 404 | Introuvable | Invitation inconnue, user introuvable, inscription désactivée. |
+| 409 | Conflit | Email déjà utilisé, invitation déjà acceptée, bootstrap requis ou déjà fait. |
+| 410 | Expiré | Invitation expirée, lien de vérification expiré, reset token expiré. |
+| 422 | Validation | Email/mot de passe invalides, champs requis, `INVALID_ROLES`, confirmation mot de passe. |
+| 423 | Verrouillé | Email non vérifié lors du login. |
+| 429 | Rate limit | Login, register, invite, invite/complete, password/forgot/reset, setup/admin. |
+| 500 | Erreur interne | Échec de reset password non géré (`ResetRequestFailedException`). |
+| 503 | Service indisponible | Échec d’envoi d’email (`MailDispatchException`). |
+
+Identifiants d’erreurs utiles dans les payloads/validations :
+- `INVALID_INVITATION` (token manquant ou invalide lors du preview).
+- `INVALID_ROLES` (payload de roles invalide).
 
 ---
 
@@ -592,22 +677,103 @@ En environnement non‑dev, le thème est **forcé** par `/api/config` (pas de l
 
 ---
 
-## Tests & SDKs
+## Architecture du code
 
-### Tests end-to-end – `tests/e2e.sh`
+### Structure du projet
 
-Un script Bash est fourni pour tester rapidement les principaux parcours (setup initial, login/logout, inscription + vérification d’email, reset password, invitation) :
-
-```bash
-./tests/e2e.sh
+```
+obsidiane-auth/
+├── core/                      # Backend Symfony (API Platform)
+│   ├── src/
+│   │   ├── Auth/             # Use cases d'authentification
+│   │   ├── Controller/       # Controllers API
+│   │   ├── Entity/           # Entités Doctrine
+│   │   ├── Dto/              # DTOs pour validation
+│   │   ├── Repository/       # Repositories Doctrine
+│   │   ├── Security/         # Voters, EmailVerifier, JWT
+│   │   ├── EventSubscriber/  # Event subscribers
+│   │   └── ...
+│   ├── config/               # Configuration Symfony
+│   ├── migrations/           # Migrations Doctrine
+│   └── phpstan.neon.dist     # Configuration PHPStan
+│
+├── webfront/                  # Frontend Angular
+│   ├── src/app/
+│   │   ├── core/             # Services, repositories, guards
+│   │   ├── modules/          # Modules fonctionnels (auth, error)
+│   │   ├── shared/           # Composants partagés
+│   │   └── ...
+│   ├── bridge/               # Bridge généré par Meridiane
+│   ├── .eslintrc.json        # Configuration ESLint
+│   └── angular.json          # Configuration Angular
+│
+├── packages/                  # SDKs clients
+│   ├── auth-client-php/      # SDK PHP (Symfony)
+│   └── auth-client-js/       # SDK JavaScript/TypeScript
+│
+├── @obsidiane/               # Configuration partagée
+│   ├── caddy/                # Configuration Caddy
+│   └── docs/                 # Documentation technique
+│
+├── Makefile                   # Commandes de développement
+├── compose.yaml              # Docker Compose (dev)
+└── compose.prod.yaml         # Docker Compose (prod)
 ```
 
-- Le script est interactif : il te demande la base URL, les emails/mots de passe à utiliser pour l’admin, l’utilisateur d’inscription et l’utilisateur invité.
-- À chaque étape nécessitant une action sur l’email (clic sur `/verify-email?...`, `/reset-password/confirm?token=...`, `/invite/complete?...`), il affiche un message du type :
-  - `Attente de confirmation d’email… Ouvrez Maildev/Notifuse et cliquez sur le lien`, puis attend `ENTER`.
-- Il envoie les en-têtes `Origin` nécessaires à la validation Same Origin.
+### Standards de code
 
-### Client JS – `@obsidiane/auth-sdk`
+#### Backend (PHP/Symfony)
+
+- **PSR-12** : Standard de code PHP
+- **PHPStan Level 6** : Analyse statique stricte
+- **Type hints stricts** : `declare(strict_types=1)` dans tous les fichiers
+- **Injection de dépendances** : Constructor injection via autowiring
+- **DTOs** : Validation avec Symfony Validator
+- **Readonly classes** : Favoriser l'immutabilité (PHP 8.2+)
+
+Tous les fichiers PHP doivent passer PHPStan sans erreur :
+```bash
+cd core && vendor/bin/phpstan analyse -c phpstan.neon.dist
+```
+
+#### Frontend (Angular/TypeScript)
+
+- **Angular 21** : Standalone components, signals, inject()
+- **TypeScript strict mode** : Tous les flags stricts activés
+- **ESLint** : Configuration custom avec règles Angular
+- **Prefer inject()** : Utiliser `inject()` au lieu de constructor injection
+- **Control flow** : Utiliser `@if`/`@for` au lieu de `*ngIf`/`*ngFor`
+- **Signals** : Favoriser les signals pour la réactivité
+- **Standalone** : Tous les composants sont standalone
+
+Tous les fichiers doivent passer le linter :
+```bash
+cd webfront && npm run lint
+```
+
+### Qualité du code
+
+Le projet maintient une qualité de code stricte :
+
+- ✅ **85 règles ESLint** appliquées sur le frontend
+- ✅ **Zero erreur PHPStan** sur le backend (Level 6)
+- ✅ **TypeScript strict** avec tous les flags activés
+- ✅ **Tests automatisés** via `make test`
+
+---
+
+## Tests & SDKs
+
+### Tests end-to-end (webfront)
+
+Des tests Playwright sont disponibles dans `webfront/tests-e2e` :
+
+```bash
+cd webfront
+npm run test:e2e
+```
+
+### Client JS – `@obsidiane/auth-client-js`
 
 * Consomme l’API (login, me, refresh, logout, register, reset password) depuis navigateur ou Node/SSR.
 * Sources & doc : `packages/auth-client-js`.
@@ -621,7 +787,8 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
 
 ## Bridge Meridiane
 
-Un bridge Angular peut être généré depuis la spec OpenAPI (API Platform) via le Makefile racine :
+Un bridge Angular peut être généré depuis la spec OpenAPI (API Platform) via le Makefile racine.
+Le core doit être lancé avec `API_DOCS_ENABLED=1` (spec sur `http://localhost:8000/api/docs.json`).
 
 ```bash
 make bridge

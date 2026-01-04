@@ -193,9 +193,10 @@ PY
     return 0
   fi
 
-  info "POST /api/users/${user_id}/roles with ROLE_ADMIN"
+  info "PUT /api/users/${user_id}/roles with ROLE_ADMIN"
   curl -s -i \
     -b "${ADMIN_COOKIES}" \
+    -X PUT \
     -H 'Content-Type: application/json' \
     -H "Origin: ${ORIGIN}" \
     -d '{"roles":["ROLE_ADMIN"]}' \

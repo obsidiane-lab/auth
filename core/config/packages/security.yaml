@@ -55,7 +55,7 @@ security:
 
         # Admin-only API endpoints
         - { path: ^/api/auth/invite$, roles: ROLE_ADMIN, methods: [ POST ] }
-        - { path: ^/api/users/\d+/roles$, roles: ROLE_ADMIN, methods: [ POST ] }
+        - { path: ^/api/users/\d+/roles$, roles: ROLE_ADMIN, methods: [ PUT ] }
 
         # Everything else requires authentication
         - { path: ^/api, roles: IS_AUTHENTICATED_FULLY, allow_if: "is_granted('MUTATION_FROM_ALLOWED_SOURCE')" }
