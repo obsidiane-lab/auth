@@ -83,7 +83,29 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 ---
 
-## 4. Sécurité
+## 4. Codes d’erreur (API)
+
+| HTTP | Cas principaux | Détails |
+| ---: | --- | --- |
+| 400 | Requête invalide, token invalide | `verify-email` (id manquant), reset/verify token invalide, invitation sans token (`details.token = INVALID_INVITATION`). |
+| 401 | Non authentifié | `me`, JWT invalide/expiré, service token invalide, login refusé. |
+| 403 | Accès refusé | Origin/Referer non autorisé, endpoints admin sans rôle. |
+| 404 | Introuvable | Invitation inconnue, user introuvable, inscription désactivée. |
+| 409 | Conflit | Email déjà utilisé, invitation déjà acceptée, bootstrap requis ou déjà fait. |
+| 410 | Expiré | Invitation expirée, lien de vérification expiré, reset token expiré. |
+| 422 | Validation | Email/mot de passe invalides, champs requis, `INVALID_ROLES`, confirmation mot de passe. |
+| 423 | Verrouillé | Email non vérifié lors du login. |
+| 429 | Rate limit | Login, register, invite, invite/complete, password/forgot/reset, setup/admin. |
+| 500 | Erreur interne | Échec de reset password non géré (`ResetRequestFailedException`). |
+| 503 | Service indisponible | Échec d’envoi d’email (`MailDispatchException`). |
+
+Identifiants d’erreurs utiles dans les payloads/validations :
+- `INVALID_INVITATION`
+- `INVALID_ROLES`
+
+---
+
+## 5. Sécurité
 
 - JWT Lexik + Gesdinet refresh tokens.
 - Contrôle Origin/Referer (Same Origin).
@@ -92,14 +114,14 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 ---
 
-## 5. Infra
+## 6. Infra
 
 - Caddyfile unique dans `@obsidiane/caddy/Caddyfile`, avec un snippet monté en `webfront.caddy` (dev/prod).
 - `compose.yaml` orchestre `core`, `webfront`, `database` (le core est l’entrypoint).
 
 ---
 
-## 6. Feature flags & config
+## 7. Feature flags & config
 
 | Variable | Effet |
 | --- | --- |
@@ -115,7 +137,7 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 
 ---
 
-## 7. Tests
+## 8. Tests
 
 - Pas de tests automatisés fournis.
 - Vérifier les parcours via curl/API et via l’UI Angular.

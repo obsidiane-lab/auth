@@ -79,6 +79,11 @@ Utiliser : `store → repository → service → composant`
   - `void router.navigate(...)` si aucun résultat attendu
   - `await router.navigate(...)` si intentionnel et géré
 
+### Codes d’erreur (front)
+- Mapper via `ApiErrorService` vers `auth.errors.codes.<status>` (i18n).
+- Statuts attendus : `400`, `401`, `403`, `404`, `409`, `410`, `422`, `423`, `429`, `500`, `503`.
+- Cas bootstrap : `409` + `detail = "Initial admin is required."` déclenche la redirection `/setup`.
+
 ## Règles de scope (“mon espace” vs admin)
 - Pages “Mon espace” : filtrer côté API sur le compte courant (owner).
 - Pages admin : chargement global ; ne pas réutiliser des services “mine” sans expliciter le scope.

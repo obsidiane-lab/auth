@@ -7,6 +7,7 @@ Frontend Angular pour Obsidiane Auth, construit avec Angular 21, Tailwind CSS 4,
 - [Stack technique](#stack-technique)
 - [Architecture](#architecture)
 - [Développement](#développement)
+- [Codes d’erreur (frontend)](#codes-derreur-frontend)
 - [Standards de code](#standards-de-code)
 - [Bridge Meridiane](#bridge-meridiane)
 - [Thèmes et personnalisation](#thèmes-et-personnalisation)
@@ -165,6 +166,27 @@ npm start
 ### Variables d'environnement
 
 Le frontend consomme sa configuration depuis l'API (`/api/config`) au runtime. Aucune variable d'environnement n'est nécessaire côté client.
+
+## Codes d’erreur (frontend)
+
+Le front normalise les erreurs HTTP via `ApiErrorService` et mappe le statut vers la clé de traduction
+`auth.errors.codes.<status>`.
+
+Statuts pris en charge dans `webfront/src/assets/i18n/*.json` :
+- `400` : champs invalides.
+- `401` : identifiants invalides / non authentifié.
+- `403` : origine non autorisée (Origin/Referer).
+- `404` : ressource introuvable.
+- `409` : conflit (email déjà utilisé, bootstrap requis ou déjà fait).
+- `410` : lien expiré.
+- `422` : validation invalide.
+- `423` : email non vérifié.
+- `429` : trop de tentatives.
+- `500` : erreur serveur.
+- `503` : service indisponible (email).
+
+Cas spécial bootstrap : quand l’API renvoie `409` avec `detail = "Initial admin is required."`, le front redirige
+automatiquement vers `/setup`.
 
 ## Standards de code
 

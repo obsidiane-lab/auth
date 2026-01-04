@@ -45,6 +45,22 @@ Deux sous-projets :
 - `InviteUser` : collection `/api/invite_users`.
 - `Auth` & `Setup` : endpoints custom (`/api/auth/*`, `/api/setup/admin`).
 
+### Codes d’erreur (API)
+
+| HTTP | Cas principaux |
+| ---: | --- |
+| 400 | Requête invalide, token invalide, invitation sans token (`INVALID_INVITATION`). |
+| 401 | Non authentifié, JWT/service token invalide. |
+| 403 | Origin/Referer non autorisé, endpoints admin sans rôle. |
+| 404 | Invitation inconnue, user introuvable, inscription désactivée. |
+| 409 | Email déjà utilisé, invitation déjà acceptée, bootstrap requis ou déjà fait. |
+| 410 | Invitation ou lien expiré. |
+| 422 | Validation (`INVALID_ROLES`, email/mot de passe invalides, confirmation). |
+| 423 | Email non vérifié lors du login. |
+| 429 | Rate limit sur login/register/invite/reset/setup. |
+| 500 | Erreur interne (reset password). |
+| 503 | Email non envoyé. |
+
 ### Validation avant PR
 - `cd webfront && npm run lint && npm run build`
 
