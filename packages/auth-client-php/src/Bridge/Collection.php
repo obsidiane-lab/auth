@@ -11,6 +11,7 @@ final readonly class Collection
 {
     /**
      * @param list<T> $items
+     * @param string|array<mixed>|null $type
      * @param array<string,mixed>|null $context
      * @param array<string,mixed>|null $view
      * @param array<string,mixed>|null $search

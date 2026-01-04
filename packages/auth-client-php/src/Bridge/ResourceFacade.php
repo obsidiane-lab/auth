@@ -7,7 +7,8 @@ namespace Obsidiane\AuthBundle\Bridge;
 use Obsidiane\AuthBundle\Bridge\Http\HttpCallOptions;
 use Obsidiane\AuthBundle\Bridge\Http\HttpRequestConfig;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 /**
  * @template T of object
@@ -25,7 +26,8 @@ final class ResourceFacade
      */
     public function __construct(
         private readonly BridgeFacade $bridge,
-        private readonly SerializerInterface $serializer,
+        private readonly NormalizerInterface $normalizer,
+        private readonly DenormalizerInterface $denormalizer,
         private readonly string $resourceUrl,
         private readonly string $modelClass,
         array $serializerContext = [],
@@ -59,6 +61,8 @@ final class ResourceFacade
     }
 
     /**
+     * @param object|array<string,mixed> $payload
+     *
      * @return T
      */
     public function post(object|array $payload, ?HttpCallOptions $opts = null): object
@@ -70,6 +74,8 @@ final class ResourceFacade
     }
 
     /**
+     * @param object|array<string,mixed> $changes
+     *
      * @return T
      */
     public function patch(string $iri, object|array $changes, ?HttpCallOptions $opts = null): object
@@ -81,6 +87,8 @@ final class ResourceFacade
     }
 
     /**
+     * @param object|array<string,mixed> $payload
+     *
      * @return T
      */
     public function put(string $iri, object|array $payload, ?HttpCallOptions $opts = null): object
@@ -110,7 +118,7 @@ final class ResourceFacade
             throw new \RuntimeException('ResourceFacade: expected array payload for item hydration.');
         }
 
-        return $this->serializer->denormalize($payload, $this->modelClass, 'json', $this->serializerContext);
+        return $this->denormalizer->denormalize($payload, $this->modelClass, 'json', $this->serializerContext);
     }
 
     /**
@@ -134,7 +142,7 @@ final class ResourceFacade
             if (!is_array($row)) {
                 continue;
             }
-            $items[] = $this->serializer->denormalize($row, $this->modelClass, 'json', $this->serializerContext);
+            $items[] = $this->denormalizer->denormalize($row, $this->modelClass, 'json', $this->serializerContext);
         }
 
         $context = isset($payload['@context']) && is_array($payload['@context']) ? $payload['@context'] : null;
@@ -153,6 +161,8 @@ final class ResourceFacade
     }
 
     /**
+     * @param object|array<string,mixed> $payload
+     *
      * @return array<string,mixed>
      */
     private function normalizePayload(object|array $payload): array
@@ -161,7 +171,7 @@ final class ResourceFacade
             return $payload;
         }
 
-        $normalized = $this->serializer->normalize($payload, 'json', $this->serializerContext);
+        $normalized = $this->normalizer->normalize($payload, 'json', $this->serializerContext);
         if (!is_array($normalized)) {
             throw new \RuntimeException('ResourceFacade: serializer returned non-array payload.');
         }

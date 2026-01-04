@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 #[AsController]
 #[IsGranted('ROLE_ADMIN')]
@@ -21,7 +21,7 @@ final class UpdateUserRolesController extends AbstractController
     public function __construct(
         private readonly UserRepository $userRepository,
         private readonly EntityManagerInterface $entityManager,
-        private readonly SerializerInterface $serializer,
+        private readonly NormalizerInterface $normalizer,
     ) {
     }
 
@@ -45,7 +45,7 @@ final class UpdateUserRolesController extends AbstractController
         $this->entityManager->flush();
 
         return new JsonResponse([
-            'user' => $this->serializer->normalize($user, 'json', [AbstractNormalizer::GROUPS => ['user:read']]),
+            'user' => $this->normalizer->normalize($user, 'json', [AbstractNormalizer::GROUPS => ['user:read']]),
         ]);
     }
 }

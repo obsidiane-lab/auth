@@ -22,9 +22,9 @@ final readonly class RequestPasswordReset
         private MailerGateway $mailer,
         private FrontendUrlBuilder $frontendUrlBuilder,
         private EmailNormalizer $emailNormalizer,
+        private LoggerInterface $logger,
         #[Autowire('%env(string:NOTIFUSE_TEMPLATE_RESET_PASSWORD)%')]
         private string $resetPasswordTemplateId = 'resetpass',
-        private LoggerInterface $logger,
     ) {
     }
 

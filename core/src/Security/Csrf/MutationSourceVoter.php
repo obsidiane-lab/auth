@@ -10,6 +10,9 @@ use Symfony\Component\Security\Core\Authorization\Voter\Voter;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
+/**
+ * @extends Voter<string, mixed>
+ */
 #[AutoconfigureTag('security.voter')]
 final class MutationSourceVoter extends Voter
 {

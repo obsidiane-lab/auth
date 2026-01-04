@@ -66,7 +66,7 @@ final readonly class EmailVerifier
     }
 
     /**
-     * @return array<string, scalar>
+     * @return array<string, mixed>
      */
     private function extractQueryParams(string $signedUrl): array
     {
@@ -77,6 +77,12 @@ final readonly class EmailVerifier
 
         parse_str($parts['query'], $params);
 
-        return is_array($params) ? $params : [];
+        // Filter to ensure keys are strings
+        /** @var array<string, mixed> */
+        return array_filter(
+            $params,
+            fn ($key) => is_string($key),
+            ARRAY_FILTER_USE_KEY
+        );
     }
 }

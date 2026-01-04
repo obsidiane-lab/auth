@@ -11,7 +11,7 @@ use Lexik\Bundle\JWTAuthenticationBundle\Events;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final readonly class JwtEventSubscriber implements EventSubscriberInterface
 {
@@ -22,7 +22,7 @@ final readonly class JwtEventSubscriber implements EventSubscriberInterface
         #[Autowire('%env(string:JWT_AUDIENCE)%')]
         private string $audience,
         private EntityManagerInterface $entityManager,
-        private SerializerInterface $serializer,
+        private NormalizerInterface $normalizer,
     ) {
     }
 
@@ -79,7 +79,7 @@ final readonly class JwtEventSubscriber implements EventSubscriberInterface
 
         $expiresAt = $this->cookieFactory->getAccessTtl();
         $payload = [
-            'user' => $this->serializer->normalize($user, 'json', [AbstractNormalizer::GROUPS => ['user:read']]),
+            'user' => $this->normalizer->normalize($user, 'json', [AbstractNormalizer::GROUPS => ['user:read']]),
             'exp' => $expiresAt > 0 ? time() + $expiresAt : time(),
         ];
 

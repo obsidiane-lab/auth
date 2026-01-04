@@ -9,14 +9,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\SerializerInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 #[AsController]
 final class InitialAdminController extends AbstractController
 {
     public function __construct(
         private readonly InitialAdminManager $initialAdminManager,
-        private readonly SerializerInterface $serializer,
+        private readonly NormalizerInterface $normalizer,
     ) {
     }
 
@@ -25,7 +25,7 @@ final class InitialAdminController extends AbstractController
         $user = $this->initialAdminManager->createInitialAdmin($input);
 
         return new JsonResponse([
-            'user' => $this->serializer->normalize($user, 'json', [AbstractNormalizer::GROUPS => ['user:read']]),
+            'user' => $this->normalizer->normalize($user, 'json', [AbstractNormalizer::GROUPS => ['user:read']]),
         ], Response::HTTP_CREATED);
     }
 }

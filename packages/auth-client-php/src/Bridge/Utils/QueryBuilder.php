@@ -45,6 +45,9 @@ final class QueryBuilder
         return implode('&', $parts);
     }
 
+    /**
+     * @param array<string> $parts
+     */
     private static function addParam(array &$parts, string $key, mixed $value): void
     {
         if ($value === null) {
