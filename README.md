@@ -120,6 +120,23 @@ make bridge
 make bridge-clean
 ```
 
+#### SDK npm (Angular package)
+
+```bash
+# Générer le package Angular complet (quand l'API change)
+make sdk-npm
+
+# Nettoyer les fichiers générés
+make sdk-npm-clean
+```
+
+**Workflow de publication:**
+1. Quand l'API change: `make sdk-npm` pour régénérer le package complet
+2. Committez le package: `git add packages/auth-client-js/ && git commit -m "chore: regenerate SDK"`
+3. Push sur master: Le CI publie automatiquement le package committé sur npmjs.com
+
+Le package est construit avec **meridiane build** (ng-packagr) et **entièrement committé** dans le repo, prêt à publier.
+
 #### Build & Tests
 
 ```bash

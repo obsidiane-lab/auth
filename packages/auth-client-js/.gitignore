@@ -1,9 +1,5 @@
-# Generated files
-/dist/
-
 # Dependencies
 /node_modules/
-package-lock.json
 
 # IDE
 .vscode/
@@ -15,8 +11,5 @@ package-lock.json
 .DS_Store
 Thumbs.db
 
-# Build
-*.js
-*.js.map
-*.d.ts
-*.d.ts.map
+# Everything else is committed (meridiane build output)
+# The complete Angular package is committed and ready to publish

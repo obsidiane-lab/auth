@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: bridge bridge-clean clean build build-prod check check-prod lint test
+.PHONY: bridge bridge-clean sdk-npm sdk-npm-clean clean build build-prod check check-prod lint test
 
 # Generate bridge for Angular app (webfront)
 bridge:
@@ -12,11 +12,33 @@ bridge:
 		--out "webfront/bridge/"
 	echo "✅ Bridge generated: frontend/bridge/"
 
+# Build Angular SDK package with meridiane build and move to packages/
+sdk-npm:
+	echo "🧩 Building Angular SDK @obsidiane/auth-client-js..."
+	npx -y @obsidiane/meridiane@2.*.* build "@obsidiane/auth-client-js" \
+		--version "0.1.0" \
+		--spec "http://localhost:8000/api/docs.json" \
+		--formats "application/ld+json"
+	echo "📦 Moving package to packages/auth-client-js/..."
+	rm -rf packages/auth-client-js/*
+	cp -r dist/auth-client-js/* packages/auth-client-js/
+	rm -rf dist/auth-client-js
+	echo "✅ Angular SDK package ready!"
+	echo "   Location: packages/auth-client-js/"
+	echo ""
+	echo "   Next: commit the package and push to publish"
+
 # Clean up generated files
 bridge-clean:
 	echo "🧹 Cleaning generated files..."
 	rm -rf frontend/bridge projects/
 	echo "✅ Cleaned"
+
+# Clean up SDK npm generated files
+sdk-npm-clean:
+	echo "🧹 Cleaning SDK npm generated files..."
+	rm -rf packages/auth-client-js/* dist/auth-client-js dist/obsidiane-auth-client-js-*.tgz
+	echo "✅ SDK npm files cleaned"
 
 # Clean dist folder
 clean:

@@ -76,19 +76,18 @@ jobs:
               with:
                   node-version: '20'
                   registry-url: ${{ env.NPM_REGISTRY }}
-                  cache: 'npm'
-                  cache-dependency-path: packages/auth-client-js/package-lock.json
 
-            - name: Install dependencies
+            - name: Update package version
               run: |
-                  if [ -f package-lock.json ]; then
-                    npm ci
-                  else
-                    npm install
-                  fi
+                  # Update version in package.json to match the git tag
+                  npm version "${APP_VERSION}" --no-git-tag-version --allow-same-version
 
-            - name: Set package version
-              run: npm version "${APP_VERSION}" --no-git-tag-version
+            - name: Verify package
+              run: |
+                  echo "Package version: $(node -p "require('./package.json').version")"
+                  echo "Publishing from: $(pwd)"
+                  test -f package.json
+                  ls -lh
 
             - name: Publish npm package
               env:
