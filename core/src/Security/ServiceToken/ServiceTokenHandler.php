@@ -12,7 +12,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 final class ServiceTokenHandler implements AccessTokenHandlerInterface
 {
     public function __construct(
-        #[Autowire('%env(default::CORE_TO_AUTH_TOKEN)%')]
+        #[Autowire('%env(SERVICE_AUTH_TOKEN)%')]
         private ?string $token,
     )
     {

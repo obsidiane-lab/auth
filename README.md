@@ -277,7 +277,7 @@ PASSWORD_STRENGTH_LEVEL=2
 API_DOCS_ENABLED=0
 
 # Token S2S (Authorization: Bearer ...) pour les services internes
-CORE_TO_AUTH_TOKEN=change-me
+SERVICE_AUTH_TOKEN=change-me
 
 NOTIFUSE_API_BASE_URL=https://notifuse.example.com
 NOTIFUSE_WORKSPACE_ID=prod-workspace
@@ -382,8 +382,8 @@ Variables complémentaires (généralement à garder telles quelles) :
 
 | Variable | Valeur par défaut |
 | --- | --- |
-| `CORE_TO_AUTH_TOKEN` | `` |
-| `CORE_TO_AUTH_TOKEN_NEXT` | `` |
+| `SERVICE_AUTH_TOKEN` | `` |
+| `SERVICE_AUTH_TOKEN_NEXT` | `` |
 | `TEST_TOKEN` | `` |
 
 ---
