@@ -6,6 +6,7 @@ import frTranslations from '../assets/i18n/fr.json';
 import enTranslations from '../assets/i18n/en.json';
 import { ThemeService } from './core/services/theme.service';
 import { FrontendConfigService } from './core/services/frontend-config.service';
+import { FaviconService } from './core/services/favicon.service';
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -14,6 +15,7 @@ import { FrontendConfigService } from './core/services/frontend-config.service';
 })
 export class AppComponent {
   public themeService = inject(ThemeService);
+  private readonly faviconService = inject(FaviconService);
   private readonly translate = inject(TranslateService);
   private readonly configService = inject(FrontendConfigService);
 
