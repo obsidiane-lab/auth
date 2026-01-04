@@ -78,6 +78,9 @@ Ce document donne une vue synthétique du module d’authentification **API-only
 - Admin `POST /api/auth/invite` -> email avec lien `/invite/complete?token=...`.
 - Angular lit `GET /api/auth/invite/preview?token=...` pour afficher l’email invité et l’état.
 - Angular `/invite/complete` -> `POST /api/auth/invite/complete`.
+#### Règles métiers
+- Un utilisateur **déjà vérifié** ne peut pas être ré-invité (`409 EmailAlreadyUsedException`).
+- Un utilisateur **non vérifié** peut être ré-invité : invitation existante non expirée renvoyée, sinon régénérée (nouveau token + expiration).
 
 ### 3.6 Setup initial admin
 - Angular `/setup` -> `POST /api/setup/admin`.

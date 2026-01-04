@@ -225,6 +225,21 @@ Les payloads détaillés, codes de réponse et schémas sont disponibles dans `h
 
 ---
 
+## Invitations utilisateurs
+
+### Règles métiers
+- Un utilisateur **déjà vérifié** ne peut pas être ré-invité (`409 EmailAlreadyUsedException`).
+- Un utilisateur **non vérifié** peut être ré-invité : une invitation existante non expirée est réutilisée (renvoi d’email),
+  sinon elle est régénérée (nouveau token + nouvelle expiration).
+
+### Parcours
+1) Admin → `POST /api/auth/invite` avec `email`.
+2) Email envoyé avec lien `/invite/complete?token=...`.
+3) Front → `GET /api/auth/invite/preview?token=...` pour afficher email/état.
+4) Front → `POST /api/auth/invite/complete` avec `token + password` pour activer le compte.
+
+---
+
 ## Codes d’erreur (API)
 
 L’API expose des erreurs HTTP standard. Selon le format (`Accept`), la réponse suit le schéma Problem Details/JSON

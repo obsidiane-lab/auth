@@ -175,6 +175,11 @@ Le frontend consomme sa configuration depuis l'API (`/api/config`) au runtime. A
 - `POST /api/setup/admin`
 - `PUT /api/users/{id}/roles` (admin)
 
+### Invitation (règles métiers)
+
+- Un utilisateur **déjà vérifié** ne peut pas être ré-invité.
+- Un utilisateur **non vérifié** peut être ré-invité : l’email est renvoyé si l’invitation est encore valide, sinon elle est régénérée.
+
 ## Codes d’erreur (frontend)
 
 Le front normalise les erreurs HTTP via `ApiErrorService` et mappe le statut vers la clé de traduction

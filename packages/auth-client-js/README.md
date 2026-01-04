@@ -276,8 +276,9 @@ validation **Origin/Referer** (Same Origin).
 - **API JSON principale**
   - Auth : `POST /api/auth/login`, `GET /api/auth/me`, `POST /api/auth/refresh`, `POST /api/auth/logout`.
   - Inscription & mot de passe : `POST /api/auth/register`, `/api/auth/password/forgot`, `/api/auth/password/reset`.
-  - Invitation : `POST /api/auth/invite`, `POST /api/auth/invite/complete`.
+  - Invitation : `POST /api/auth/invite`, `POST /api/auth/invite/complete`, `GET /api/auth/invite/preview?token=...`.
   - Setup : `POST /api/setup/admin`.
+  - Admin users : `PUT /api/users/{id}/roles`.
 
 - **Cookies & tokens**
   - `__Secure-at` : access token JWT (HttpOnly, prod).
@@ -473,6 +474,13 @@ ou Hydra, mais les statuts restent identiques.
 Identifiants d’erreurs utiles dans les payloads/validations :
 - `INVALID_INVITATION` (token manquant ou invalide lors du preview).
 - `INVALID_ROLES` (payload de roles invalide).
+
+---
+
+## Invitation (règles métiers)
+
+- Un utilisateur **déjà vérifié** ne peut pas être ré-invité.
+- Un utilisateur **non vérifié** peut être ré-invité : l’email est renvoyé si l’invitation est encore valide, sinon elle est régénérée.
 
 ---
 
