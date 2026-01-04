@@ -115,7 +115,7 @@ jobs:
         runs-on: ubuntu-latest
         needs: docker
         env:
-            GITHUB_TOKEN: ${{ secrets.TOKEN_GITHUB }}
+            GITHUB_TOKEN: ${{ secrets.REPO_PUSH_TOKEN }}
 
         steps:
             - name: Checkout monorepo
