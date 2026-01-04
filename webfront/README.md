@@ -92,12 +92,10 @@ export class AuthRepository {
 
   readonly user = this.store.user;
 
-  login(email: string, password: string): Observable<User> {
-    return this.bridge.post<{ user: User }>('/api/auth/login', { email, password })
-      .pipe(
-        map(response => response.user),
-        tap(user => this.store.setUser(user))
-      );
+  login$(email: string, password: string): Observable<{ user: User }> {
+    return this.bridge
+      .post$<{ user: User }, { email: string; password: string }>('/auth/login', { email, password })
+      .pipe(tap(({ user }) => this.store.setUser(user)));
   }
 }
 ```
@@ -132,9 +130,7 @@ export class AuthService {
   readonly checkingSession = signal(false);
 
   async login(email: string, password: string): Promise<User> {
-    const user = await firstValueFrom(
-      this.authRepository.login(email, password)
-    );
+    const { user } = await firstValueFrom(this.authRepository.login$(email, password));
     return user;
   }
 }
@@ -172,7 +168,7 @@ Le frontend consomme sa configuration depuis l'API (`/api/config`) au runtime. A
 
 ## Standards de code
 
-### Modern Angular (v19+)
+### Modern Angular (v21+)
 
 Le projet utilise exclusivement les patterns modernes d'Angular :
 
@@ -299,7 +295,8 @@ npm run lint:fix
 
 ## Bridge Meridiane
 
-Le bridge est généré automatiquement depuis la spec OpenAPI de l'API :
+Le bridge est généré automatiquement depuis la spec OpenAPI de l'API.
+Le core doit être lancé avec `API_DOCS_ENABLED=1` (spec sur `http://localhost:8000/api/docs.json`) :
 
 ### Génération
 
@@ -312,6 +309,8 @@ make bridge
 
 ### Utilisation
 
+Le `baseUrl` du bridge est configuré sur `/api`, donc les routes sont relatives (`/auth/...`).
+
 ```typescript
 import { inject } from '@angular/core';
 import { BridgeFacade } from 'bridge';
@@ -320,7 +319,7 @@ export class MyService {
   private readonly bridge = inject(BridgeFacade);
 
   login(email: string, password: string) {
-    return this.bridge.post('/api/auth/login', { email, password });
+    return this.bridge.post$('/auth/login', { email, password });
   }
 }
 ```

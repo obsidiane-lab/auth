@@ -1,7 +1,7 @@
 # AGENTS.md (webfront/) — Angular + Tailwind + Bridge
 
 ## Rôle de ce dossier
-Frontend Angular (ex : Angular 20) avec Tailwind.
+Frontend Angular (ex : Angular 21) avec Tailwind.
 L’accès aux données est standardisé via un bridge (ex : `@auth/bridge` ou équivalent).
 
 ## Architecture non négociable
@@ -103,6 +103,8 @@ Utiliser : `store → repository → service → composant`
 - Nom du package bridge : `@auth/bridge` (généré via `@obsidiane/meridiane`).
 - Commande de génération : `make bridge` (mode `meridiane generate`, depuis la racine).
 - Chemin de sortie : `webfront/bridge`.
+- Alias TS local : `bridge` (voir `webfront/tsconfig.json`).
+- Source OpenAPI : `http://localhost:8000/api/docs.json` (core + `API_DOCS_ENABLED=1`).
 
 ## Commandes canoniques (dev)
 Depuis `webfront/` :

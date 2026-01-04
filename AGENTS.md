@@ -2,14 +2,13 @@
 
 Deux sous-projets :
 - `core/` : backend Symfony 7 + API Platform (FrankenPHP).
-- `webfront/` : frontend Angular 20 (Tailwind).
+- `webfront/` : frontend Angular 21 (Tailwind).
 
 ## Bridge Meridiane (obligatoire)
 - Le bridge est genere via le `Makefile` (pas d'installation du CLI dans `webfront/`).
-- Export OpenAPI local :
-  - `API_DOCS_ENABLED=1 APP_ENV=dev php core/bin/console api:openapi:export --output openapi.json`
-- Generation + copie :
-  - `make bridge` (ou `make bridge-build` + `make bridge-install`)
+- Pre-requis : core en marche avec `API_DOCS_ENABLED=1` (spec sur `http://localhost:8000/api/docs.json`).
+- Generation :
+  - `make bridge`
 - Le bridge genere vit dans `webfront/bridge` (ne pas editer a la main).
 
 ## Webfront - bonnes pratiques
