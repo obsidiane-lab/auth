@@ -94,17 +94,13 @@ RUN set -eux; \
 	composer run-script --no-dev post-install-cmd; \
 	chmod +x bin/console; sync;
 
-# Webfront builder
-FROM node:22-alpine AS webfront_builder_base
+
+FROM node:22-alpine AS webfront_builder_prod
 WORKDIR /app
-
-COPY webfront/package*.json ./
-RUN npm ci
 COPY webfront/. .
+RUN npm ci
 
-FROM webfront_builder_base AS webfront_builder_prod
 ARG ENVIRONMENT=production
-
 RUN npm install -g @angular/cli
 RUN ng build --configuration=$ENVIRONMENT
 

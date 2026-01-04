@@ -44,10 +44,11 @@ jobs:
                   fi
 
                   echo "Building Docker image ${IMAGE_NAME}:${APP_VERSION}"
+                  echo "Using target 'app' which includes Angular frontend build"
 
                   docker build \
                     --build-arg APP_VERSION="${APP_VERSION}" \
-                    --target frankenphp_prod \
+                    --target app \
                     -t "${IMAGE_NAME}:${APP_VERSION}" \
                     -t "${IMAGE_NAME}:latest" \
                     .
