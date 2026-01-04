@@ -506,7 +506,7 @@ Un script Bash est fourni pour tester rapidement les principaux parcours (setup 
   - `Attente de confirmation d’email… Ouvrez Maildev/Notifuse et cliquez sur le lien`, puis attend `ENTER`.
 - Il envoie les en-têtes `Origin` nécessaires à la validation Same Origin.
 
-### Client JS – `@obsidiane/auth-sdk`
+### Client JS – `@obsidiane/auth-client-js`
 
 * Consomme l’API (login, me, refresh, logout, register, reset password) depuis navigateur ou Node/SSR.
 * Sources & doc : `packages/auth-client-js`.

@@ -1,0 +1,8 @@
+node_modules/
+src/
+index.ts
+tsconfig.json
+DEVELOPMENT.md
+package-lock.json
+.gitignore
+.npmignore
