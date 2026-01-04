@@ -3,6 +3,9 @@ security:
         App\Entity\User:
             algorithm: auto
 
+    role_hierarchy:
+        ROLE_SERVICE: [ 'ROLE_ADMIN' ]
+
     providers:
         app_user_provider:
             entity: { class: App\Entity\User, property: email }
