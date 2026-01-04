@@ -90,10 +90,10 @@ La documentation OpenAPI générée par API Platform est disponible sur `http://
 ### Installation
 
 ```bash
-# Dépendances PHP
-composer install
+# Dépendances PHP (dans le dossier core/)
+cd core && composer install && cd ..
 
-# Démarrer le core (racine)
+# Démarrer le core
 docker compose up -d
 
 # Installer les dépendances du webfront (premier lancement)
@@ -103,8 +103,48 @@ docker compose run --rm webfront npm install
 docker compose up -d webfront
 
 # Migrations
-php bin/console doctrine:migrations:migrate
-````
+docker compose exec core php bin/console doctrine:migrations:migrate
+```
+
+### Commandes Makefile (à la racine)
+
+Le projet fournit un Makefile avec des commandes pratiques pour le développement :
+
+#### Génération du Bridge
+
+```bash
+# Générer le bridge Angular depuis l'OpenAPI spec
+make bridge
+
+# Nettoyer les fichiers générés
+make bridge-clean
+```
+
+#### Build & Tests
+
+```bash
+# Nettoyer le dossier dist
+make clean
+
+# Linter le code (webfront uniquement)
+make lint
+
+# Build development
+make build
+
+# Build production
+make build-prod
+
+# Checks rapides (lint + build dev)
+make check
+
+# Tests complets production (lint + build prod + PHPStan)
+make check-prod
+# ou
+make test
+```
+
+**Avant de push :** Lancez `make test` pour vérifier que tout passe (lint, build production, PHPStan).`
 
 ### URLs utiles (dev)
 
@@ -363,6 +403,91 @@ Le frontend consomme `/api/config` (public) pour piloter l’UI et la politique 
 | `FRONTEND_THEME_COLOR` | `themeColor` | Couleur principale (`base`, `red`, `blue`, `orange`, `yellow`, `green`, `violet`, `cyan`, `rose`). |
 
 En environnement non‑dev, le thème est **forcé** par `/api/config` (pas de lecture `localStorage`).
+
+---
+
+## Architecture du code
+
+### Structure du projet
+
+```
+obsidiane-auth/
+├── core/                      # Backend Symfony (API Platform)
+│   ├── src/
+│   │   ├── Auth/             # Use cases d'authentification
+│   │   ├── Controller/       # Controllers API
+│   │   ├── Entity/           # Entités Doctrine
+│   │   ├── Dto/              # DTOs pour validation
+│   │   ├── Repository/       # Repositories Doctrine
+│   │   ├── Security/         # Voters, EmailVerifier, JWT
+│   │   ├── EventSubscriber/  # Event subscribers
+│   │   └── ...
+│   ├── config/               # Configuration Symfony
+│   ├── migrations/           # Migrations Doctrine
+│   └── phpstan.neon.dist     # Configuration PHPStan
+│
+├── webfront/                  # Frontend Angular
+│   ├── src/app/
+│   │   ├── core/             # Services, repositories, guards
+│   │   ├── modules/          # Modules fonctionnels (auth, error)
+│   │   ├── shared/           # Composants partagés
+│   │   └── ...
+│   ├── bridge/               # Bridge généré par Meridiane
+│   ├── .eslintrc.json        # Configuration ESLint
+│   └── angular.json          # Configuration Angular
+│
+├── packages/                  # SDKs clients
+│   ├── auth-client-php/      # SDK PHP (Symfony)
+│   └── auth-client-js/       # SDK JavaScript/TypeScript
+│
+├── @obsidiane/               # Configuration partagée
+│   ├── caddy/                # Configuration Caddy
+│   └── docs/                 # Documentation technique
+│
+├── Makefile                   # Commandes de développement
+├── compose.yaml              # Docker Compose (dev)
+└── compose.prod.yaml         # Docker Compose (prod)
+```
+
+### Standards de code
+
+#### Backend (PHP/Symfony)
+
+- **PSR-12** : Standard de code PHP
+- **PHPStan Level 6** : Analyse statique stricte
+- **Type hints stricts** : `declare(strict_types=1)` dans tous les fichiers
+- **Injection de dépendances** : Constructor injection via autowiring
+- **DTOs** : Validation avec Symfony Validator
+- **Readonly classes** : Favoriser l'immutabilité (PHP 8.2+)
+
+Tous les fichiers PHP doivent passer PHPStan sans erreur :
+```bash
+cd core && vendor/bin/phpstan analyse -c phpstan.neon.dist
+```
+
+#### Frontend (Angular/TypeScript)
+
+- **Angular 19+** : Standalone components, signals, inject()
+- **TypeScript strict mode** : Tous les flags stricts activés
+- **ESLint** : Configuration custom avec règles Angular
+- **Prefer inject()** : Utiliser `inject()` au lieu de constructor injection
+- **Control flow** : Utiliser `@if`/`@for` au lieu de `*ngIf`/`*ngFor`
+- **Signals** : Favoriser les signals pour la réactivité
+- **Standalone** : Tous les composants sont standalone
+
+Tous les fichiers doivent passer le linter :
+```bash
+cd webfront && npm run lint
+```
+
+### Qualité du code
+
+Le projet maintient une qualité de code stricte :
+
+- ✅ **85 règles ESLint** appliquées sur le frontend
+- ✅ **Zero erreur PHPStan** sur le backend (Level 6)
+- ✅ **TypeScript strict** avec tous les flags activés
+- ✅ **Tests automatisés** via `make test`
 
 ---
 
