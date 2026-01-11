@@ -11,7 +11,7 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class PasswordInputComponent {
   @Input() label = 'Mot de passe';
-  @Input() id!: string;
+  @Input() inputId!: string;
   @Input() autocomplete = 'current-password';
   @Input() control!: FormControl;
   @Input() submitted = false;

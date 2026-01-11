@@ -16,7 +16,7 @@ export interface FieldError {
 })
 export class FormFieldComponent {
   @Input() label!: string;
-  @Input() id!: string;
+  @Input() inputId!: string;
   @Input() icon?: string;
   @Input() type: string = 'text';
   @Input() inputmode?: string;

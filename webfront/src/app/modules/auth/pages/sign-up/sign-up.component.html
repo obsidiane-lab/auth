@@ -15,7 +15,7 @@
     <!-- Email Field -->
     <app-form-field
       label="Adresse email"
-      id="register-email"
+      inputId="register-email"
       type="email"
       inputmode="email"
       autocomplete="email"
@@ -28,7 +28,7 @@
     <!-- Password Field -->
     <app-password-input
       label="Mot de passe"
-      id="register-password"
+      inputId="register-password"
       autocomplete="new-password"
       [control]="f['password']"
       [submitted]="submitted"
@@ -49,7 +49,7 @@
     <!-- Confirm Password Field -->
     <app-password-input
       label="Confirmez le mot de passe"
-      id="register-confirm-password"
+      inputId="register-confirm-password"
       autocomplete="new-password"
       [control]="f['confirmPassword']"
       [submitted]="submitted"

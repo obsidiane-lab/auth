@@ -1,11 +1,14 @@
 <div class="form__group">
   <div class="form__field">
     @if (icon) {
-      <svg-icon [src]="icon" [svgClass]="'h-5 w-5 absolute left-3 top-2 text-muted-foreground z-20'"></svg-icon>
+      <svg-icon
+        [src]="icon"
+        [svgClass]="'h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-20'"
+      ></svg-icon>
     }
     <input
       #inputRef
-      [id]="id"
+      [id]="inputId"
       [type]="type"
       [attr.inputmode]="inputmode || type"
       [attr.autocomplete]="autocomplete || 'off'"
@@ -17,7 +20,7 @@
     <label
       [class]="'form__label ' + (icon ? 'left-9' : 'left-4')"
       [ngClass]="{ 'peer-focus:text-destructive!': hasErrors }"
-      [attr.for]="id">
+      [attr.for]="inputId">
       {{ label }}
     </label>
     <ng-content></ng-content>

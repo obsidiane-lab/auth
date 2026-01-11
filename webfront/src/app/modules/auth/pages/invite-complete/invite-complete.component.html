@@ -28,7 +28,10 @@
       <!-- Read-only Email -->
       <div class="form__group">
         <div class="form__field">
-          <svg-icon src="assets/icons/heroicons/outline/envelope.svg" [svgClass]="'h-5 w-5 absolute left-3 top-2 text-muted-foreground z-20 opacity-70'"></svg-icon>
+          <svg-icon
+            src="assets/icons/heroicons/outline/envelope.svg"
+            [svgClass]="'h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground z-20 opacity-70'"
+          ></svg-icon>
           <input
             id="invite-email"
             [value]="invitedEmail()"
@@ -37,14 +40,17 @@
             placeholder=" "
             disabled />
           <label class="form__label left-9" for="invite-email">Adresse email invitée</label>
-          <svg-icon src="assets/icons/heroicons/outline/lock-closed.svg" [svgClass]="'h-4 w-4 absolute right-4 top-4 text-muted-foreground opacity-50'"></svg-icon>
+          <svg-icon
+            src="assets/icons/heroicons/outline/lock-closed.svg"
+            [svgClass]="'h-4 w-4 absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-50'"
+          ></svg-icon>
         </div>
       </div>
 
       <!-- Password Field -->
       <app-password-input
         label="Mot de passe"
-        id="invite-password"
+        inputId="invite-password"
         autocomplete="new-password"
         [control]="f['password']"
         [submitted]="submitted"
@@ -65,7 +71,7 @@
       <!-- Confirm Password -->
       <app-password-input
         label="Confirmez le mot de passe"
-        id="invite-confirm-password"
+        inputId="invite-confirm-password"
         autocomplete="new-password"
         [control]="f['confirmPassword']"
         [submitted]="submitted"
